@@ -1,0 +1,340 @@
+﻿@implements IDisposable
+@inject NavigationManager NavigationManager
+
+<div class="nav-container">
+    
+    <!-- Logo -->
+    <div class="logo-section">
+        <img src="images/logo.png" alt="RAMS COTTONS"
+     style="height: 60px; width: auto; margin-bottom: 0.5rem; 
+     filter: brightness(0) saturate(100%) invert(79%) sepia(53%) 
+     saturate(627%) hue-rotate(359deg) brightness(104%) contrast(106%);" />
+
+        <small class="menu-text" style="color: #888;">
+            Sistema de Promociones
+        </small>
+    </div>
+
+    <!-- Menú -->
+    <div class="menu-section">
+        <nav>
+            <AuthorizeView>
+                <Authorized>
+                    @{
+                        var user = context.User;
+                        var esSuperAdmin = user.IsInRole("SuperAdministrador");
+                        var esAdmin = user.IsInRole("Administrador");
+                        var esGerente = user.IsInRole("Gerente");
+                        var esVendedor = user.IsInRole("Vendedor");
+                    }
+
+                    <!-- INICIO -->
+                    <NavLink class="menu-item" href="" Match="NavLinkMatch.All">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span class="menu-text">Inicio</span>
+                    </NavLink>
+
+                    <!-- PROMOCIONES -->
+                    <div class="menu-section-title">
+                        <i class="bi bi-tags-fill me-1"></i>
+                        <span class="menu-text">PROMOCIONES</span>
+                    </div>
+
+                    <NavLink class="menu-item" href="promociones"Match="NavLinkMatch.All">
+                        <i class="bi bi-megaphone-fill"></i>
+                        <span class="menu-text">Gestionar Promociones</span>
+                    </NavLink>
+
+                    @if (esSuperAdmin || esAdmin)
+                    {
+                    <NavLink class="menu-item" href="promociones/crear" Match="NavLinkMatch.All">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        <span class="menu-text">Nueva Promoción</span>
+                    </NavLink>
+                    }
+
+                    <!-- CLIENTES -->
+                    <div class="menu-section-title">
+                        <i class="bi bi-people-fill me-1"></i>
+                        <span class="menu-text">CLIENTES</span>
+                    </div>
+
+                    <NavLink class="menu-item" href="clientes">
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span class="menu-text">Todos los Clientes</span>
+                    </NavLink>
+
+                    @if (esSuperAdmin || esAdmin || esGerente)
+                    {
+                        <div class="menu-section-title">
+                            <i class="bi bi-graph-up me-1"></i>
+                            <span class="menu-text">REPORTES</span>
+                        </div>
+
+                        <NavLink class="menu-item" href="reportes">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span class="menu-text">Ver Reportes</span>
+                        </NavLink>
+                    }
+
+                    <!-- ADMIN -->
+                    @if (esSuperAdmin || esAdmin)
+                    {
+                        <div class="menu-section-title">
+                            <i class="bi bi-gear-fill me-1"></i>
+                            <span class="menu-text">ADMINISTRACIÓN</span>
+                        </div>
+
+                        <!-- Crear Usuario -->
+                        <NavLink class="menu-item" href="admin/usuarios/crear" Match="NavLinkMatch.All">
+                            <i class="bi bi-person-plus-fill"></i>
+                            <span class="menu-text"> Crear Usuario</span>
+                        </NavLink>
+
+                        <!-- Lista de Usuarios -->
+                        <NavLink class="menu-item" href="admin/usuarios" Match="NavLinkMatch.All">
+                            <i class="bi bi-people-fill"></i>
+                            <span  class="menu-text"> Lista de Usuarios</span>
+                        </NavLink>
+
+                        @if (esSuperAdmin)
+                        {
+                            <NavLink class="menu-item" href="admin/roles">
+                                <i class="bi bi-shield-lock-fill"></i>
+                                <span class="menu-text">Roles y Permisos</span>
+                            </NavLink>
+                        }
+                    }
+                </Authorized>
+
+                <NotAuthorized>
+                    <NavLink class="menu-item" href="Account/Login">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span class="menu-text">Iniciar Sesión</span>
+                    </NavLink>
+
+                    <NavLink class="menu-item" href="Account/Register">
+                        <i class="bi bi-person-plus"></i>
+                        <span class="menu-text">Registrarse</span>
+                    </NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
+        </nav>
+    </div>
+
+    <!-- Footer -->
+    <AuthorizeView>
+        <Authorized>
+            @{
+                var user = context.User;
+                var esSuperAdmin = user.IsInRole("SuperAdministrador");
+                var esAdmin = user.IsInRole("Administrador");
+                var esGerente = user.IsInRole("Gerente");
+            }
+
+            <div class="footer-section">
+                <div class="profile-info">
+                    <i class="bi bi-person-circle me-2" style="color: #ffd700;"></i>
+
+                    <div class="menu-text">
+                        <div style="color: white; font-weight: 500;">
+                            @context.User.Identity?.Name
+                        </div>
+                        <div style="color: #ffd700; font-size: 0.8rem;">
+                            @(esSuperAdmin ? "Super Administrador" :
+                              esAdmin ? "Administrador" :
+                              esGerente ? "Gerente" :
+                              "Vendedor")
+                        </div>
+                    </div>
+                </div>
+
+                <form action="Account/Logout" method="post" style="margin-top: 1rem;">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+
+                    <button type="submit" class="logout-button">
+                        <i class="bi bi-box-arrow-right me-2"></i>
+                        <span class="menu-text">Cerrar Sesión</span>
+                    </button>
+                </form>
+            </div>
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+<style>
+    /* Contenedor principal */
+    .nav-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background-color: #1f1f1f;
+        color: #e4e4e4;
+        overflow: hidden; 
+    }
+
+    /* Logo */
+    .logo-section {
+        text-align: center;
+        padding: 1.5rem 1rem;
+        border-bottom: 1px solid #333;
+    }
+
+    /* Menú (con scroll solo si es necesario) */
+    .menu-section {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .menu-section::-webkit-scrollbar {
+        width: 0px;
+        height: 0px;
+    }
+
+    /* Títulos de sección */
+    .menu-section-title {
+        color: #aaa;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .menu-section-title i {
+        color: #ffd700;
+        font-size: 0.9rem;
+    }
+
+    /* Items del menú */
+    .menu-item {
+        display: flex;
+        align-items: center;
+        color: #e4e4e4;
+        text-decoration: none;
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+        margin: 0.2rem 0;
+        transition: all 0.2s;
+        gap: 0.1rem; 
+    }
+
+    .menu-item i {
+        font-size: 1.2rem;
+        min-width: 1.8rem;
+        text-align: center;
+        color: #aaa;
+    }
+
+    /* Ajustes de íconos específicos */
+    .bi-whatsapp,
+    .bi-grid-1x2-fill,
+    .bi-megaphone-fill,
+    .bi-plus-circle-fill,
+    .bi-person-lines-fill,
+    .bi-graph-up-arrow,
+    .bi-person-gear,
+    .bi-person-circle,
+    .bi-shield-lock-fill {
+        transform: translateY(-2px);
+    }
+
+    .menu-item:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+        color: white;
+    }
+
+    .menu-item.active {
+        background-color: rgba(255, 215, 0, 0.15);
+        border-left: 3px solid #ffd700;
+    }
+
+    .menu-item.active i {
+        color: #ffd700;
+    }
+
+    /* Footer */
+    .footer-section {
+        padding: 1.5rem 1rem;
+        border-top: 1px solid #333;
+        background-color: #1a1a1a;
+    }
+
+    /* Perfil */
+    .profile-info {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 0.5rem;
+    }
+
+    .profile-info > div {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .profile-info div div:first-child {
+        font-weight: 500;
+        color: white;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Botón de logout */
+    .logout-button {
+        width: 100%;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        background: transparent;
+        border: 1px solid #444;
+        border-radius: 0.375rem;
+        color: #e4e4e4;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s;
+    }
+
+    .logout-button:hover {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-color: #dc3545;
+    }
+
+    .logout-button:hover i {
+        color: #dc3545;
+    }
+
+    .logout-button i {
+        font-size: 1.2rem;
+        min-width: 1.8rem;
+        color: #aaa;
+    }
+</style>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

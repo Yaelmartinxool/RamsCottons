@@ -1,0 +1,919 @@
+@page "/clientes/qr/{Id}"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Models
+@using RamsCottons.Data
+@using RamsCottons.Services
+@using System.Text.Json
+
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject QrGeneratorService QrGeneratorService
+@inject IJSRuntime JSRuntime
+@inject IWebHostEnvironment WebHostEnvironment
+
+<PageTitle>Generar QR | RAMS Cottons</PageTitle>
+
+<div class="generar-qr-container">
+    <br>
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="title-icon">
+                    <i class="bi bi-qr-code"></i>
+                </div>
+                <div>
+                    <h1>Generar Código QR</h1>
+                    <p class="subtitle">Código QR personalizado para el cliente</p>
+                </div>
+            </div>
+            <button class="btn-back" @onclick="Volver">
+                <i class="bi bi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
+        </div>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="loading-container">
+            <div class="spinner-border text-primary"></div>
+            <p>Cargando información del cliente...</p>
+        </div>
+    }
+    else if (cliente == null)
+    {
+        <div class="error-container">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <h3>Cliente no encontrado</h3>
+            <p>El cliente que buscas no existe o ha sido eliminado.</p>
+            <button class="btn-back" @onclick="Volver">Volver</button>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <!-- Columna Principal: QR -->
+            <div class="col-lg-7">
+                <div class="qr-card">
+                    <div class="qr-card-header">
+                        <div class="qr-card-header-left">
+                            <i class="bi bi-qr-code-scan"></i>
+                            <h3>Código QR</h3>
+                        </div>
+                        <span class="qr-badge">Personalizado</span>
+                    </div>
+                    <div class="qr-card-body text-center">
+                        @if (qrGenerado && !string.IsNullOrEmpty(qrImagenBase64))
+                        {
+                            <div class="qr-image-container">
+                                <div class="qr-code-preview">
+                                    <img src="@qrImagenBase64" alt="QR Code" style="width: 250px; height: 250px; border-radius: 12px; border: 1px solid #e5e7eb;" />
+                                </div>
+                                <div class="qr-info-text">
+                                    <p><i class="bi bi-link"></i> Enlace: <strong>@qrTexto</strong></p>
+                                    <p><i class="bi bi-info-circle"></i> Escanea este código con tu celular</p>
+                                </div>
+                                <div class="qr-actions">
+                                    <button class="btn-download" @onclick="DescargarQR">
+                                        <i class="bi bi-download"></i>
+                                        Descargar QR
+                                    </button>
+                                    <button class="btn-print" @onclick="ImprimirQR">
+                                        <i class="bi bi-printer"></i>
+                                        Imprimir
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="qr-placeholder">
+                                <i class="bi bi-qr-code-scan"></i>
+                                <p>Haz clic en "Generar QR" para crear el código</p>
+                                <button class="btn-generate" @onclick="GenerarQRCode" disabled="@generando">
+                                    @if (generando)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-qr-code"></i>
+                                    }
+                                    @(generando ? "Generando..." : "Generar QR")
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Lateral: Información -->
+            <div class="col-lg-5">
+                <!-- Tarjeta de Cliente -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="bi bi-person-badge"></i>
+                        <h4>Información del Cliente</h4>
+                    </div>
+                    <div class="info-card-body">
+                        <div class="info-item">
+                            <span class="info-label">Nombre:</span>
+                            <span class="info-value">@cliente.NombreCompleto</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">ID:</span>
+                            <span class="info-value">CL-@cliente.Id</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Teléfono:</span>
+                            <span class="info-value">@cliente.Telefono</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Correo:</span>
+                            <span class="info-value">@(string.IsNullOrEmpty(cliente.Correo) ? "No registrado" : cliente.Correo)</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fecha registro:</span>
+                            <span class="info-value">@cliente.FechaRegistro.ToString("dd/MM/yyyy")</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Datos del QR -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="bi bi-info-circle"></i>
+                        <h4>Datos del QR</h4>
+                    </div>
+                    <div class="info-card-body">
+                        <div class="qr-data">
+                            <div class="data-row">
+                                <span class="data-label">Folio:</span>
+                                <span class="data-value">CL-@cliente.Id</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">Nombre:</span>
+                                <span class="data-value">@cliente.NombreCompleto</span>
+                            </div>
+                            <div class="data-row">
+                                <span class="data-label">Teléfono:</span>
+                                <span class="data-value">@cliente.Telefono</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(cliente.Correo))
+                            {
+                                <div class="data-row">
+                                    <span class="data-label">Email:</span>
+                                    <span class="data-value">@cliente.Correo</span>
+                                </div>
+                            }
+                            <div class="data-row">
+                                <span class="data-label">Enlace:</span>
+                                <span class="data-value">https://marquis-leavenless-nonseparably.ngrok-free.dev/cliente/@cliente.Id</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Consejo -->
+                <div class="tip-card">
+                    <i class="bi bi-lightbulb"></i>
+                    <div>
+                        <h5>¿Cómo usar el QR?</h5>
+                        <p>El cliente puede escanear este código con su celular para acceder rápidamente a su información y promociones.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    private int ClienteId => int.TryParse(Id, out var id) ? id : 0;
+
+    private Cliente? cliente;
+    private GeneradorQR? generadorExistente;
+    private bool cargando = true;
+    private bool generando = false;
+    private bool qrGenerado = false;
+    private string qrImagenBase64 = string.Empty;
+    private string qrTexto = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        cargando = true;
+        try
+        {
+            cliente = await DbContext.Clientes.FirstOrDefaultAsync(c => c.Id == ClienteId);
+            
+            if (cliente != null)
+            {
+                // Buscar si ya tiene QR generado (para referencia, pero no cargamos)
+                generadorExistente = await DbContext.GeneradorQR
+                    .FirstOrDefaultAsync(g => g.ClienteId == cliente.Id && g.Activo == 1);
+                
+                // No cargar QR existente, mostrar botón "Generar QR"
+                qrGenerado = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GenerarQRCode()
+    {
+        if (cliente == null) return;
+
+        generando = true;
+        StateHasChanged();
+
+        try
+        {
+            // ✅ URL CORRECTA DE NGROK
+            qrTexto = $"https://marquis-leavenless-nonseparably.ngrok-free.dev/cliente/{cliente.Id}";
+            
+            Console.WriteLine($"Texto del QR: {qrTexto}");
+
+            // Generar la imagen del QR
+            qrImagenBase64 = QrGeneratorService.GenerarQRBase64(qrTexto, 20);
+            qrGenerado = true;
+
+            // Guardar en la base de datos (actualizar o crear)
+            if (generadorExistente == null)
+            {
+                generadorExistente = new GeneradorQR
+                {
+                    ClienteId = cliente.Id,
+                    CodigoQR = qrTexto,
+                    ImagenQRUrl = qrImagenBase64,
+                    FolioCliente = $"CL-{cliente.Id}",
+                    DatosQR = JsonSerializer.Serialize(new
+                    {
+                        nombre = cliente.NombreCompleto,
+                        telefono = cliente.Telefono,
+                        correo = cliente.Correo,
+                        url = qrTexto
+                    }),
+                    FechaGeneracion = DateTime.Now,
+                    Activo = 1
+                };
+
+                DbContext.GeneradorQR.Add(generadorExistente);
+                await DbContext.SaveChangesAsync();
+
+                cliente.IdGeneradorQR = generadorExistente.IdGeneradorQR;
+                await DbContext.SaveChangesAsync();
+            }
+            else
+            {
+                // ✅ ACTUALIZAR QR EXISTENTE
+                generadorExistente.CodigoQR = qrTexto;
+                generadorExistente.ImagenQRUrl = qrImagenBase64;
+                generadorExistente.DatosQR = JsonSerializer.Serialize(new
+                {
+                    nombre = cliente.NombreCompleto,
+                    telefono = cliente.Telefono,
+                    correo = cliente.Correo,
+                    url = qrTexto
+                });
+                generadorExistente.FechaGeneracion = DateTime.Now;
+                
+                await DbContext.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generando QR: {ex.Message}");
+        }
+        finally
+        {
+            generando = false;
+            StateHasChanged();
+        }
+    }
+
+  private async Task DescargarQR()
+{
+    if (string.IsNullOrEmpty(qrImagenBase64)) return;
+
+    try
+    {
+        // Extraer solo los datos base64 (sin el prefijo "data:image/png;base64,")
+        var base64Data = qrImagenBase64.Contains(",") 
+            ? qrImagenBase64.Substring(qrImagenBase64.IndexOf(',') + 1) 
+            : qrImagenBase64;
+        
+        var bytes = Convert.FromBase64String(base64Data);
+        var fileName = $"qr_cliente_{cliente?.Id}.png";
+        
+        // Convertir bytes a string base64 para JS
+        var base64ForJs = Convert.ToBase64String(bytes);
+        
+        var js = $@"
+            (function() {{
+                var blob = new Blob([Uint8Array.from(atob('{base64ForJs}'), c => c.charCodeAt(0))], {{type: 'image/png'}});
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = '{fileName}';
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }})();
+        ";
+        
+        await JSRuntime.InvokeVoidAsync("eval", js);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al descargar QR: {ex.Message}");
+    }
+}
+
+private async Task ImprimirQR()
+{
+    if (string.IsNullOrEmpty(qrImagenBase64) || cliente == null)
+        return;
+
+    try
+    {
+        // Cargar el logo como Base64
+        var logoPath = Path.Combine(WebHostEnvironment.WebRootPath, "images", "logo.png");
+        string logoBase64 = "";
+        
+        if (File.Exists(logoPath))
+        {
+            var logoBytes = await File.ReadAllBytesAsync(logoPath);
+            logoBase64 = $"data:image/png;base64,{Convert.ToBase64String(logoBytes)}";
+        }
+
+        var html = $@"
+        <html>
+        <head>
+            <title>QR Cliente | RAMS COTTONS</title>
+            <style>
+                * {{
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }}
+                body {{
+                    font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+                    min-height: 100vh;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    padding: 20px;
+                }}
+                .qr-card {{
+                    background: white;
+                    border-radius: 32px;
+                    padding: 35px 30px;
+                    max-width: 450px;
+                    width: 100%;
+                    text-align: center;
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                    transition: transform 0.3s ease;
+                }}
+                .qr-card:hover {{
+                    transform: translateY(-5px);
+                }}
+                .logo {{
+                    margin-bottom: 20px;
+                }}
+                .logo img {{
+                    height: 70px;
+                    width: auto;
+                    margin-bottom: 8px;
+                }}
+                .qr-code {{
+                    background: #f9fafb;
+                    padding: 20px;
+                    border-radius: 24px;
+                    margin: 15px 0;
+                    border: 2px dashed #e5e7eb;
+                }}
+                .qr-code img {{
+                    width: 220px;
+                    height: 220px;
+                    display: block;
+                    margin: 0 auto;
+                }}
+                .cliente-box {{
+                    border: 2px solid #e5e7eb;
+                    border-radius: 16px;
+                    padding: 20px;
+                    margin: 15px 0;
+                    background: white;
+                }}
+                .cliente-nombre {{
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #1f2937;
+                    text-align: center;
+                    margin-bottom: 15px;
+                }}
+                .cliente-datos {{
+                    display: flex;
+                    justify-content: center;
+                    gap: 30px;
+                    flex-wrap: wrap;
+                }}
+                .dato {{
+                    display: flex;
+                    gap: 8px;
+                    font-size: 14px;
+                }}
+                .dato strong {{
+                    color: #6b7280;
+                    font-weight: 500;
+                }}
+                .dato span {{
+                    color: #1f2937;
+                    font-weight: 600;
+                }}
+                .footer {{
+                    margin-top: 20px;
+                    font-size: 11px;
+                    color: #9ca3af;
+                    border-top: 1px solid #f3f4f6;
+                    padding-top: 15px;
+                }}
+                .footer i {{
+                    font-style: normal;
+                    display: inline-block;
+                }}
+                @media print {{
+                    body {{
+                        background: white;
+                        padding: 0;
+                    }}
+                    .qr-card {{
+                        box-shadow: none;
+                        padding: 20px;
+                    }}
+                    .qr-code {{
+                        border: 1px solid #e5e7eb;
+                    }}
+                    .cliente-box {{
+                        border: 1px solid #e5e7eb;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class='qr-card'>
+                <div class='logo'>
+                    <img src='{logoBase64}' alt='RAMS COTTONS' />
+                </div>
+                <div class='qr-code'>
+                    <img src='{qrImagenBase64}' alt='Código QR' />
+                </div>
+                <div class='cliente-box'>
+                    <div class='cliente-nombre'>{cliente.NombreCompleto}</div>
+                    <div class='cliente-datos'>
+                        <div class='dato'>
+                            <strong>Folio:</strong>
+                            <span>CL-{cliente.Id}</span>
+                        </div>
+                        <div class='dato'>
+                            <strong>Teléfono:</strong>
+                            <span>{cliente.Telefono}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class='footer'>
+                    <i> Escanea este código para ver tu información y promociones </i><br/>
+                    <i style='font-size: 10px;'>© 2026 RAMS COTTONS - Todos los derechos reservados</i>
+                </div>
+            </div>
+            <script>
+                window.onload = function() {{
+                    window.print();
+                }};
+            </script>
+        </body>
+        </html>";
+
+        await JSRuntime.InvokeVoidAsync("imprimirQR", html);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error al imprimir QR: {ex.Message}");
+    }
+}
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/clientes");
+    }
+}
+
+<style>
+    .generar-qr-container {
+        padding-bottom: 2rem;
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #e5e7eb;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        background: #0f172a;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .subtitle {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: #f9fafb;
+        transform: translateX(-2px);
+    }
+
+    .qr-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .qr-card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .qr-card-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .qr-card-header-left i {
+        color: #8b5cf6;
+        font-size: 1.25rem;
+    }
+
+    .qr-card-header-left h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .qr-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.75rem;
+        background: #8b5cf6;
+        color: white;
+        border-radius: 20px;
+    }
+
+    .qr-card-body {
+        padding: 2rem;
+        min-height: 350px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .qr-image-container {
+        text-align: center;
+    }
+
+    .qr-info-text {
+        margin: 1rem 0;
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+
+    .qr-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .btn-download, .btn-print {
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+
+    .btn-download {
+        background: #0f172a;
+        border: none;
+        color: white;
+    }
+
+    .btn-download:hover {
+        background: #020617;
+        transform: translateY(-1px);
+    }
+
+    .btn-print {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+    }
+
+    .btn-print:hover {
+        background: #f9fafb;
+        transform: translateY(-1px);
+    }
+
+    .qr-placeholder {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .qr-placeholder i {
+        font-size: 4rem;
+        color: #9ca3af;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .qr-placeholder p {
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-generate {
+        background: #8b5cf6;
+        border: none;
+        color: white;
+        padding: 0.7rem 1.5rem;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+
+    .btn-generate:hover:not(:disabled) {
+        background: #7c3aed;
+        transform: translateY(-1px);
+    }
+
+    .btn-generate:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .info-card-header i {
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+
+    .info-card-header h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .info-card-body {
+        padding: 1.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .info-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-label {
+        width: 100px;
+        color: #6b7280;
+    }
+
+    .info-value {
+        color: #1f2937;
+        font-weight: 500;
+    }
+
+    .qr-data {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .data-row {
+        display: flex;
+        font-size: 0.85rem;
+        padding: 0.5rem;
+        background: #f9fafb;
+        border-radius: 8px;
+    }
+
+    .data-label {
+        width: 80px;
+        color: #6b7280;
+    }
+
+    .data-value {
+        color: #1f2937;
+        font-weight: 500;
+        word-break: break-all;
+    }
+
+    .tip-card {
+        background: rgba(15, 23, 42, 0.05);
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .tip-card i {
+        font-size: 1.5rem;
+        color: #0f172a;
+    }
+
+    .tip-card h5 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+    }
+
+    .tip-card p {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    .loading-container, .error-container {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .error-container i {
+        font-size: 3rem;
+        color: #ef4444;
+        margin-bottom: 1rem;
+    }
+
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -0.75rem;
+    }
+
+    .col-lg-7 {
+        width: 58.333%;
+        padding: 0 0.75rem;
+    }
+
+    .col-lg-5 {
+        width: 41.666%;
+        padding: 0 0.75rem;
+    }
+
+    .spinner-border {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .me-2 {
+        margin-right: 0.5rem;
+    }
+
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .row {
+            flex-direction: column;
+        }
+
+        .col-lg-7, .col-lg-5 {
+            width: 100%;
+        }
+
+        .qr-actions {
+            flex-direction: column;
+        }
+
+        .btn-download, .btn-print {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>

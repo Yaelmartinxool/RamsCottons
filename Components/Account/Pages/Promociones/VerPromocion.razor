@@ -1,0 +1,395 @@
+@page "/promociones/{token}"
+@layout Layout.BlankLayout
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Models
+@using RamsCottons.Data
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Promoción | RAMS Cottons</PageTitle>
+
+@if (cargando)
+{
+    <div class="loading-container">
+        <div class="spinner-border text-primary"></div>
+        <p>Cargando promoción...</p>
+    </div>
+}
+else if (promocion == null)
+{
+    <div class="error-container">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <h3>Promoción no encontrada</h3>
+        <p>La promoción que buscas no existe o ha expirado.</p>
+    </div>
+}
+else
+{
+    <div class="promocion-publica">
+        <div class="promocion-card">
+            <!-- Logo -->
+            <div class="logo">
+                <img src="images/logo.png" alt="RAMS COTTONS" />
+            </div>
+
+            <!-- Contenido -->
+            <h1 class="titulo">@promocion.Titulo</h1>
+            <p class="descripcion">@promocion.Descripcion</p>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <i class="bi bi-tag"></i>
+                    <span>Precio: $@promocion.Precio.ToString("N2")</span>
+                </div>
+                @if (promocion.DescuentoPorcentaje.HasValue)
+                {
+                    <div class="info-item descuento">
+                        <i class="bi bi-percent"></i>
+                        <span>@promocion.DescuentoPorcentaje% OFF</span>
+                    </div>
+                }
+                <div class="info-item">
+                    <i class="bi bi-calendar"></i>
+                    <span>Válido hasta: @promocion.FechaFin.ToString("dd MMMM yyyy")</span>
+                </div>
+            </div>
+
+            <!-- Archivo -->
+            @if (!string.IsNullOrEmpty(promocion.pdf_url))
+{
+    <div class="archivo-container">
+        @if (promocion.pdf_url.EndsWith(".pdf"))
+        {
+            <div class="pdf-card">
+                <div class="pdf-icon-wrapper">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                </div>
+                <div class="pdf-info">
+                    <span class="pdf-nombre">@promocion.pdf_nombre</span>
+                    <span class="pdf-tamaño">PDF • Documento</span>
+                </div>
+                <a href="@promocion.pdf_url" target="_blank" class="pdf-boton">
+                    <i class="bi bi-eye"></i>
+                    <span>Abrir</span>
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="imagen-card">
+                <img src="@promocion.pdf_url" alt="@promocion.Titulo" />
+                <a href="@promocion.pdf_url" target="_blank" class="imagen-boton">
+                    <i class="bi bi-arrows-fullscreen"></i> Ver completo
+                </a>
+            </div>
+        }
+    </div>
+}
+
+            <!-- Botón WhatsApp -->
+            <a href="https://wa.me/?text=@Uri.EscapeDataString($"¡Mira esta promoción de RAMS COTTONS! {NavigationManager.Uri}")" 
+               class="btn-whatsapp" target="_blank">
+                <i class="bi bi-whatsapp"></i> Compartir por WhatsApp
+            </a>
+
+            <div class="footer">
+                <p>© 2026 RAMS COTTONS - Todos los derechos reservados</p>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Token { get; set; } = string.Empty;
+
+    private Promocion? promocion;
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPromocion();
+    }
+
+    private async Task CargarPromocion()
+    {
+        cargando = true;
+        try
+        {
+            promocion = await DbContext.Promociones
+                .FirstOrDefaultAsync(p => p.TokenUnico == Token && p.Activo);
+            
+            // Verificar si expiró
+            if (promocion != null && promocion.FechaFin < DateTime.Today)
+            {
+                promocion = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+}
+
+<style>
+    .promocion-publica {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e7eb 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+    }
+
+    .promocion-card {
+        max-width: 500px;
+        width: 100%;
+        background: white;
+        border-radius: 28px;
+        padding: 2rem;
+        box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .logo {
+        margin-bottom: 1.5rem;
+    }
+
+    .logo img {
+        height: 50px;
+        width: auto;
+    }
+
+    .titulo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+    }
+
+    .descripcion {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
+    }
+
+    .info-grid {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.3rem 0.8rem;
+        background: #f3f4f6;
+        border-radius: 30px;
+        font-size: 0.8rem;
+    }
+
+    .info-item i {
+        color: #f59e0b;
+    }
+
+    .descuento {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .archivo {
+        margin: 1.5rem 0;
+    }
+/* Archivo */
+.archivo-container {
+    margin: 1.5rem 0;
+}
+
+/* PDF Card */
+.pdf-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 1rem;
+    transition: all 0.2s;
+}
+
+.pdf-card:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.pdf-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    background: #fee2e2;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdf-icon-wrapper i {
+    font-size: 1.8rem;
+    color: #ef4444;
+}
+
+.pdf-info {
+    flex: 1;
+    text-align: left;
+}
+
+.pdf-nombre {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.pdf-tamaño {
+    display: block;
+    font-size: 0.65rem;
+    color: #94a3b8;
+}
+
+.pdf-boton {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: #0f172a;
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.pdf-boton:hover {
+    background: #f59e0b;
+    transform: scale(1.02);
+}
+
+/* Imagen Card */
+.imagen-card {
+    background: #f8fafc;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.imagen-card img {
+    width: 100%;
+    max-height: 250px;
+    object-fit: cover;
+}
+
+.imagen-boton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: #0f172a;
+    color: white;
+    padding: 0.6rem;
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.imagen-boton:hover {
+    background: #f59e0b;
+}
+    .pdf-viewer {
+        background: #f9fafb;
+        border-radius: 16px;
+        padding: 1rem;
+    }
+
+    .pdf-viewer i {
+        font-size: 3rem;
+        color: #ef4444;
+        margin-bottom: 0.5rem;
+    }
+
+    .image-viewer img {
+        max-width: 100%;
+        border-radius: 12px;
+    }
+
+    .btn-ver {
+        display: inline-block;
+        background: #0f172a;
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 30px;
+        text-decoration: none;
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+    }
+
+    .btn-whatsapp {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: #25D366;
+        color: white;
+        text-decoration: none;
+        padding: 0.7rem;
+        border-radius: 40px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        width: 100%;
+    }
+
+    .btn-whatsapp:hover {
+        background: #128C7E;
+        transform: scale(1.02);
+    }
+
+    .footer {
+        margin-top: 1.5rem;
+        font-size: 0.7rem;
+        color: #9ca3af;
+    }
+
+    .loading-container, .error-container {
+        text-align: center;
+        padding: 2rem;
+        background: white;
+        border-radius: 24px;
+        max-width: 400px;
+        width: 100%;
+    }
+
+    @@media (max-width: 480px) {
+        .promocion-publica {
+            padding: 1rem;
+        }
+
+        .promocion-card {
+            padding: 1.5rem;
+        }
+
+        .titulo {
+            font-size: 1.2rem;
+        }
+    }
+</style>

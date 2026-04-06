@@ -1,0 +1,1518 @@
+@page "/admin/usuarios"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Data
+@attribute [Authorize(Roles = "SuperAdministrador,Administrador")]
+
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager NavigationManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Gestión de Usuarios | RAMS Cottons</PageTitle>
+
+<!-- Header -->
+<br>
+<div class="dashboard-header">
+    <div class="header-content">
+        <div class="header-title">
+            <div class="title-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <h1>Gestión de Usuarios</h1>
+                <p class="subtitle">Sistema completo de administración y control de accesos</p>
+            </div>
+        </div>
+        <button class="btn-create" @onclick="CrearUsuario">
+            <i class="bi bi-plus-lg"></i>
+            <span>Nuevo Usuario</span>
+        </button>
+    </div>
+</div>
+
+<!-- Control Panel -->
+<div class="control-panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <i class="bi bi-table"></i>
+            <h3>Tabla de Usuarios</h3>
+        </div>
+        <div class="panel-actions">
+            @if (selectedIds.Any())
+            {
+                <div class="batch-actions-container">
+                    <div class="batch-selection-info">
+                        <span>@selectedIds.Count</span> seleccionados
+                    </div>
+                    <select class="select-custom batch-action-select" @onchange="(e) => ExecuteBatchAction(e.Value?.ToString())">
+                        <option value="" selected disabled>Acciones en lote</option>
+                        <option value="activate">Activar seleccionados</option>
+                        <option value="deactivate">Desactivar seleccionados</option>
+                        <option value="role-superadmin">Asignar rol SuperAdministrador</option>
+                        <option value="role-admin">Asignar rol Administrador</option>
+                        <option value="role-gerente">Asignar rol Gerente</option>
+                        <option value="role-vendedor">Asignar rol Vendedor</option>
+                        <option value="delete" class="text-danger">Eliminar seleccionados</option>
+                    </select>
+                    <button class="btn-clear-selection" @onclick="ClearSelection">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            }
+
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" @bind="filtro" @bind:event="oninput" placeholder="Buscar usuarios, emails...">
+            </div>
+            <div class="action-buttons">
+                <button class="btn-select-all @(selectAllActive ? "active" : "")" @onclick="ToggleSelectAll" title="Seleccionar todos">
+                    <i class="bi @(selectAllActive ? "bi-check-square" : "bi-square")"></i>
+                </button>
+                <button class="btn-filter" @onclick="ToggleFilters">
+                    <i class="bi bi-funnel"></i>
+                    Filtros
+                </button>
+                <button class="btn-refresh" @onclick="CargarUsuarios">
+                    <i class="bi bi-arrow-clockwise @(cargando ? "fa-spin" : "")"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-panel @(mostrarFiltros ? "show" : "")">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Rol de Usuario</label>
+                <select class="select-custom" @bind="filtroRol">
+                    <option value="">Todos los roles</option>
+                    <option value="SuperAdministrador">SuperAdministrador</option>
+                    <option value="Administrador">Administrador</option>
+                    <option value="Gerente">Gerente</option>
+                    <option value="Vendedor">Vendedor</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Estado</label>
+                <select class="select-custom" @bind="filtroEstado">
+                    <option value="">Todos</option>
+                    <option value="activo">Activos</option>
+                    <option value="inactivo">Inactivos</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Ordenar por</label>
+                <select class="select-custom" @bind="ordenarPor">
+                    <option value="reciente">Más recientes primero</option>
+                    <option value="antiguo">Más antiguos primero</option>
+                    <option value="nombre">Nombre A-Z</option>
+                    <option value="email">Email A-Z</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Filas por página</label>
+                <select class="select-custom" @bind="elementosPorPagina">
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15" selected>15</option>
+                    <option value="20">20</option>
+                    <option value="25">25</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>&nbsp;</label>
+                <button class="btn-clear-filters" @onclick="LimpiarFiltros">
+                    <i class="bi bi-x-circle"></i>
+                    Limpiar Filtros
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading -->
+@if (cargando)
+{
+    <div class="loading-container">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+        <p class="mt-3 text-muted">Cargando usuarios...</p>
+    </div>
+}
+else
+{
+    <!-- Main Table -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="crud-table">
+                <thead>
+                    <tr>
+                        <th class="col-checkbox">
+                            <div class="th-content">
+                                <input type="checkbox" 
+                                       checked="@selectAllHeader" 
+                                       @onchange="ToggleSelectAllFromHeader" />
+                            </div>
+                        </th>
+                        <th class="col-usuario">
+                            <div class="th-content">
+                                <span>Usuario</span>
+                                <i class="bi bi-arrow-down-up"></i>
+                            </div>
+                        </th>
+                        <th class="col-email">
+                            <div class="th-content">
+                                <span>Email</span>
+                                <i class="bi bi-arrow-down-up"></i>
+                            </div>
+                        </th>
+                        <th class="col-telefono">
+                            <div class="th-content">
+                                <span>Teléfono</span>
+                            </div>
+                        </th>
+                        <th class="col-roles">
+                            <div class="th-content">
+                                <span>Roles</span>
+                            </div>
+                        </th>
+                        <th class="col-estado">
+                            <div class="th-content">
+                                <span>Estado</span>
+                            </div>
+                        </th>
+                        <th class="col-acciones">
+                            <div class="th-content">
+                                <span>Acciones</span>
+                            </div>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!usuariosPaginados.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <div class="no-data">
+                                    <i class="bi bi-people-fill display-4 text-muted"></i>
+                                    <p class="mb-0">No hay usuarios registrados</p>
+                                    <button class="btn btn-sm btn-primary mt-3" @onclick="CrearUsuario">
+                                        <i class="bi bi-plus-lg"></i> Crear primer usuario
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in usuariosPaginados)
+                        {
+                            var isSelected = selectedIds.Contains(item.Usuario.Id);
+                            <tr class="usuario-row @(isSelected ? "selected" : "")">
+                                <td class="col-checkbox">
+                                    <input type="checkbox" 
+                                           class="row-checkbox" 
+                                           @onclick="() => ToggleSelection(item.Usuario.Id)" 
+                                           checked="@isSelected" />
+                                </td>
+                                <td class="col-usuario">
+                                    <div class="user-info">
+                                        <div class="user-avatar" style="background: linear-gradient(135deg, @GetGradientStart(item.Roles.FirstOrDefault()), @GetGradientEnd(item.Roles.FirstOrDefault()));">
+                                            @(item.Usuario.NombreCompleto?.Substring(0, 1).ToUpper() ?? "?")
+                                        </div>
+                                        <div class="user-details">
+                                            <span class="user-name">@item.Usuario.NombreCompleto</span>
+                                            <small class="text-muted">@@@item.Usuario.UserName</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="col-email">
+                                    <div class="email-cell">
+                                        <i class="bi bi-envelope-fill text-muted me-1"></i>
+                                        @item.Usuario.Email
+                                    </div>
+                                </td>
+                                <td class="col-telefono">
+                                    @if (!string.IsNullOrEmpty(item.Usuario.Telefono))
+                                    {
+                                        <div class="phone-cell">
+                                            <i class="bi bi-telephone-fill text-muted me-1"></i>
+                                            @item.Usuario.Telefono
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="no-data-cell">-</span>
+                                    }
+                                </td>
+                                <td class="col-roles">
+                                    <div class="roles-container">
+                                        @foreach (var rol in item.Roles)
+                                        {
+                                            <span class="role-badge @GetBadgeClass(rol)">
+                                                @rol
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="col-estado">
+                                    <div class="status-indicator @(item.Usuario.Activo ? "status-activo" : "status-inactivo")">
+                                        <span class="status-dot"></span>
+                                        <span class="status-text">@(item.Usuario.Activo ? "Activo" : "Inactivo")</span>
+                                    </div>
+                                </td>
+                                <td class="col-acciones">
+                                    <div class="action-buttons">
+                                        <button class="btn-action btn-view" @onclick="() => VerUsuario(item.Usuario.Id)" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn-action btn-edit" @onclick="() => EditarUsuario(item.Usuario.Id)" title="Editar usuario">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn-action btn-toggle" @onclick="() => ToggleEstado(item.Usuario)" title="@(item.Usuario.Activo ? "Desactivar" : "Activar")">
+                                            <i class="bi @(item.Usuario.Activo ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                        </button>
+                                        <button class="btn-action btn-delete" @onclick="() => ConfirmarEliminar(item.Usuario)" title="Eliminar usuario">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Table Footer -->
+        @if (usuariosFiltrados.Any())
+        {
+            <div class="table-footer">
+                <div class="footer-info">
+                    <div class="total-count">
+                        Mostrando <span>@usuariosPaginados.Count()</span> de <span>@usuariosFiltrados.Count()</span> usuarios
+                    </div>
+                    <div class="pagination-info">
+                        Página @paginaActual de @totalPaginas
+                    </div>
+                </div>
+
+                @if (totalPaginas > 1)
+                {
+                    <div class="pagination-wrapper">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                <li class="page-item @(paginaActual == 1 ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => CambiarPagina(paginaActual - 1)">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                </li>
+                                @for (int i = 1; i <= totalPaginas; i++)
+                                {
+                                    if (i == 1 || i == totalPaginas || (i >= paginaActual - 2 && i <= paginaActual + 2))
+                                    {
+                                        <li class="page-item @(i == paginaActual ? "active" : "")">
+                                            <button class="page-link" @onclick="() => CambiarPagina(i)">@i</button>
+                                        </li>
+                                    }
+                                    else if (i == paginaActual - 3 || i == paginaActual + 3)
+                                    {
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    }
+                                }
+                                <li class="page-item @(paginaActual == totalPaginas ? "disabled" : "")">
+                                    <button class="page-link" @onclick="() => CambiarPagina(paginaActual + 1)">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+<!-- Modal Eliminar -->
+@if (mostrarModalEliminar && usuarioEliminar != null)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Confirmar eliminación</h5>
+                    <button class="btn-close-custom" @onclick="CerrarModal">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-4"
+                         style="width: 80px; height: 80px;">
+                        <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 2.5rem;"></i>
+                    </div>
+                    
+                    <h5 class="fw-bold mb-3">¿Eliminar usuario?</h5>
+                    <p class="text-muted mb-4">
+                        Estás a punto de eliminar a 
+                        <span class="fw-bold text-dark">@usuarioEliminar.NombreCompleto</span>
+                        <br>Esta acción no se puede deshacer.
+                    </p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <button class="btn btn-light px-5 py-2 rounded-3" @onclick="CerrarModal">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-danger px-5 py-2 rounded-3" @onclick="EliminarUsuario">
+                        <i class="bi bi-trash3 me-2"></i>
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Cargando -->
+@if (mostrarModalCargando)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-body text-center p-5">
+                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                    <h5 class="fw-bold mb-2">@mensajeCargando</h5>
+                    <p class="text-muted mb-0">Por favor espere...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // Variables de filtrado y paginación
+    private string filtro = "";
+    private string filtroRol = "";
+    private string filtroEstado = "";
+    private string ordenarPor = "reciente";
+    private int paginaActual = 1;
+    private int elementosPorPagina = 15;
+    private bool mostrarFiltros = false;
+    private bool selectAllHeader = false;
+    private bool selectAllActive = false;
+    private string usuarioActualId = string.Empty;
+    private int sucursalUsuarioActual = 0;
+    private bool esSuperAdmin = false;
+    private bool esAdmin = false;
+    private bool esGerente = false;
+    private bool esVendedor = false;
+        
+    private HashSet<string> selectedIds = new();
+    private List<UsuarioConRoles> usuariosConRoles = new();
+    private bool cargando = true;
+    private bool mostrarModalEliminar = false;
+    private ApplicationUser? usuarioEliminar;
+    private bool mostrarModalCargando = false;
+    private string mensajeCargando = "";
+
+    private IEnumerable<UsuarioConRoles> usuariosFiltrados
+    {
+        get
+        {
+            var query = usuariosConRoles.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(filtro))
+            {
+                query = query.Where(x =>
+                    (x.Usuario.NombreCompleto?.Contains(filtro, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (x.Usuario.Email?.Contains(filtro, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (x.Usuario.UserName?.Contains(filtro, StringComparison.OrdinalIgnoreCase) ?? false)
+                );
+            }
+
+            if (!string.IsNullOrWhiteSpace(filtroRol))
+            {
+                query = query.Where(x => x.Roles.Contains(filtroRol, StringComparer.OrdinalIgnoreCase));
+            }
+
+            if (filtroEstado == "activo")
+            {
+                query = query.Where(x => x.Usuario.Activo);
+            }
+            else if (filtroEstado == "inactivo")
+            {
+                query = query.Where(x => !x.Usuario.Activo);
+            }
+
+            query = ordenarPor switch
+            {
+                "antiguo" => query.OrderBy(x => x.Usuario.FechaRegistro),
+                "nombre" => query.OrderBy(x => x.Usuario.NombreCompleto),
+                "email" => query.OrderBy(x => x.Usuario.Email),
+                _ => query.OrderByDescending(x => x.Usuario.FechaRegistro)
+            };
+
+            return query;
+        }
+    }
+
+    private int totalPaginas => (int)Math.Ceiling((double)usuariosFiltrados.Count() / elementosPorPagina);
+    
+    private IEnumerable<UsuarioConRoles> usuariosPaginados =>
+        usuariosFiltrados
+            .Skip((paginaActual - 1) * elementosPorPagina)
+            .Take(elementosPorPagina)
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUsuarios();
+    }
+
+    private async Task CargarUsuarioActual()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var usuario = await UserManager.GetUserAsync(user);
+            if (usuario != null)
+            {
+                usuarioActualId = usuario.Id;
+                sucursalUsuarioActual = usuario.IdSucursal;
+                
+                esSuperAdmin = user.IsInRole("SuperAdministrador");
+                esAdmin = user.IsInRole("Administrador");
+                esGerente = user.IsInRole("Gerente");
+                esVendedor = user.IsInRole("Vendedor");
+            }
+        }
+    }
+
+    private async Task CargarUsuarios()
+    {
+        cargando = true;
+        try
+        {
+            await CargarUsuarioActual();
+            
+            var query = UserManager.Users.AsQueryable();
+
+            if (!esSuperAdmin)
+            {
+                if (esAdmin || esGerente)
+                {
+                    var allUsers = await UserManager.Users.ToListAsync();
+                    var superAdminIds = new List<string>();
+
+                    foreach (var u in allUsers)
+                    {
+                        var roles = await UserManager.GetRolesAsync(u);
+                        if (roles.Contains("SuperAdministrador"))
+                        {
+                            superAdminIds.Add(u.Id);
+                        }
+                    }
+
+                    query = query.Where(u =>
+                        u.IdSucursal == sucursalUsuarioActual ||
+                        superAdminIds.Contains(u.Id));
+                }
+                else if (esVendedor)
+                {
+                    query = query.Where(u => u.Id == usuarioActualId);
+                }
+            }
+
+            var usuarios = await query
+                .OrderByDescending(u => u.FechaRegistro)
+                .ToListAsync();
+
+            usuariosConRoles.Clear();
+            selectedIds.Clear();
+            selectAllHeader = false;
+            selectAllActive = false;
+
+            foreach (var user in usuarios)
+            {
+                var roles = await UserManager.GetRolesAsync(user);
+                usuariosConRoles.Add(new UsuarioConRoles
+                {
+                    Usuario = user,
+                    Roles = roles.ToList()
+                });
+            }
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void CrearUsuario() => NavigationManager.NavigateTo("/admin/usuarios/crear");
+    private void EditarUsuario(string userId) => NavigationManager.NavigateTo($"/admin/usuarios/edit/{userId}");
+    private void VerUsuario(string userId) => NavigationManager.NavigateTo($"/admin/usuarios/view/{userId}");
+    private void ToggleFilters() => mostrarFiltros = !mostrarFiltros;
+
+    private void LimpiarFiltros()
+    {
+        filtro = "";
+        filtroRol = "";
+        filtroEstado = "";
+        ordenarPor = "reciente";
+        paginaActual = 1;
+    }
+
+    private void CambiarPagina(int pagina)
+    {
+        if (pagina >= 1 && pagina <= totalPaginas)
+        {
+            paginaActual = pagina;
+        }
+    }
+
+    private void ToggleSelection(string userId)
+    {
+        if (selectedIds.Contains(userId))
+        {
+            selectedIds.Remove(userId);
+        }
+        else
+        {
+            selectedIds.Add(userId);
+        }
+        
+        selectAllActive = selectedIds.Any();
+        selectAllHeader = selectedIds.Count == usuariosFiltrados.Count() && usuariosFiltrados.Any();
+    }
+
+    private void ToggleSelectAll()
+    {
+        if (selectedIds.Count == usuariosFiltrados.Count() && usuariosFiltrados.Any())
+        {
+            ClearSelection();
+        }
+        else
+        {
+            selectedIds.Clear();
+            foreach (var user in usuariosFiltrados)
+            {
+                selectedIds.Add(user.Usuario.Id);
+            }
+            selectAllActive = true;
+            selectAllHeader = true;
+        }
+    }
+
+    private void ToggleSelectAllFromHeader()
+    {
+        selectAllHeader = !selectAllHeader;
+        
+        if (selectAllHeader)
+        {
+            selectedIds.Clear();
+            foreach (var user in usuariosFiltrados)
+            {
+                selectedIds.Add(user.Usuario.Id);
+            }
+            selectAllActive = true;
+        }
+        else
+        {
+            ClearSelection();
+        }
+    }
+
+    private void ClearSelection()
+    {
+        selectedIds.Clear();
+        selectAllHeader = false;
+        selectAllActive = false;
+    }
+
+    private async Task ExecuteBatchAction(string? action)
+    {
+        if (string.IsNullOrEmpty(action) || !selectedIds.Any()) return;
+
+        try
+        {
+            mostrarModalCargando = true;
+            mensajeCargando = action switch
+            {
+                "delete" => "Eliminando usuarios seleccionados...",
+                "activate" => "Activando usuarios...",
+                "deactivate" => "Desactivando usuarios...",
+                _ => "Actualizando roles..."
+            };
+            StateHasChanged();
+
+            switch (action)
+            {
+                case "delete":
+                    await BatchDelete();
+                    break;
+                case "activate":
+                    await BatchToggleStatus(true);
+                    break;
+                case "deactivate":
+                    await BatchToggleStatus(false);
+                    break;
+                case "role-superadmin":
+                    await BatchAssignRole("SuperAdministrador");
+                    break;
+                case "role-admin":
+                    await BatchAssignRole("Administrador");
+                    break;
+                case "role-gerente":
+                    await BatchAssignRole("Gerente");
+                    break;
+                case "role-vendedor":
+                    await BatchAssignRole("Vendedor");
+                    break;
+            }
+
+            await CargarUsuarios();
+            ClearSelection();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            mostrarModalCargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task BatchDelete()
+    {
+        var usersToDelete = usuariosConRoles
+            .Where(x => selectedIds.Contains(x.Usuario.Id))
+            .Select(x => x.Usuario)
+            .ToList();
+
+        foreach (var user in usersToDelete)
+        {
+            await UserManager.DeleteAsync(user);
+        }
+    }
+
+    private async Task BatchToggleStatus(bool activo)
+    {
+        var usersToUpdate = usuariosConRoles
+            .Where(x => selectedIds.Contains(x.Usuario.Id))
+            .Select(x => x.Usuario)
+            .ToList();
+
+        foreach (var user in usersToUpdate)
+        {
+            user.Activo = activo;
+            await UserManager.UpdateAsync(user);
+        }
+    }
+
+    private async Task BatchAssignRole(string role)
+    {
+        var usersToUpdate = usuariosConRoles
+            .Where(x => selectedIds.Contains(x.Usuario.Id))
+            .Select(x => x.Usuario)
+            .ToList();
+
+        foreach (var user in usersToUpdate)
+        {
+            var currentRoles = await UserManager.GetRolesAsync(user);
+            await UserManager.RemoveFromRolesAsync(user, currentRoles);
+            await UserManager.AddToRoleAsync(user, role);
+        }
+    }
+
+    private void ConfirmarEliminar(ApplicationUser user)
+    {
+        usuarioEliminar = user;
+        mostrarModalEliminar = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModalEliminar = false;
+        usuarioEliminar = null;
+    }
+
+    private async Task EliminarUsuario()
+    {
+        if (usuarioEliminar == null) return;
+
+        try
+        {
+            mostrarModalCargando = true;
+            mensajeCargando = "Eliminando usuario...";
+            StateHasChanged();
+
+            await UserManager.DeleteAsync(usuarioEliminar);
+            await CargarUsuarios();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar: {ex.Message}");
+        }
+        finally
+        {
+            mostrarModalCargando = false;
+            CerrarModal();
+        }
+    }
+
+    private async Task ToggleEstado(ApplicationUser user)
+    {
+        try
+        {
+            user.Activo = !user.Activo;
+            await UserManager.UpdateAsync(user);
+            await CargarUsuarios();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    private string GetBadgeClass(string rol)
+    {
+        return rol switch
+        {
+            "SuperAdministrador" => "role-badge-superadmin",
+            "Administrador" => "role-badge-admin",
+            "Gerente" => "role-badge-gerente",
+            "Vendedor" => "role-badge-vendedor",
+            _ => "role-badge-other"
+        };
+    }
+
+    private string GetGradientStart(string? rol)
+    {
+        return rol switch
+        {
+            "SuperAdministrador" => "#7c3aed",
+            "Administrador" => "#1e293b",
+            "Gerente" => "#0891b2",
+            "Vendedor" => "#059669",
+            _ => "#64748b"
+        };
+    }
+
+    private string GetGradientEnd(string? rol)
+    {
+        return rol switch
+        {
+            "SuperAdministrador" => "#5b21b6",
+            "Administrador" => "#0f172a",
+            "Gerente" => "#0e7490",
+            "Vendedor" => "#047857",
+            _ => "#475569"
+        };
+    }
+
+    private class UsuarioConRoles
+    {
+        public ApplicationUser Usuario { get; set; } = new();
+        public List<string> Roles { get; set; } = new();
+    }
+}
+
+<style>
+    :root {
+        --primary: #0f172a;
+        --primary-dark: #020617;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --info: #3b82f6;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f8fafc;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+    }
+
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid var(--gray-200);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        background: var(--primary);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+        color: var(--gray-500);
+        font-size: 0.9rem;
+    }
+
+    .btn-create {
+        background: var(--primary);
+        border: none;
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-create:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .control-panel {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid var(--gray-200);
+    }
+
+    .panel-header {
+        padding: 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .panel-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .panel-title i {
+        color: var(--primary);
+    }
+
+    .panel-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .batch-actions-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: rgba(15, 23, 42, 0.05);
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        animation: fadeIn 0.3s ease;
+    }
+
+    .batch-selection-info {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    .batch-action-select {
+        min-width: 180px;
+        padding: 0.4rem 0.75rem;
+        background: white;
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        font-size: 0.85rem;
+    }
+
+    .btn-clear-selection {
+        background: none;
+        border: none;
+        color: var(--gray-500);
+        cursor: pointer;
+        padding: 0.2rem 0.4rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-clear-selection:hover {
+        color: var(--danger);
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    .btn-select-all {
+        padding: 0.4rem;
+        border: 1px solid var(--gray-300);
+        background: white;
+        border-radius: 6px;
+        color: var(--gray-700);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-select-all:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-400);
+    }
+
+    .btn-select-all.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .search-box {
+        position: relative;
+        background: var(--gray-100);
+        border-radius: 6px;
+        padding: 0.4rem 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 250px;
+    }
+
+    .search-box i {
+        color: var(--gray-500);
+        font-size: 0.9rem;
+    }
+
+    .search-box input {
+        border: none;
+        background: none;
+        outline: none;
+        width: 100%;
+        font-size: 0.85rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-filter, .btn-refresh {
+        padding: 0.4rem 0.75rem;
+        border: 1px solid var(--gray-300);
+        background: white;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-refresh {
+        padding: 0.4rem;
+    }
+
+    .btn-filter:hover, .btn-refresh:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-400);
+    }
+
+    .filters-panel {
+        padding: 1.25rem;
+        border-top: 1px solid var(--gray-200);
+        display: none;
+    }
+
+    .filters-panel.show {
+        display: block;
+        animation: slideDown 0.3s ease;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .filter-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .filter-group {
+        flex: 1;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-weight: 500;
+        color: var(--gray-700);
+        font-size: 0.8rem;
+    }
+
+    .select-custom {
+        padding: 0.4rem 0.75rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        background: white;
+        font-size: 0.85rem;
+        width: 100%;
+    }
+
+    .btn-clear-filters {
+        padding: 0.4rem 0.75rem;
+        background: var(--gray-100);
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        color: var(--gray-700);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-clear-filters:hover {
+        background: var(--gray-200);
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .crud-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .crud-table thead {
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .crud-table th {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .th-content {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .th-content i {
+        color: var(--gray-400);
+        font-size: 0.7rem;
+    }
+
+    .crud-table td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--gray-200);
+        vertical-align: middle;
+        font-size: 0.85rem;
+    }
+
+    .usuario-row:hover {
+        background: var(--gray-50);
+    }
+
+    .usuario-row.selected {
+        background: rgba(15, 23, 42, 0.05);
+    }
+
+    .col-checkbox { width: 40px; }
+    .col-usuario { min-width: 200px; }
+    .col-email { min-width: 180px; }
+    .col-telefono { min-width: 120px; }
+    .col-roles { min-width: 150px; }
+    .col-estado { min-width: 80px; }
+    .col-acciones { min-width: 120px; }
+
+    .row-checkbox {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: var(--primary);
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+        color: white;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-name {
+        font-weight: 500;
+        color: var(--gray-800);
+        font-size: 0.9rem;
+    }
+
+    .user-details small {
+        color: var(--gray-500);
+        font-size: 0.7rem;
+    }
+
+    .email-cell, .phone-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: var(--gray-700);
+        font-size: 0.85rem;
+    }
+
+    .no-data-cell {
+        color: var(--gray-400);
+        font-style: italic;
+    }
+
+    .roles-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.6rem;
+        border-radius: 16px;
+        font-size: 0.65rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+    }
+
+    .role-badge-superadmin {
+        background: #7c3aed;
+        color: white;
+    }
+
+    .role-badge-admin {
+        background: #1e293b;
+        color: white;
+    }
+
+    .role-badge-gerente {
+        background: #0891b2;
+        color: white;
+    }
+
+    .role-badge-vendedor {
+        background: #059669;
+        color: white;
+    }
+
+    .role-badge-other {
+        background: var(--gray-200);
+        color: var(--gray-700);
+    }
+
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 16px;
+        font-size: 0.65rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .status-activo {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-inactivo {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+    }
+
+    .status-activo .status-dot { background: var(--success); }
+    .status-inactivo .status-dot { background: var(--gray-400); }
+
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .btn-action {
+        width: 28px;
+        height: 28px;
+        border: none;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        font-size: 0.8rem;
+        background: var(--gray-100);
+        color: var(--gray-700);
+    }
+
+    .btn-view:hover {
+        background: var(--info);
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background: var(--warning);
+        color: white;
+    }
+
+    .btn-toggle:hover {
+        background: var(--success);
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background: var(--danger);
+        color: white;
+    }
+
+    .table-footer {
+        padding: 1rem 1.25rem;
+        background: var(--gray-50);
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .footer-info {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .total-count, .pagination-info {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+    }
+
+    .total-count span, .pagination-info span {
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .pagination-wrapper {
+        display: flex;
+    }
+
+    .pagination {
+        display: flex;
+        gap: 0.25rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .page-item {
+        display: inline-block;
+    }
+
+    .page-item.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .page-item.active .page-link {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 0.5rem;
+        border: 1px solid var(--gray-300);
+        background: white;
+        color: var(--gray-700);
+        text-decoration: none;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+
+    .page-link:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-400);
+    }
+
+    .no-data {
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .no-data i {
+        color: var(--gray-400);
+        margin-bottom: 1rem;
+    }
+
+    .no-data p {
+        color: var(--gray-600);
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .loading-container {
+        background: white;
+        border-radius: 12px;
+        padding: 3rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .modal.fade.show {
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    .btn-close-custom {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: white;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .btn-close-custom:hover {
+        opacity: 1;
+    }
+
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>

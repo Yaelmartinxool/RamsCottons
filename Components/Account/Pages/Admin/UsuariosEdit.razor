@@ -1,0 +1,1317 @@
+@page "/admin/usuarios/edit/{UserId}"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using System.ComponentModel.DataAnnotations
+@using RamsCottons.Data
+
+@attribute [Authorize(Roles = "SuperAdministrador,Administrador")]
+
+@inject UserManager<ApplicationUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Editar Usuario | RAMS Cottons</PageTitle>
+<br>
+@if (cargandoInicial)
+{
+    <div class="loading-container">
+        <div class="spinner-border text-primary"></div>
+        <p>Cargando información del usuario...</p>
+    </div>
+}
+else if (usuario is null)
+{
+    <div class="error-container">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <h3>Usuario no encontrado</h3>
+        <p>El usuario que intentas editar no existe o ha sido eliminado.</p>
+        <button class="btn-back" @onclick="Volver">
+            <i class="bi bi-arrow-left"></i>
+            <span>Volver a Usuarios</span>
+        </button>
+    </div>
+}
+else
+{
+    <div class="edit-user-container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="header-title">
+                    <div class="title-icon">
+                        <i class="bi bi-pencil-fill"></i>
+                    </div>
+                    <div>
+                        <h1>Editar Usuario</h1>
+                        <p class="subtitle">Modifique la información del miembro en el sistema</p>
+                    </div>
+                </div>
+                <button class="btn-back" @onclick="Volver">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>Volver a Usuarios</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Columna Principal: Formulario -->
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <div class="card-header">
+                        <div class="header-left">
+                            <i class="bi bi-pencil-square"></i>
+                            <h3>Información del Usuario</h3>
+                        </div>
+                        <span class="required-badge">* Campos obligatorios</span>
+                    </div>
+                    <div class="card-body">
+                        <EditForm Model="modelo" OnValidSubmit="Guardar" FormName="editarUsuario">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="validation-summary" />
+
+                            <div class="form-grid">
+                                <!-- Nombre Completo -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Nombre Completo <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-person input-icon"></i>
+                                        <InputText @bind-Value="modelo.NombreCompleto"
+                                                class="form-control"
+                                                placeholder="Ej: Juan Carlos Pérez" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.NombreCompleto" class="validation-message" />
+                                </div>
+                                <!-- Nombre de Usuario (Login) -->
+<div class="form-group full-width">
+    <label class="form-label">
+        Nombre de Usuario <span class="text-danger">*</span>
+    </label>
+    <div class="input-wrapper">
+        <i class="bi bi-at input-icon"></i>
+        <InputText @bind-Value="modelo.UserName"
+                class="form-control"
+                placeholder="usuario" />
+    </div>
+    <ValidationMessage For="() => modelo.UserName" class="validation-message" />
+    <span class="field-hint">Nombre único para iniciar sesión</span>
+</div>
+
+                                <!-- Email y Teléfono -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Correo Electrónico <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-envelope input-icon"></i>
+                                        <InputText @bind-Value="modelo.Email"
+                                                class="form-control"
+                                                placeholder="usuario@ramscottons.com" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.Email" class="validation-message" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Teléfono <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-telephone input-icon"></i>
+                                        <InputText @bind-Value="modelo.Telefono"
+                                                class="form-control"
+                                                placeholder="+521234567890" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.Telefono" class="validation-message" />
+                                    <span class="field-hint">Formato internacional</span>
+                                </div>
+
+                                <!-- Estado del Usuario -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">Estado de la Cuenta</label>
+                                    <div class="status-toggle">
+                                        <label class="toggle-switch">
+                                            <InputCheckbox @bind-Value="modelo.Activo" />
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <div class="status-info">
+                                            <span class="status-badge @(modelo.Activo ? "status-active" : "status-inactive")">
+                                                <i class="bi @(modelo.Activo ? "bi-check-circle-fill" : "bi-x-circle-fill")"></i>
+                                                @(modelo.Activo ? "Activo" : "Inactivo")
+                                            </span>
+                                            <span class="status-hint">
+                                                @(modelo.Activo ? "El usuario puede acceder al sistema" : "El usuario no podrá iniciar sesión")
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Confirmación de Email -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">Confirmación de Email</label>
+                                    <div class="email-confirmation-status">
+                                        <div class="confirmation-info">
+                                            <i class="bi @(usuario.EmailConfirmed ? "bi-check-circle-fill text-success" : "bi-exclamation-triangle-fill text-warning")"></i>
+                                            <span>
+                                                @if (usuario.EmailConfirmed)
+                                                {
+                                                    <span>Email confirmado <span class="text-muted">· El usuario verificó su correo</span></span>
+                                                }
+                                                else
+                                                {
+                                                    <span>Email no confirmado <span class="text-muted">· Pendiente de verificación</span></span>
+                                                }
+                                            </span>
+                                        </div>
+                                        @if (!usuario.EmailConfirmed)
+                                        {
+                                            <button type="button" class="btn-confirm-email" @onclick="ReenviarConfirmacion" disabled="@reenviandoConfirmacion">
+                                                @if (reenviandoConfirmacion)
+                                                {
+                                                    <span class="spinner-border spinner-border-sm"></span>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-envelope-check"></i>
+                                                }
+                                                @(reenviandoConfirmacion ? "Enviando..." : "Reenviar correo de confirmación")
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Roles (Selector Visual) -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Rol de Usuario <span class="text-danger">*</span>
+                                    </label>
+                                    <ValidationMessage For="() => modelo.Rol" class="validation-message" />
+                                    <div class="roles-grid">
+                                        @foreach (var rol in roles.Where(r => !string.IsNullOrEmpty(r.Name)))
+                                        {
+                                            var roleName = rol.Name!;
+                                            var isSelected = modelo.Rol == roleName;
+                                            <div class="role-card @(isSelected ? "selected" : "")" @onclick="() => SeleccionarRol(roleName)">
+                                                <div class="role-icon">
+                                                    @if (rol.Name == "SuperAdministrador")
+                                                    {
+                                                        <i class="bi bi-shield-fill-check"></i>
+                                                    }
+                                                    else if (rol.Name == "Administrador")
+                                                    {
+                                                        <i class="bi bi-person-fill-gear"></i>
+                                                    }
+                                                    else if (rol.Name == "Gerente")
+                                                    {
+                                                        <i class='bi bi-graph-up'></i>
+                                                    }
+                                                    else if (rol.Name == "Vendedor")
+                                                    {
+                                                        <i class='bi bi-shop'></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class='bi bi-person-badge'></i>
+                                                    }
+                                                </div>
+                                                <div class="role-info">
+                                                    <span class="role-name">@rol.Name</span>
+                                                    <span class="role-desc">@GetRoleDescription(rol.Name)</span>
+                                                </div>
+                                                <div class="role-check">
+                                                    @if (isSelected)
+                                                    {
+                                                        <i class="bi bi-check-circle-fill"></i>
+                                                    }
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                
+
+                                <!-- Botones de Acción -->
+                                <div class="form-actions full-width">
+                                    <button type="submit" class="btn-submit" disabled="@guardando">
+                                        @if (guardando)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-lg me-2"></i>
+                                        }
+                                        @(guardando ? "Guardando..." : "Guardar Cambios")
+                                    </button>
+                                    <button type="button" class="btn-cancel" @onclick="Volver">
+                                        <i class="bi bi-x-lg me-2"></i>
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Lateral: Información y Ayuda -->
+            <div class="col-lg-4">
+                <!-- Tarjeta de Información del Usuario -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="bi bi-person-badge"></i>
+                        <h4>Información del Usuario</h4>
+                    </div>
+                    <div class="info-card-body">
+                        <div class="user-info-item">
+                            <span class="info-label">ID:</span>
+                            <span class="info-value">@usuario.Id</span>
+                        </div>
+                        <div class="user-info-item">
+                            <span class="info-label">Nombre de usuario:</span>
+                            <span class="info-value">@usuario.UserName</span>
+                        </div>
+                
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Roles -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="bi bi-shield-check"></i>
+                        <h4>Roles Disponibles</h4>
+                    </div>
+                    <div class="info-card-body">
+                     <div class="role-info-item">
+    <span class="role-tag role-tag-superadmin">
+        <i class="bi bi-shield-fill-check me-1"></i>
+        SuperAdministrador
+    </span>
+    <p class="role-description">Control total del sistema, todos los permisos.</p>
+</div>
+<div class="role-info-item">
+    <span class="role-tag role-tag-admin">
+        <i class="bi bi-person-fill-gear me-1"></i>
+        Administrador
+    </span>
+    <p class="role-description">Administración por sucursal, puede crear usuarios.</p>
+</div>
+<div class="role-info-item">
+    <span class="role-tag role-tag-gerente">
+        <i class="bi bi-graph-up me-1"></i>
+        Gerente
+    </span>
+    <p class="role-description">Supervisión, reportes, acceso a todas las sucursales.</p>
+</div>
+<div class="role-info-item">
+    <span class="role-tag role-tag-vendedor">
+        <i class="bi bi-shop me-1"></i>
+        Vendedor
+    </span>
+    <p class="role-description">Registrar clientes y ver promociones.</p>
+</div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Consejo -->
+                <div class="tip-card">
+                    <i class="bi bi-lightbulb"></i>
+                    <div>
+                        <h5>Consejo de Edición</h5>
+                        <p>Al cambiar el email del usuario, asegúrate de que sea correcto. Si desactivas la cuenta, el usuario no podrá acceder hasta que la reactives.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Toasts para notificaciones -->
+@if (!string.IsNullOrEmpty(mensajeExito))
+{
+    <div class="toast-notification toast-success">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>@mensajeExito</span>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="toast-notification toast-error">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>@error</span>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string UserId { get; set; } = string.Empty;
+
+    private ApplicationUser? usuario;
+    private bool cargandoInicial = true;
+    private bool guardando;
+    private bool reenviandoConfirmacion;
+    private string? error;
+    private string? mensajeExito;
+    private List<IdentityRole> roles = new();
+
+    private EditModel modelo = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        roles = await RoleManager.Roles.ToListAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await CargarUsuario();
+    }
+
+    private async Task CargarUsuario()
+    {
+        cargandoInicial = true;
+        error = null;
+
+        try
+        {
+            usuario = await UserManager.FindByIdAsync(UserId);
+
+            if (usuario is not null)
+            {
+                var userRoles = await UserManager.GetRolesAsync(usuario);
+                
+               modelo = new EditModel
+{
+    NombreCompleto = usuario.NombreCompleto,
+    UserName = usuario.UserName,
+    Email = usuario.Email,
+    Telefono = usuario.Telefono,
+    Activo = usuario.Activo,
+    Rol = userRoles.FirstOrDefault() ?? ""
+};
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al cargar el usuario: {ex.Message}";
+        }
+        finally
+        {
+            cargandoInicial = false;
+        }
+    }
+
+    private void SeleccionarRol(string rol)
+    {
+        modelo.Rol = rol;
+    }
+
+private string GetRoleDescription(string? rol)
+{
+    return rol switch
+    {
+        "SuperAdministrador" => "Control total del sistema, todos los permisos",
+        "Administrador" => "Administración por sucursal, puede crear usuarios",
+        "Gerente" => "Supervisión, reportes, ver todo",
+        "Vendedor" => "Registrar clientes y ver promociones",
+        _ => "Acceso al sistema"
+    };
+}
+
+   private async Task Guardar()
+{
+    if (usuario is null)
+        return;
+
+    guardando = true;
+    error = null;
+    mensajeExito = null;
+
+    try
+    {
+        // Verificar si el email ya está en uso por otro usuario
+        if (usuario.Email != modelo.Email)
+        {
+            var existingUser = await UserManager.FindByEmailAsync(modelo.Email!);
+            if (existingUser != null && existingUser.Id != usuario.Id)
+            {
+                error = "Ya existe otro usuario con este correo electrónico.";
+                return;
+            }
+        }
+
+        // VERIFICAR NOMBRE DE USUARIO (AGREGA ESTO)
+        if (usuario.UserName != modelo.UserName)
+        {
+            var existingUser = await UserManager.FindByNameAsync(modelo.UserName!);
+            if (existingUser != null && existingUser.Id != usuario.Id)
+            {
+                error = "Ya existe otro usuario con este nombre de usuario.";
+                return;
+            }
+        }
+
+        // Actualizar datos básicos
+        usuario.NombreCompleto = modelo.NombreCompleto;
+        usuario.UserName = modelo.UserName;
+        usuario.Email = modelo.Email;
+        usuario.Telefono = modelo.Telefono;
+        usuario.Activo = modelo.Activo;
+
+        var updateResult = await UserManager.UpdateAsync(usuario);
+
+        if (!updateResult.Succeeded)
+        {
+            error = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+            return;
+        }
+
+        // Actualizar rol
+        var rolesActuales = await UserManager.GetRolesAsync(usuario);
+        if (rolesActuales.Any())
+        {
+            await UserManager.RemoveFromRolesAsync(usuario, rolesActuales);
+        }
+        
+        if (!string.IsNullOrEmpty(modelo.Rol))
+        {
+            await UserManager.AddToRoleAsync(usuario, modelo.Rol);
+        }
+
+        mensajeExito = $"Usuario {modelo.NombreCompleto} actualizado correctamente.";
+        
+        // Recargar datos actualizados
+        await CargarUsuario();
+
+        // Redirigir después de 2 segundos
+        await Task.Delay(2000);
+        NavigationManager.NavigateTo("/admin/usuarios");
+    }
+    catch (Exception ex)
+    {
+        error = $"Error inesperado: {ex.Message}";
+    }
+    finally
+    {
+        guardando = false;
+    }
+}
+
+   private Task ReenviarConfirmacion()
+{
+    if (usuario is null || usuario.EmailConfirmed)
+        return Task.CompletedTask;
+
+    reenviandoConfirmacion = true;
+    error = null;
+    mensajeExito = null;
+
+    try
+    {
+        mensajeExito = $"📧 Correo de confirmación reenviado a {usuario.Email}";
+    }
+    catch (Exception ex)
+    {
+        error = $"Error al reenviar correo: {ex.Message}";
+    }
+    finally
+    {
+        reenviandoConfirmacion = false;
+    }
+
+    return Task.CompletedTask;
+}
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/admin/usuarios");
+    }
+
+private class EditModel
+{
+    [Required(ErrorMessage = "El nombre completo es obligatorio")]
+    public string? NombreCompleto { get; set; }
+
+    [Required(ErrorMessage = "El nombre de usuario es obligatorio")]
+    public string? UserName { get; set; }
+
+    [Required(ErrorMessage = "El correo es obligatorio")]
+    [EmailAddress(ErrorMessage = "Formato de correo inválido")]
+    public string? Email { get; set; }
+
+    [Required(ErrorMessage = "El teléfono es obligatorio")]
+    public string? Telefono { get; set; }
+
+    public bool Activo { get; set; }
+
+    [Required(ErrorMessage = "Debes seleccionar un rol")]
+    public string Rol { get; set; } = "";
+}
+}
+
+<style>
+    :root {
+        --primary: #0f172a;
+        --primary-dark: #020617;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --info: #3b82f6;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f8fafc;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        gap: 1rem;
+        color: var(--gray-600);
+    }
+    .role-tag-superadmin {
+    background: rgba(124, 58, 237, 0.1);
+    color: #7c3aed;
+}
+
+.role-tag-admin {
+    background: rgba(15, 23, 42, 0.1);
+    color: #1e293b;
+}
+
+.role-tag-gerente {
+    background: rgba(8, 145, 178, 0.1);
+    color: #0891b2;
+}
+
+.role-tag-vendedor {
+    background: rgba(5, 150, 105, 0.1);
+    color: #059669;
+}
+    .error-container {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gray-200);
+        max-width: 500px;
+        margin: 2rem auto;
+    }
+
+    .error-container i {
+        font-size: 3rem;
+        color: var(--danger);
+        margin-bottom: 1rem;
+    }
+
+    .error-container h3 {
+        font-size: 1.25rem;
+        color: var(--gray-800);
+        margin-bottom: 0.5rem;
+    }
+
+    .error-container p {
+        color: var(--gray-500);
+        margin-bottom: 1.5rem;
+    }
+
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid var(--gray-200);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        background: var(--primary);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+        color: var(--gray-500);
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-back:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-400);
+        transform: translateX(-2px);
+    }
+
+    .form-card, .info-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        overflow: hidden;
+        transition: all 0.2s ease;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .header-left i {
+        color: var(--primary);
+        font-size: 1.25rem;
+    }
+
+    .header-left h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .required-badge {
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        background: var(--gray-200);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .card-body {
+        padding: 2rem 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: var(--gray-700);
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        color: var(--gray-400);
+        font-size: 1rem;
+        z-index: 1;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+    }
+
+    .field-hint {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+    }
+
+    .validation-message {
+        color: var(--danger);
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    .validation-summary {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid var(--danger);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        color: var(--danger);
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        grid-column: 1 / -1;
+    }
+
+    .status-toggle {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 0.5rem 0;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 30px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--gray-300);
+        transition: .3s;
+        border-radius: 30px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 24px;
+        width: 24px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: var(--success);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(30px);
+    }
+
+    .status-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        width: fit-content;
+    }
+
+    .status-active {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .status-inactive {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--danger);
+    }
+
+    .status-hint {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+    }
+
+    .email-confirmation-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+    }
+
+    .confirmation-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .confirmation-info i {
+        font-size: 1.25rem;
+    }
+
+    .btn-confirm-email {
+        background: var(--gray-100);
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-confirm-email:hover:not(:disabled) {
+        background: var(--gray-200);
+        border-color: var(--gray-400);
+    }
+
+    .btn-confirm-email:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .roles-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .role-card {
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: 12px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .role-card:hover {
+        background: white;
+        border-color: var(--primary);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .role-card.selected {
+        background: rgba(15, 23, 42, 0.05);
+        border-color: var(--primary);
+        border-width: 2px;
+    }
+
+    .role-icon {
+        width: 36px;
+        height: 36px;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-size: 1.1rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .role-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .role-name {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 0.9rem;
+    }
+
+    .role-desc {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    .role-check {
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+
+    .info-message {
+        background: rgba(59, 130, 246, 0.05);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--info);
+        font-size: 0.85rem;
+    }
+
+    .info-message i {
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .info-content {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .email-info {
+        color: var(--gray-500);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .btn-submit {
+        background: var(--primary);
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        min-width: 160px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-400);
+        transform: translateY(-1px);
+    }
+
+    .info-card-header {
+        padding: 1.25rem 1.5rem;
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .info-card-header i {
+        color: var(--primary);
+        font-size: 1.25rem;
+    }
+
+    .info-card-header h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .info-card-body {
+        padding: 1.5rem;
+    }
+
+    .user-info-item {
+        display: flex;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .user-info-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-label {
+        width: 120px;
+        color: var(--gray-500);
+        flex-shrink: 0;
+    }
+
+    .info-value {
+        color: var(--gray-800);
+        font-weight: 500;
+        word-break: break-all;
+    }
+
+    .role-info-item {
+        margin-bottom: 1.25rem;
+    }
+
+    .role-info-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .role-tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .role-tag-marketing {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+    }
+
+    .role-tag-vendedor {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success);
+    }
+
+    .role-description {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .tip-card {
+        background: rgba(15, 23, 42, 0.05);
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .tip-card i {
+        font-size: 1.5rem;
+        color: var(--primary);
+        flex-shrink: 0;
+    }
+
+    .tip-card h5 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.25rem;
+    }
+
+    .tip-card p {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .toast-notification {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        animation: slideIn 0.3s ease;
+        z-index: 1000;
+        border-left: 4px solid;
+        max-width: 400px;
+    }
+
+    .toast-success {
+        border-left-color: var(--success);
+    }
+
+    .toast-success i {
+        color: var(--success);
+        font-size: 1.25rem;
+    }
+
+    .toast-error {
+        border-left-color: var(--danger);
+    }
+
+    .toast-error i {
+        color: var(--danger);
+        font-size: 1.25rem;
+    }
+
+    .toast-notification span {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .roles-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .email-confirmation-status {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .btn-confirm-email {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-submit, .btn-cancel {
+            width: 100%;
+        }
+    }
+    .role-info-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.role-info-header i {
+    font-size: 1rem;
+    color: var(--primary);
+}
+
+.role-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 0;
+}
+</style>

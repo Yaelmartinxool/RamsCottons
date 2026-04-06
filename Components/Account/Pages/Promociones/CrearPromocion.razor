@@ -1,0 +1,1174 @@
+@page "/promociones/crear"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Models
+@using RamsCottons.Data
+@using System.ComponentModel.DataAnnotations
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IWebHostEnvironment WebHostEnvironment
+@inject IJSRuntime JS
+
+<PageTitle>Nueva Promoción | RAMS Cottons</PageTitle>
+
+<div class="crear-promo-container">
+    <br>
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="title-icon">
+                    <i class="bi bi-megaphone-fill"></i>
+                </div>
+                <div>
+                    <h1>Nueva Promoción</h1>
+                    <p class="subtitle">Crea una nueva promoción y compártela al instante</p>
+                </div>
+            </div>
+            <button class="btn-back" @onclick="Volver">
+                <i class="bi bi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="form-card">
+                <div class="card-header">
+                    <div class="header-left">
+                        <i class="bi bi-file-pdf-fill"></i>
+                        <h3>Subir Promoción</h3>
+                    </div>
+                    <span class="required-badge">* Campos obligatorios</span>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="modelo" OnValidSubmit="GuardarPromocion" FormName="crearPromocion">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="validation-summary" />
+
+                        <div class="form-grid">
+                            <!-- Título -->
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Título de la Promoción <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-tag input-icon"></i>
+                                    <InputText @bind-Value="modelo.Titulo" class="form-control" placeholder="Ej: Descuento Primavera 2026" />
+                                </div>
+                                <ValidationMessage For="() => modelo.Titulo" class="validation-message" />
+                            </div>
+
+                            <!-- Descripción -->
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Descripción <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-file-text input-icon"></i>
+                                    <InputTextArea @bind-Value="modelo.Descripcion" class="form-control" rows="3" placeholder="Describe los beneficios de esta promoción..." />
+                                </div>
+                                <ValidationMessage For="() => modelo.Descripcion" class="validation-message" />
+                            </div>
+
+                            <!-- Precio -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Precio <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-currency-dollar input-icon"></i>
+                                    <InputNumber @bind-Value="modelo.Precio" class="form-control" placeholder="Ej: 500" />
+                                </div>
+                                <ValidationMessage For="() => modelo.Precio" class="validation-message" />
+                            </div>
+
+                            <!-- Descuento -->
+                            <div class="form-group">
+                                <label class="form-label">Descuento (%)</label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-percent input-icon"></i>
+                                    <InputNumber @bind-Value="modelo.DescuentoPorcentaje" class="form-control" placeholder="Ej: 20" />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Descuento (Monto)</label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-currency-dollar input-icon"></i>
+                                    <InputNumber @bind-Value="modelo.DescuentoMonto" class="form-control" placeholder="Ej: 100" />
+                                </div>
+                            </div>
+
+                            <!-- Fechas -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Fecha de Inicio <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-calendar-plus input-icon"></i>
+                                    <InputDate @bind-Value="modelo.FechaInicio" class="form-control" />
+                                </div>
+                                <ValidationMessage For="() => modelo.FechaInicio" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Fecha de Fin <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-calendar-x input-icon"></i>
+                                    <InputDate @bind-Value="modelo.FechaFin" class="form-control" />
+                                </div>
+                                <ValidationMessage For="() => modelo.FechaFin" class="validation-message" />
+                            </div>
+
+                            <!-- Seleccionar Administrador (solo SuperAdmin) -->
+                            @if (esSuperAdmin)
+                            {
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Asignar a Administrador <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-person-badge input-icon"></i>
+                                        <select @bind="selectedAdminId" class="form-control">
+                                            <option value="">Seleccione un administrador</option>
+                                            @foreach (var admin in administradores)
+                                            {
+                                                <option value="@admin.Id">@admin.NombreCompleto (@admin.Email)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <ValidationMessage For="() => selectedAdminId" class="validation-message" />
+                                </div>
+                            }
+
+                            <!-- Archivo -->
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Archivo de la Promoción <span class="text-danger">*</span>
+                                </label>
+                                
+                                <div class="file-upload-container">
+                                    <label for="fileInput" class="file-upload-btn">
+                                        <i class="bi bi-cloud-upload-fill"></i>
+                                        <span>Seleccionar archivo</span>
+                                    </label>
+                                    <span class="file-name">
+                                        @(string.IsNullOrEmpty(nombreArchivo) ? "Ningún archivo seleccionado" : nombreArchivo)
+                                    </span>
+                                    <InputFile id="fileInput" OnChange="OnFileSelected" accept=".pdf,.jpg,.jpeg,.png" style="display:none" />
+                                </div>
+                                
+                                @if (!string.IsNullOrEmpty(nombreArchivo))
+                                {
+                                    <div class="selected-file-info">
+                                        <i class="bi @(nombreArchivo.EndsWith(".pdf") ? "bi-file-earmark-pdf-fill" : "bi-file-earmark-image-fill")"></i>
+                                        <span>@nombreArchivo</span>
+                                        <button type="button" class="btn-remove-file" @onclick="() => EliminarArchivo()">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="form-actions">
+                            <button type="submit" class="btn-submit" disabled="@guardando">
+                                @if (guardando)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-check-lg me-2"></i>
+                                }
+                                @(guardando ? "Guardando..." : "Crear Promoción")
+                            </button>
+                            <button type="button" class="btn-cancel" @onclick="Volver">
+                                <i class="bi bi-x-lg me-2"></i>
+                                Cancelar
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <!-- Tarjeta de Información -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="bi bi-lightbulb"></i>
+                    <h4>¿Cómo funciona?</h4>
+                </div>
+                <div class="info-card-body">
+                    <div class="process-step">
+                        <div class="step-number">1</div>
+                        <div class="step-text">Sube tu archivo (PDF o imagen)</div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">2</div>
+                        <div class="step-text">Completa los datos de la promoción</div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">3</div>
+                        <div class="step-text">Se genera un enlace único automáticamente</div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">4</div>
+                        <div class="step-text">Comparte el enlace por WhatsApp a tus clientes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Enlace (se muestra después de crear) -->
+            @if (!string.IsNullOrEmpty(enlaceGenerado))
+            {
+                <div class="link-card">
+                    <div class="link-card-header">
+                        <i class="bi bi-link-45deg"></i>
+                        <h4>¡Promoción creada!</h4>
+                    </div>
+                    <div class="link-card-body">
+                        <div class="link-container">
+                            <input type="text" id="enlacePromocion" value="@enlaceGenerado" readonly class="link-input" />
+                            <button class="btn-copy" @onclick="CopiarEnlace">
+                                <i class="bi bi-files"></i>
+                            </button>
+                        </div>
+                        <div class="whatsapp-link">
+                            <a href="@($"https://wa.me/?text={Uri.EscapeDataString("¡Mira esta promoción! " + enlaceGenerado)}")" 
+                               target="_blank" 
+                               class="btn-whatsapp-share">
+                                <i class="bi bi-whatsapp"></i> Compartir por WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Toasts -->
+    @if (!string.IsNullOrEmpty(mensajeExito))
+    {
+        <div class="toast-notification toast-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@mensajeExito</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="toast-notification toast-error">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>@error</span>
+        </div>
+    }
+</div>
+
+@code {
+    private PromocionModel modelo = new();
+    private bool guardando = false;
+    private string? error;
+    private string? mensajeExito;
+    private string? enlaceGenerado;
+    private string? nombreArchivo;
+    private string? archivoBase64;
+    private string? archivoContentType;
+    private string usuarioId = "";
+    
+    // Variables para SuperAdmin
+    private bool esSuperAdmin = false;
+    private List<ApplicationUser> administradores = new();
+    private string selectedAdminId = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUsuarioActual();
+        await CargarAdministradores();
+    }
+
+    private async Task CargarUsuarioActual()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        esSuperAdmin = user.IsInRole("SuperAdministrador");
+        
+        var usuario = await UserManager.GetUserAsync(user);
+        if (usuario != null)
+        {
+            usuarioId = usuario.Id;
+        }
+    }
+
+    private async Task CargarAdministradores()
+    {
+        if (esSuperAdmin)
+        {
+            var admins = await UserManager.GetUsersInRoleAsync("Administrador");
+            administradores = admins.ToList();
+        }
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        try
+        {
+            if (file.Size > 10 * 1024 * 1024)
+            {
+                error = "El archivo no puede superar los 10MB";
+                return;
+            }
+
+            nombreArchivo = file.Name;
+            archivoContentType = file.ContentType;
+            
+            using var stream = file.OpenReadStream(10_000_000);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            archivoBase64 = Convert.ToBase64String(ms.ToArray());
+            
+            error = null;
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al cargar el archivo: {ex.Message}";
+        }
+    }
+
+    private async Task EliminarArchivo()
+    {
+        nombreArchivo = null;
+        archivoBase64 = null;
+        archivoContentType = null;
+    }
+
+    private async Task GuardarPromocion()
+    {
+        guardando = true;
+        error = null;
+        mensajeExito = null;
+
+        try
+        {
+            // Validar archivo
+            if (string.IsNullOrEmpty(archivoBase64))
+            {
+                error = "Debes seleccionar un archivo para la promoción";
+                return;
+            }
+
+            // Validar fechas
+            if (modelo.FechaInicio > modelo.FechaFin)
+            {
+                error = "La fecha de inicio no puede ser mayor a la fecha de fin";
+                return;
+            }
+
+            // Validar que SuperAdmin seleccionó un administrador
+            if (esSuperAdmin && string.IsNullOrEmpty(selectedAdminId))
+            {
+                error = "Debes seleccionar un administrador";
+                return;
+            }
+
+            // Generar token único
+            var tokenUnico = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
+            
+            // Generar enlace con ngrok
+            var baseUrl = "https://marquis-leavenless-nonseparably.ngrok-free.dev";
+            var enlace = $"{baseUrl}/promociones/{tokenUnico}";
+
+            // Guardar archivo en el servidor
+            var uploadsFolder = Path.Combine(WebHostEnvironment.WebRootPath, "uploads", "promociones");
+            Directory.CreateDirectory(uploadsFolder);
+            
+            var fileName = $"{tokenUnico}_{DateTime.Now.Ticks}{Path.GetExtension(nombreArchivo)}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+            
+            var bytes = Convert.FromBase64String(archivoBase64);
+            await File.WriteAllBytesAsync(filePath, bytes);
+            
+            var archivoUrl = $"/uploads/promociones/{fileName}";
+
+            // Determinar a quién asignar la promoción
+            string assignedUserId;
+            if (esSuperAdmin)
+            {
+                assignedUserId = selectedAdminId;
+            }
+            else
+            {
+                assignedUserId = usuarioId;
+            }
+
+            // Crear promoción
+            var promocion = new Promocion
+            {
+                Titulo = modelo.Titulo,
+                Descripcion = modelo.Descripcion ?? "",
+                Precio = modelo.Precio,
+                DescuentoPorcentaje = modelo.DescuentoPorcentaje,
+                DescuentoMonto = modelo.DescuentoMonto,
+                FechaInicio = modelo.FechaInicio,  
+                FechaFin = modelo.FechaFin,
+                TokenUnico = tokenUnico,
+                pdf_nombre = nombreArchivo,
+                pdf_ruta = filePath,
+                pdf_url = archivoUrl,
+                Activo = true,
+                FechaCreacion = DateTime.Now,
+                ApplicationUserId = assignedUserId
+            };
+
+            DbContext.Promociones.Add(promocion);
+            await DbContext.SaveChangesAsync();
+
+            enlaceGenerado = enlace;
+            mensajeExito = $"✅ Promoción '{modelo.Titulo}' creada correctamente!";
+            
+            // Limpiar formulario
+            modelo = new PromocionModel();
+            nombreArchivo = null;
+            archivoBase64 = null;
+            archivoContentType = null;
+            
+            // Redirigir a clientes
+            await Task.Delay(1500);
+            NavigationManager.NavigateTo("/clientes");
+        }
+        catch (Exception ex)
+        {
+            error = $"Error inesperado: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private async Task CopiarEnlace()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", enlaceGenerado);
+        mensajeExito = "✅ Enlace copiado al portapapeles";
+        await Task.Delay(2000);
+        mensajeExito = null;
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/promociones");
+    }
+
+    private class PromocionModel
+    {
+        [Required(ErrorMessage = "El título es obligatorio")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "El título debe tener entre 3 y 100 caracteres")]
+        public string Titulo { get; set; } = "";
+
+        [Required(ErrorMessage = "La descripción es obligatoria")]
+        [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres")]
+        public string Descripcion { get; set; } = "";
+
+        [Required(ErrorMessage = "El precio es obligatorio")]
+        [Range(0.01, 999999.99, ErrorMessage = "El precio debe ser mayor a 0")]
+        public decimal Precio { get; set; }
+
+        [Range(0, 100, ErrorMessage = "El descuento debe estar entre 0 y 100%")]
+        public decimal? DescuentoPorcentaje { get; set; }
+
+        [Range(0, 999999, ErrorMessage = "El monto debe ser mayor a 0")]
+        public decimal? DescuentoMonto { get; set; }
+
+        [Required(ErrorMessage = "La fecha de inicio es obligatoria")]
+        public DateTime FechaInicio { get; set; } = DateTime.Today;
+
+        [Required(ErrorMessage = "La fecha de fin es obligatoria")]
+        public DateTime FechaFin { get; set; } = DateTime.Today.AddDays(30);
+    }
+}
+<style>
+    .crear-promo-container {
+        padding-bottom: 2rem;
+        min-height: 100vh;
+    }
+
+    /* Header */
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #e5e7eb;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        background: #0f172a;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .subtitle {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: #f9fafb;
+        transform: translateX(-2px);
+    }
+
+    /* Form Card */
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .header-left i {
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+
+    .header-left h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .required-badge {
+        font-size: 0.7rem;
+        color: #6b7280;
+        background: #e5e7eb;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .card-body {
+        padding: 2rem 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.85rem;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        color: #9ca3af;
+        font-size: 1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.7rem 1rem 0.7rem 2.5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    textarea.form-control {
+        padding: 0.7rem 1rem 0.7rem 2.5rem;
+        resize: vertical;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0f172a;
+        box-shadow: 0 0 0 3px rgba(15,23,42,0.1);
+    }
+
+    .validation-message {
+        color: #ef4444;
+        font-size: 0.75rem;
+    }
+
+    .validation-summary {
+        background: #fee2e2;
+        border: 1px solid #ef4444;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        color: #991b1b;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        grid-column: 1 / -1;
+    }
+
+    /* File Upload */
+    .file-upload-area {
+        border: 2px dashed #e5e7eb;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #fafbfc;
+    }
+
+    .file-upload-area:hover {
+        border-color: #0f172a;
+        background: #f8fafc;
+    }
+
+    .file-upload-area i {
+        font-size: 2rem;
+        color: #9ca3af;
+        margin-bottom: 0.5rem;
+    }
+
+    .file-upload-area p {
+        margin: 0.5rem 0;
+        color: #374151;
+    }
+
+    .selected-file {
+        margin-top: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        background: #f3f4f6;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .selected-file i {
+        font-size: 1.2rem;
+    }
+
+    .selected-file span {
+        flex: 1;
+        font-size: 0.85rem;
+        color: #374151;
+    }
+
+    .btn-remove-file {
+        background: none;
+        border: none;
+        color: #ef4444;
+        cursor: pointer;
+        padding: 0.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+    }
+
+    .btn-remove-file:hover {
+        background: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Info Card */
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .info-card-header i {
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+
+    .info-card-header h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .info-card-body {
+        padding: 1.5rem;
+    }
+
+    .process-step {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .process-step:last-child {
+        margin-bottom: 0;
+    }
+
+    .step-number {
+        width: 28px;
+        height: 28px;
+        background: #e5e7eb;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: #374151;
+    }
+
+    .step-text {
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+
+    /* Link Card */
+    .link-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+        animation: slideUp 0.3s ease;
+    }
+
+    .link-card-header {
+        padding: 1.25rem 1.5rem;
+        background: #d1fae5;
+        border-bottom: 1px solid #10b981;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .link-card-header i {
+        color: #10b981;
+        font-size: 1.25rem;
+    }
+
+    .link-card-header h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #065f46;
+        margin: 0;
+    }
+
+    .link-card-body {
+        padding: 1.5rem;
+    }
+
+    .link-container {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .link-input {
+        flex: 1;
+        padding: 0.6rem 0.8rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        background: #f9fafb;
+        color: #1f2937;
+    }
+
+    .btn-copy {
+        background: #0f172a;
+        border: none;
+        color: white;
+        padding: 0 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-copy:hover {
+        background: #020617;
+        transform: scale(1.02);
+    }
+
+    .btn-whatsapp-share {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: #25D366;
+        color: white;
+        text-decoration: none;
+        padding: 0.7rem;
+        border-radius: 40px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        width: 100%;
+    }
+
+    .btn-whatsapp-share:hover {
+        background: #128C7E;
+        transform: scale(1.02);
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        grid-column: 1 / -1;
+    }
+
+    .btn-submit, .btn-cancel {
+        flex: 1;
+        padding: 0.7rem;
+        border-radius: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-submit {
+        background: #0f172a;
+        border: none;
+        color: white;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+        background: #020617;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+    }
+
+    .btn-cancel:hover {
+        background: #f9fafb;
+        transform: translateY(-1px);
+    }
+
+    /* Toasts */
+    .toast-notification {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        z-index: 1000;
+        border-left: 4px solid;
+        animation: slideIn 0.3s ease;
+        max-width: 400px;
+    }
+
+    .toast-success {
+        border-left-color: #10b981;
+    }
+
+    .toast-success i {
+        color: #10b981;
+    }
+
+    .toast-error {
+        border-left-color: #ef4444;
+    }
+
+    .toast-error i {
+        color: #ef4444;
+    }
+
+    .toast-notification span {
+        font-size: 0.9rem;
+        color: #374151;
+    }
+
+    /* Layout de columnas */
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -0.75rem;
+    }
+
+    .col-lg-7 {
+        width: 58.333%;
+        padding: 0 0.75rem;
+    }
+
+    .col-lg-5 {
+        width: 41.666%;
+        padding: 0 0.75rem;
+    }
+
+    /* Utilidades */
+    .text-danger {
+        color: #ef4444;
+    }
+
+    .me-2 {
+        margin-right: 0.5rem;
+    }
+
+    .fs-1 {
+        font-size: 2rem;
+    }
+
+    .spinner-border {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+    }
+
+    /* Animaciones */
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .row {
+            flex-direction: column;
+        }
+
+        .col-lg-7, .col-lg-5 {
+            width: 100%;
+        }
+
+        .toast-notification {
+            left: 1rem;
+            right: 1rem;
+            bottom: 1rem;
+        }
+
+        .link-container {
+            flex-direction: column;
+        }
+
+        .btn-copy {
+            padding: 0.6rem;
+        }
+    }
+    /* File Upload Mejorado */
+.file-upload-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.file-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #0f172a;
+    color: white;
+    padding: 0.7rem 1.2rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.file-upload-btn:hover {
+    background: #020617;
+    transform: translateY(-1px);
+}
+
+.file-upload-btn i {
+    font-size: 1.1rem;
+}
+
+.file-name {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.selected-file-info {
+    margin-top: 0.75rem;
+    padding: 0.6rem 1rem;
+    background: #f3f4f6;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-left: 3px solid #f59e0b;
+}
+
+.selected-file-info i {
+    font-size: 1.2rem;
+    color: #f59e0b;
+}
+
+.selected-file-info span {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #1f2937;
+}
+
+.btn-remove-file {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    padding: 0.3rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-remove-file:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+</style>

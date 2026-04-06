@@ -1,0 +1,130 @@
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+    width: 250px;
+    background: #1f1f1f;
+    color: #e4e4e4;
+    height: 100vh;
+    transition: width 0.3s ease;
+}
+
+/* COLAPSADO */
+body.sidebar-collapsed .sidebar {
+    width: 80px;
+}
+
+/* Links */
+.sidebar a {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    color: white;
+    text-decoration: none;
+    gap: 10px;
+}
+
+/* Iconos */
+.sidebar i {
+    font-size: 20px;
+}
+
+/* Texto */
+.menu-text {
+    transition: opacity 0.2s ease;
+}
+
+/* OCULTAR TEXTO CORRECTAMENTE */
+body.sidebar-collapsed .menu-text,
+body.sidebar-collapsed .menu-section-title {
+    display: none;
+}
+
+/* CENTRAR ÍCONOS */
+body.sidebar-collapsed .sidebar a {
+    justify-content: center;
+}
+
+/* HOVER EXPAND PRO */
+body.sidebar-collapsed .sidebar:hover {
+    width: 250px;
+}
+
+body.sidebar-collapsed .sidebar:hover .menu-text,
+body.sidebar-collapsed .sidebar:hover .menu-section-title {
+    display: inline;
+}
+
+/* ================= TOP BAR ================= */
+.top-row {
+    background-color: #ffffff;
+    border-bottom: 1px solid #d6d5d5;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1rem;
+}
+
+/* BOTÓN MENU */
+.btn-menu {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    cursor: pointer;
+    color: #555;
+}
+
+.btn-menu:hover {
+    color: #007bff;
+}
+
+/* BOTÓN FULLSCREEN */
+.btn-fullscreen {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    cursor: pointer;
+    color: #555;
+}
+
+.btn-fullscreen:hover {
+    color: #007bff;
+}
+
+/* ICONO FULLSCREEN */
+.btn-fullscreen i::before {
+    content: "\f3df";
+    font-family: "bootstrap-icons";
+}
+
+body.is-fullscreen .btn-fullscreen i::before {
+    content: "\f3de";
+}
+
+/* ================= RESPONSIVE ================= */
+@media (min-width: 641px) {
+    .page {
+        flex-direction: row;
+    }
+
+    .sidebar {
+        position: sticky;
+        top: 0;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.15);
+    }
+
+    .top-row {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+}

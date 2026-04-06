@@ -1,0 +1,793 @@
+/* --- RAMS COTTONS - DISEÑO DE LOGIN PROFESIONAL --- */
+:root {
+    --primary-orange: #EB6F14;
+    --primary-orange-light: rgba(235, 111, 20, 0.1);
+    --primary-orange-dark: #D15F0A;
+    --text-primary: #1a1a1a;
+    --text-secondary: #4a4a4a;
+    --text-light: #888888;
+    --border-color: #dddddd;
+    --white: #FFFFFF;
+    --error-color: #dc3545;
+    --background-gradient: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* CONTENEDOR PRINCIPAL DE AUTENTICACIÓN */
+.auth-outer-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-gradient);
+    z-index: 9999;
+    overflow: hidden;
+    padding: 20px;
+}
+
+/* FONDO CON GRADIENTES SUTILES */
+.auth-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.bg-gradient {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(235, 111, 20, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(235, 111, 20, 0.05) 0%, transparent 50%);
+}
+
+/* LOGO Y HEADER */
+.auth-header {
+    position: relative;
+    z-index: 10;
+    margin-bottom: 40px;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.logo-subtitle {
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: -2px;
+    line-height: 1;
+}
+
+.main-logo {
+    height: 70px;
+    width: auto;
+    max-width: 220px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    margin-bottom: 10px;
+}
+
+/* CONTENEDOR DEL FORMULARIO */
+.auth-inner-box {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth-footer {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    color: var(--text-light);
+    font-size: 0.875rem;
+    z-index: 10;
+}
+
+/* ===== TARJETA DE LOGIN ===== */
+.login-container {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.login-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 32px 32px;
+    box-shadow: 
+        0 4px 20px rgba(0, 0, 0, 0.08),
+        0 8px 32px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    margin-top: -10px;
+}
+
+/* ENCABEZADO DEL LOGIN */
+.login-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.login-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 6px 0;
+    line-height: 1.3;
+}
+
+.login-subtitle {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+    opacity: 0.9;
+}
+
+/* MENSAJE DE ERROR */
+.error-message-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    color: var(--error-color);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.error-message-container svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* ===== CAMPOS DE FORMULARIO ===== */
+.input-group {
+    margin-bottom: 18px;
+    width: 100%;
+}
+
+.input-wrapper {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+/* ESTILOS PRINCIPALES DE LOS CAMPOS DE ENTRADA */
+.form-input {
+    width: 100%;
+    padding: 14px; /* Padding simétrico - sin espacio para íconos */
+    font-size: 15px;
+    background: var(--white);
+    border: 1.5px solid var(--border-color);
+    border-radius: 8px; /* Bordes redondeados */
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+    height: 48px;
+    font-weight: 400;
+    line-height: 1.5;
+    box-sizing: border-box;
+    display: block;
+}
+
+/* Espacio adicional para el botón del ojo en contraseña */
+.input-wrapper:has(.password-toggle) .form-input {
+    padding-right: 50px;
+}
+
+/* Estados del campo - sin cambios visuales al escribir */
+.form-input:hover {
+    border-color: var(--border-color);
+    background: #fafafa;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--border-color); /* Sin cambios de color */
+    background: var(--white);
+}
+
+/* Placeholder */
+.form-input::placeholder {
+    color: var(--text-light);
+    font-weight: 400;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+/* Estado de error */
+.form-input.input-validation-error {
+    border-color: var(--error-color);
+}
+
+.form-input.input-validation-error:focus {
+    border-color: var(--error-color);
+}
+
+/* OCULTAR SOLO LOS ÍCONOS DE EMAIL Y CANDADO */
+.input-wrapper svg.input-icon {
+    display: none;
+}
+
+/* ===== BOTÓN PARA MOSTRAR/OCULTAR CONTRASEÑA ===== */
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    width: 36px;
+    height: 36px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+
+.password-toggle:hover {
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.password-toggle:focus {
+    outline: none;
+}
+
+.password-toggle svg {
+    width: 18px;
+    height: 18px;
+    display: block !important;
+}
+
+/* Mensajes de validación */
+.validation-error {
+    font-size: 12px;
+    color: var(--error-color);
+    margin-top: 4px;
+    display: block;
+    padding-left: 4px;
+    font-weight: 500;
+}
+
+/* ===== OPCIONES DEL FORMULARIO ===== */
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 22px 0 26px;
+    padding: 0 2px;
+}
+
+/* Checkbox personalizado */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+    position: relative;
+    user-select: none;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    width: 16px;
+    height: 16px;
+    background: var(--white);
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    margin-right: 8px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.checkbox-container:hover .checkmark {
+    border-color: #666666;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background: var(--primary-orange);
+    border-color: var(--primary-orange);
+}
+
+.checkbox-container input:checked ~ .checkmark::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkbox-label {
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Enlace de contraseña olvidada */
+.forgot-password {
+    color: var(--primary-orange);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.forgot-password:hover {
+    color: var(--primary-orange-dark);
+    text-decoration: underline;
+    background: rgba(235, 111, 20, 0.05);
+}
+
+/* ===== BOTÓN PRINCIPAL DE INICIO ===== */
+.login-button {
+    width: 100%;
+    padding: 14px 20px;
+    background: var(--primary-orange);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+    height: 48px;
+    margin-bottom: 24px;
+}
+
+.login-button:hover:not(:disabled) {
+    background: var(--primary-orange-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(235, 111, 20, 0.2);
+}
+
+.login-button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(235, 111, 20, 0.15);
+}
+
+.login-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.login-button svg {
+    width: 16px;
+    height: 16px;
+    margin-left: 2px;
+}
+
+/* Spinner para estado de carga */
+.button-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+    margin-right: 8px;
+}
+
+/* ===== SECCIÓN DE REGISTRO ===== */
+.register-section {
+    text-align: center;
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    color: var(--text-secondary);
+}
+
+.register-section p {
+    margin: 0 0 10px 0;
+    font-weight: 400;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.register-link {
+    color: var(--primary-orange);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s;
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1.5px solid var(--primary-orange);
+}
+
+.register-link:hover {
+    color: white;
+    background: var(--primary-orange);
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(235, 111, 20, 0.15);
+}
+
+/* ===== ANIMACIONES ===== */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* ===== RESPONSIVE PARA MÓVILES ===== */
+@media (max-width: 480px) {
+    .auth-outer-container {
+        padding: 16px;
+    }
+    
+    .auth-header {
+        margin-bottom: 30px;
+    }
+    
+    .logo-title {
+        font-size: 28px;
+    }
+    
+    .logo-subtitle {
+        font-size: 16px;
+        letter-spacing: 3px;
+    }
+    
+    .main-logo {
+        height: 60px;
+        max-width: 180px;
+    }
+    
+    .login-container {
+        max-width: 100%;
+    }
+    
+    .login-card {
+        padding: 24px 20px;
+        border-radius: 10px;
+        margin-top: 0;
+    }
+    
+    .login-title {
+        font-size: 18px;
+        margin-bottom: 4px;
+    }
+    
+    .login-subtitle {
+        font-size: 13px;
+    }
+    
+    .error-message-container {
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+    
+    .input-group {
+        margin-bottom: 16px;
+    }
+    
+    .form-input {
+        padding: 12px;
+        font-size: 14px;
+        height: 44px;
+        border-radius: 6px;
+    }
+    
+    .input-wrapper:has(.password-toggle) .form-input {
+        padding-right: 46px;
+    }
+    
+    .password-toggle {
+        right: 8px;
+        padding: 5px;
+        width: 32px;
+        height: 32px;
+    }
+    
+    .password-toggle svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .form-options {
+        margin: 18px 0 22px;
+    }
+    
+    .login-button {
+        padding: 12px 16px;
+        height: 44px;
+        font-size: 14px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+    }
+    
+    .button-spinner {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .register-section {
+        margin-top: 22px;
+        padding-top: 18px;
+    }
+    
+    .register-link {
+        padding: 5px 10px;
+        font-size: 13px;
+    }
+    
+    .auth-footer {
+        bottom: 12px;
+        font-size: 11px;
+    }
+}
+
+/* TABLETS */
+@media (min-width: 481px) and (max-width: 768px) {
+    .login-container {
+        max-width: 440px;
+    }
+    
+    .login-card {
+        padding: 28px 28px;
+    }
+}
+
+/* ESCRITORIO GRANDE */
+@media (min-width: 1200px) {
+    .auth-outer-container {
+        padding: 40px;
+    }
+    
+    .login-container {
+        max-width: 440px;
+    }
+    
+    .login-card {
+        padding: 32px 36px;
+    }
+}
+
+/* ACCESIBILIDAD - REDUCCIÓN DE MOVIMIENTO */
+@media (prefers-reduced-motion: reduce) {
+    .login-card,
+    .login-button,
+    .form-input,
+    .register-link {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* Focus visible para navegación con teclado */
+.login-button:focus-visible,
+.register-link:focus-visible,
+.forgot-password:focus-visible {
+    outline: 2px solid #666666;
+    outline-offset: 2px;
+}
+
+/* Quitar outline de inputs y botón del ojo */
+.form-input:focus-visible,
+.password-toggle:focus-visible {
+    outline: none;
+}
+
+/* CLASES UTILITARIAS */
+.text-center { text-align: center; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mb-1 { margin-bottom: 4px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-3 { margin-bottom: 12px; }
+.mb-4 { margin-bottom: 16px; }
+
+/* ===== ESTILOS PARA FORGOT PASSWORD ===== */
+
+/* Mensaje de éxito */
+.success-message-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: rgba(21, 87, 36, 0.1);
+    border: 1px solid rgba(21, 87, 36, 0.2);
+    color: #155724;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.success-message-container svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: #28a745;
+}
+
+/* Footer específico para forgot password */
+.forgot-password-footer {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.forgot-password-footer p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* Enlace para volver al login */
+.back-to-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary-orange);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s;
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: transparent;
+}
+
+.back-to-login:hover {
+    color: var(--primary-orange-dark);
+    background: rgba(235, 111, 20, 0.05);
+    text-decoration: none;
+    transform: translateX(-4px);
+}
+
+.back-to-login .back-icon {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s;
+}
+
+.back-to-login:hover .back-icon {
+    transform: translateX(-2px);
+}
+
+/* Estilos para la página de confirmación */
+.confirmation-container {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.confirmation-icon {
+    width: 64px;
+    height: 64px;
+    color: var(--primary-orange);
+    margin: 0 auto 20px;
+    display: block;
+}
+
+.confirmation-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.confirmation-message {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.6;
+    max-width: 400px;
+    margin: 0 auto 30px;
+}
+/* ============================= */
+/* 🔥 SIDEBAR COLLAPSE GLOBAL 🔥 */
+/* ============================= */
+
+/* 🔥 COLAPSADO */
+/* COLAPSADO */
+body.sidebar-collapsed .sidebar {
+    width: 80px !important;
+}
+
+/* ocultar texto */
+body.sidebar-collapsed .menu-text {
+    display: none !important;
+}
+
+/* ocultar títulos */
+body.sidebar-collapsed .menu-section-title {
+    display: none !important;
+}
+
+/* centrar iconos */
+body.sidebar-collapsed .menu-item {
+    justify-content: center !important;
+}

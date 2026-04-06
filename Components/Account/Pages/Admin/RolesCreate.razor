@@ -1,0 +1,883 @@
+@page "/admin/roles/crear"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+
+@attribute [Authorize(Roles = "SuperAdministrador")]
+
+@inject RoleManager<IdentityRole> RoleManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Crear Rol | RAMS Cottons</PageTitle>
+<br>
+<div class="create-role-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="title-icon">
+                    <i class="bi bi-shield-plus"></i>
+                </div>
+                <div>
+                    <h1>Crear Nuevo Rol</h1>
+                    <p class="subtitle">Agregue un nuevo rol al sistema</p>
+                </div>
+            </div>
+            <button class="btn-back" @onclick="Volver">
+                <i class="bi bi-arrow-left"></i>
+                <span>Volver a Roles</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Columna Principal: Formulario -->
+        <div class="col-lg-8">
+            <div class="form-card">
+                <div class="card-header">
+                    <div class="header-left">
+                        <i class="bi bi-pencil-square"></i>
+                        <h3>Información del Rol</h3>
+                    </div>
+                    <span class="required-badge">* Campos obligatorios</span>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="model" OnValidSubmit="CrearRol" FormName="crearRol">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="validation-summary" />
+
+                        <div class="form-grid">
+                            <!-- Nombre del Rol -->
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Nombre del Rol <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-shield input-icon"></i>
+                                    <InputText @bind-Value="model.Nombre"
+                                            class="form-control"
+                                            placeholder="Ej: Supervisor, Gerente, Analista" />
+                                </div>
+                                <ValidationMessage For="() => model.Nombre" class="validation-message" />
+                                <span class="field-hint">Nombre único, sin espacios (Ej: SupervisorVentas)</span>
+                            </div>
+
+                            <!-- Vista Previa del Rol -->
+                            <div class="preview-card full-width">
+                                <div class="preview-header">
+                                    <i class="bi bi-eye"></i>
+                                    <span>Vista previa del rol</span>
+                                </div>
+                                <div class="preview-body">
+                                    <div class="role-preview">
+                                        <div class="preview-icon" style="background: @GetRoleColor(model.Nombre)">
+                                            <i class="@GetRoleIcon(model.Nombre)"></i>
+                                        </div>
+                                        <div class="preview-details">
+                                            <span class="preview-name">@(!string.IsNullOrWhiteSpace(model.Nombre) ? model.Nombre : "Nombre del Rol")</span>
+                                            <span class="preview-desc">@GetRoleDescription(model.Nombre)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mensaje Informativo -->
+                            <div class="info-message full-width">
+                                <i class="bi bi-info-circle-fill"></i>
+                                <span>
+                                    <strong>Nota:</strong> Después de crear el rol, podrás asignarle permisos específicos desde la gestión de roles.
+                                </span>
+                            </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="form-actions full-width">
+                                <button type="submit" class="btn-submit" disabled="@cargando">
+                                    @if (cargando)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-check-lg me-2"></i>
+                                    }
+                                    @(cargando ? "Creando..." : "Crear Rol")
+                                </button>
+                                <button type="button" class="btn-cancel" @onclick="Volver">
+                                    <i class="bi bi-x-lg me-2"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Lateral: Información y Ayuda -->
+        <div class="col-lg-4">
+            <!-- Tarjeta de Proceso -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="bi bi-diagram-3"></i>
+                    <h4>Proceso de Creación</h4>
+                </div>
+                <div class="info-card-body">
+                    <div class="process-step">
+                        <div class="step-number">1</div>
+                        <div class="step-text">Define un nombre único y descriptivo para el rol</div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">2</div>
+                        <div class="step-text">El sistema valida que el nombre no exista previamente</div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">3</div>
+                        <div class="step-text">Se crea el rol y queda disponible para asignar permisos</div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">4</div>
+                        <div class="step-text">Ya puedes asignar este rol a usuarios y configurar permisos</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Ejemplos -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="bi bi-shield-check"></i>
+                    <h4>Roles del Sistema</h4>
+                </div>
+                <div class="info-card-body">
+                    <div class="role-example-item">
+                        <div class="example-icon" style="background: linear-gradient(135deg, #7c3aed, #5b21b6);">
+                            <i class="bi bi-shield-fill-check"></i>
+                        </div>
+                        <div class="example-info">
+                            <span class="example-name">SuperAdministrador</span>
+                            <span class="example-desc">Control total del sistema, todos los permisos</span>
+                        </div>
+                    </div>
+                    <div class="role-example-item">
+                        <div class="example-icon" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                            <i class="bi bi-person-fill-gear"></i>
+                        </div>
+                        <div class="example-info">
+                            <span class="example-name">Administrador</span>
+                            <span class="example-desc">Administración por sucursal, puede crear usuarios</span>
+                        </div>
+                    </div>
+                    <div class="role-example-item">
+                        <div class="example-icon" style="background: linear-gradient(135deg, #0891b2, #0e7490);">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <div class="example-info">
+                            <span class="example-name">Gerente</span>
+                            <span class="example-desc">Supervisión, reportes, ver todo</span>
+                        </div>
+                    </div>
+                    <div class="role-example-item">
+                        <div class="example-icon" style="background: linear-gradient(135deg, #059669, #047857);">
+                            <i class="bi bi-shop"></i>
+                        </div>
+                        <div class="example-info">
+                            <span class="example-name">Vendedor</span>
+                            <span class="example-desc">Registrar clientes y ver promociones</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Consejo -->
+            <div class="tip-card">
+                <i class="bi bi-lightbulb"></i>
+                <div>
+                    <h5>Consejo de Nomenclatura</h5>
+                    <p>Usa nombres descriptivos y consistentes. Ej: "GerenteVentas" en lugar de "gv" o "ventas_gerente". Esto facilita la gestión de permisos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts para notificaciones -->
+    @if (!string.IsNullOrEmpty(mensajeExito))
+    {
+        <div class="toast-notification toast-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@mensajeExito</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="toast-notification toast-error">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>@error</span>
+        </div>
+    }
+</div>
+
+@code {
+    private bool cargando;
+    private string? error;
+    private string? mensajeExito;
+    private Modelo model = new();
+
+    private async Task CrearRol()
+    {
+        cargando = true;
+        error = null;
+        mensajeExito = null;
+
+        try
+        {
+            var existente = await RoleManager.FindByNameAsync(model.Nombre);
+            if (existente != null)
+            {
+                error = $"Ya existe un rol con el nombre '{model.Nombre}'";
+                return;
+            }
+
+            var rol = new IdentityRole(model.Nombre);
+            var result = await RoleManager.CreateAsync(rol);
+
+            if (result.Succeeded)
+            {
+                mensajeExito = $"Rol '{model.Nombre}' creado exitosamente.";
+                
+                // Esperar un momento y redirigir
+                await Task.Delay(2000);
+                NavigationManager.NavigateTo("/admin/roles");
+            }
+            else
+            {
+                error = string.Join(", ", result.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Error inesperado: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/admin/roles");
+    }
+
+    // Helpers para la vista previa
+    private string GetRoleColor(string? roleName)
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+            return "linear-gradient(135deg, #64748b, #475569)";
+
+        return roleName switch
+        {
+            "SuperAdministrador" => "linear-gradient(135deg, #7c3aed, #5b21b6)",
+            "Administrador" => "linear-gradient(135deg, #1e293b, #0f172a)",
+            "Gerente" => "linear-gradient(135deg, #0891b2, #0e7490)",
+            "Vendedor" => "linear-gradient(135deg, #059669, #047857)",
+            _ => "linear-gradient(135deg, #64748b, #475569)"
+        };
+    }
+
+    private string GetRoleIcon(string? roleName)
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+            return "bi bi-person-badge";
+
+        return roleName switch
+        {
+            "SuperAdministrador" => "bi bi-shield-fill-check",
+            "Administrador" => "bi bi-person-fill-gear",
+            "Gerente" => "bi bi-graph-up",
+            "Vendedor" => "bi bi-shop",
+            _ => "bi bi-person-badge"
+        };
+    }
+
+    private string GetRoleDescription(string? roleName)
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+            return "Rol personalizado";
+
+        return roleName switch
+        {
+            "SuperAdministrador" => "Control total del sistema, todos los permisos",
+            "Administrador" => "Administración por sucursal, puede crear usuarios",
+            "Gerente" => "Supervisión, reportes, ver todo",
+            "Vendedor" => "Registrar clientes y ver promociones",
+            _ => "Rol personalizado"
+        };
+    }
+
+    private class Modelo
+    {
+        [Required(ErrorMessage = "El nombre del rol es obligatorio")]
+        [RegularExpression(@"^[a-zA-Z0-9]+$", ErrorMessage = "Solo letras y números, sin espacios ni caracteres especiales")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "El nombre debe tener entre 3 y 50 caracteres")]
+        public string Nombre { get; set; } = "";
+    }
+}
+
+<style>
+    :root {
+        --primary: #0f172a;
+        --primary-dark: #020617;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --info: #3b82f6;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f8fafc;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+    }
+
+    .create-role-container {
+        padding-bottom: 2rem;
+        min-height: 100vh;
+    }
+
+    /* Header */
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid var(--gray-200);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+        color: var(--gray-500);
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-back:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-400);
+        transform: translateX(-2px);
+    }
+
+    /* Cards */
+    .form-card, .info-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        overflow: hidden;
+        transition: all 0.2s ease;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .header-left i {
+        color: var(--primary);
+        font-size: 1.25rem;
+    }
+
+    .header-left h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .required-badge {
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        background: var(--gray-200);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .card-body {
+        padding: 2rem 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: var(--gray-700);
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        color: var(--gray-400);
+        font-size: 1rem;
+        z-index: 1;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+    }
+
+    .field-hint {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+    }
+
+    .validation-message {
+        color: var(--danger);
+        font-size: 0.7rem;
+        margin-top: 0.25rem;
+    }
+
+    .validation-summary {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid var(--danger);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        color: var(--danger);
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        grid-column: 1 / -1;
+    }
+
+    /* Vista Previa */
+    .preview-card {
+        background: linear-gradient(135deg, var(--gray-50), white);
+        border: 2px dashed var(--gray-300);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin: 1rem 0;
+    }
+
+    .preview-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        color: var(--gray-600);
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .role-preview {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 10px;
+        border: 1px solid var(--gray-200);
+    }
+
+    .preview-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .preview-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .preview-name {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 1rem;
+    }
+
+    .preview-desc {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+    }
+
+    /* Ejemplos de Roles */
+    .role-example-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--gray-200);
+        transition: all 0.2s ease;
+    }
+
+    .role-example-item:hover {
+        background: white;
+        transform: translateX(2px);
+        border-color: var(--gray-300);
+    }
+
+    .example-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .example-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .example-name {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 0.9rem;
+    }
+
+    .example-desc {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    /* Mensaje Informativo */
+    .info-message {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--info);
+        font-size: 0.85rem;
+        margin: 1rem 0;
+        border-left: 4px solid var(--info);
+    }
+
+    .info-message i {
+        font-size: 1.25rem;
+    }
+
+    /* Botones */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        min-width: 160px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(15, 23, 42, 0.15);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 1px solid var(--gray-300);
+        color: var(--gray-700);
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        flex: 1;
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        border-color: var(--gray-400);
+        transform: translateY(-1px);
+    }
+
+    /* Info Cards */
+    .info-card-header {
+        padding: 1.25rem 1.5rem;
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .info-card-header i {
+        color: var(--primary);
+        font-size: 1.25rem;
+    }
+
+    .info-card-header h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .info-card-body {
+        padding: 1.5rem;
+    }
+
+    /* Proceso */
+    .process-step {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .process-step:last-child {
+        margin-bottom: 0;
+    }
+
+    .step-number {
+        width: 28px;
+        height: 28px;
+        background: var(--gray-200);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: var(--gray-700);
+        flex-shrink: 0;
+    }
+
+    .step-text {
+        font-size: 0.85rem;
+        color: var(--gray-600);
+        line-height: 1.4;
+    }
+
+    /* Tip Card */
+    .tip-card {
+        background: rgba(15, 23, 42, 0.05);
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .tip-card i {
+        font-size: 1.5rem;
+        color: var(--primary);
+        flex-shrink: 0;
+    }
+
+    .tip-card h5 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 0.25rem;
+    }
+
+    .tip-card p {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Toasts */
+    .toast-notification {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        animation: slideIn 0.3s ease;
+        z-index: 1000;
+        border-left: 4px solid;
+        max-width: 400px;
+    }
+
+    .toast-success {
+        border-left-color: var(--success);
+    }
+
+    .toast-success i {
+        color: var(--success);
+        font-size: 1.25rem;
+    }
+
+    .toast-error {
+        border-left-color: var(--danger);
+    }
+
+    .toast-error i {
+        color: var(--danger);
+        font-size: 1.25rem;
+    }
+
+    .toast-notification span {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-submit, .btn-cancel {
+            width: 100%;
+        }
+    }
+</style>

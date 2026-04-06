@@ -1,0 +1,122 @@
+@inherits LayoutComponentBase
+
+<div class="auth-outer-container">
+    <div class="auth-background">
+        <div class="bg-gradient"></div>
+    </div>
+    
+    <div class="auth-header">
+        <img src="images/logo.png" alt="Rams Cottons" class="main-logo" />
+    </div>
+    
+    <div class="auth-inner-box">
+        @Body
+    </div>
+    
+    <div class="auth-footer">
+        <p>© @DateTime.Now.Year Rams Cottons. Todos los derechos reservados.</p>
+    </div>
+</div>
+
+<style>
+    .auth-outer-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        z-index: 9999;
+        overflow: hidden;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        padding: 20px;
+    }
+
+    .auth-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    .bg-gradient {
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: 
+            radial-gradient(circle at 20% 80%, rgba(235, 111, 20, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(235, 111, 20, 0.05) 0%, transparent 50%);
+    }
+
+    /* Header con logo centrado */
+    .auth-header {
+        position: relative;
+        z-index: 10;
+        margin-bottom: 25px;
+        text-align: center;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Logo mejorado */
+    .main-logo {
+        height: 90px; /* Tamaño consistente con la imagen */
+        width: auto;
+        max-width: 280px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        margin-bottom: 15px;
+    }
+
+    /* Títulos del logo como en la imagen */
+    .logo-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        letter-spacing: 1px;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .logo-subtitle {
+        font-size: 18px;
+        font-weight: 400;
+        color: #4a4a4a;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+        margin-top: -4px;
+    }
+
+    /* Contenedor del login centrado */
+    .auth-inner-box {
+        position: relative;
+        z-index: 10;
+        width: 100%;
+        max-width: 420px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Footer en la posición correcta */
+    .auth-footer {
+        position: absolute;
+        bottom: 20px;
+        width: 100%;
+        text-align: center;
+        color: #6c757d;
+        font-size: 0.875rem;
+        z-index: 10;
+    }
+
+</style>

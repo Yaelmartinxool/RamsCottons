@@ -1,0 +1,184 @@
+﻿@page "/Account/Login"
+@layout RamsCottons.Components.Layout.AuthLayout
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+@using RamsCottons.Data
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject ILogger<Login> Logger
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Ingreso | Rams Cottons</PageTitle>
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <h2 class="login-title">Inicia sesión para empezar</h2>
+            <p class="login-subtitle">Ingresa tus credenciales para acceder al sistema</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error-message-container">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width:20px; color:#ef4444; margin-right:8px;">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                </svg>
+                <span>@errorMessage</span>
+            </div>
+        }
+
+        <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+            <DataAnnotationsValidator />
+            
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="input-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                    </svg>
+                    <InputText @bind-Value="Input.Email" class="form-input" placeholder="Correo electrónico" autocomplete="username" />
+                </div>
+                <ValidationMessage For="() => Input.Email" class="validation-error" />
+            </div>
+
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="input-icon" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                    </svg>
+                    <InputText type="password" @bind-Value="Input.Password" id="login-pass" class="form-input" placeholder="Contraseña" autocomplete="current-password" />
+                    
+                    <button type="button" class="toggle-password-btn" onclick="const p = document.getElementById('login-pass'); p.type = p.type === 'password' ? 'text' : 'password';">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:20px; height:20px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </button>
+                </div>
+                <ValidationMessage For="() => Input.Password" class="validation-error" />
+            </div>
+
+            <div class="form-options">
+                <label class="checkbox-container">
+                    <InputCheckbox @bind-Value="Input.RememberMe" id="rememberMe" />
+                    <span class="checkmark"></span>
+                    <span class="checkbox-label">Recuérdame</span>
+                </label>
+                
+                <a href="Account/ForgotPassword" class="forgot-password">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            <button type="submit" class="login-button">Iniciar</button>
+        </EditForm>
+
+        <div class="register-section" style="text-align: center; margin-top: 1rem;">
+            <p style="color: #6b7280; font-size: 0.9rem;">
+                <i class="bi bi-shield-lock me-1"></i>
+                Sistema exclusivo para personal autorizado
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .input-wrapper { 
+        position: relative; 
+        width: 100%; 
+        display: flex; 
+        align-items: center; 
+    }
+    .form-input { 
+        width: 100%; 
+        padding-right: 45px !important; 
+    }
+    .toggle-password-btn {
+        position: absolute;
+        right: 12px;
+        background: transparent;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        z-index: 10;
+    }
+    .toggle-password-btn:hover { 
+        color: #4b5563; 
+    }
+</style>
+
+@code {
+    private string? errorMessage;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        {
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        }
+    }
+
+    public async Task LoginUser()
+    {
+        // Buscar usuario por email
+        var user = await SignInManager.UserManager.FindByEmailAsync(Input.Email);
+        if (user == null)
+        {
+            errorMessage = "Correo o contraseña incorrectos.";
+            return;
+        }
+
+        // Verificar que el nombre de usuario no sea nulo
+        if (string.IsNullOrEmpty(user.UserName))
+        {
+            errorMessage = "Error en la configuración del usuario.";
+            return;
+        }
+
+        // Intentar iniciar sesión con el nombre de usuario
+        var result = await SignInManager.PasswordSignInAsync(user.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        
+        if (result.Succeeded)
+        {
+            Logger.LogInformation("Usuario ha iniciado sesión.");
+            RedirectManager.RedirectTo(ReturnUrl);
+        }
+        else if (result.RequiresTwoFactor)
+        {
+            RedirectManager.RedirectTo("Account/LoginWith2fa", new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+        }
+        else if (result.IsLockedOut)
+        {
+            errorMessage = "Cuenta bloqueada temporalmente.";
+        }
+        else
+        {
+            errorMessage = "Correo o contraseña incorrectos.";
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "El correo electrónico es requerido")]
+        [EmailAddress(ErrorMessage = "Ingresa un correo electrónico válido")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "La contraseña es requerida")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        public bool RememberMe { get; set; }
+    }
+}

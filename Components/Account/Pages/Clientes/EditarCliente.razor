@@ -1,0 +1,946 @@
+@page "/clientes/editar/{Id}"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Models
+@using RamsCottons.Data
+@using System.ComponentModel.DataAnnotations
+
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Editar Cliente | RAMS Cottons</PageTitle>
+
+<div class="editar-cliente-container">
+    <br>
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="title-icon">
+                    <i class="bi bi-pencil-fill"></i>
+                </div>
+                <div>
+                    <h1>Editar Cliente</h1>
+                    <p class="subtitle">Modifique la información del cliente</p>
+                </div>
+            </div>
+            <button class="btn-back" @onclick="Volver">
+                <i class="bi bi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
+        </div>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="loading-container">
+            <div class="spinner-border text-primary"></div>
+            <p>Cargando información del cliente...</p>
+        </div>
+    }
+    else if (cliente == null)
+    {
+        <div class="error-container">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <h3>Cliente no encontrado</h3>
+            <p>El cliente que intentas editar no existe o ha sido eliminado.</p>
+            <button class="btn-back" @onclick="Volver">Volver</button>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <!-- Columna Principal: Formulario -->
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <div class="card-header">
+                        <div class="header-left">
+                            <i class="bi bi-pencil-square"></i>
+                            <h3>Información del Cliente</h3>
+                        </div>
+                        <span class="required-badge">* Campos obligatorios</span>
+                    </div>
+                    <div class="card-body">
+                        <EditForm Model="modelo" OnValidSubmit="GuardarCliente" FormName="editarCliente">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="validation-summary" />
+
+                            <div class="form-grid">
+                                <!-- Nombre Completo -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Nombre Completo <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-person input-icon"></i>
+                                        <InputText @bind-Value="modelo.NombreCompleto"
+                                                class="form-control" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.NombreCompleto" class="validation-message" />
+                                </div>
+
+                                <!-- Teléfono y Email -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Teléfono <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-telephone input-icon"></i>
+                                        <InputText @bind-Value="modelo.Telefono"
+                                                class="form-control" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.Telefono" class="validation-message" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Correo Electrónico
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-envelope input-icon"></i>
+                                        <InputText @bind-Value="modelo.Correo"
+                                                class="form-control" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.Correo" class="validation-message" />
+                                </div>
+
+                                <!-- Categoría -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">Categoría</label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-tags input-icon"></i>
+                                        <select @bind="modelo.IdCategoriaProducto" class="form-control">
+                                            <option value="">Seleccione una categoría</option>
+                                            @foreach (var cat in categorias)
+                                            {
+                                                <option value="@cat.IdCategoria">@cat.NombreCat</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- 🔥 SUPERADMIN: Campos extra para asignar a otro administrador -->
+                                @if (esSuperAdmin)
+                                {
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Asignar a Administrador <span class="text-danger">*</span></label>
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-person-badge input-icon"></i>
+                                            <select @bind="selectedAdminId" class="form-control">
+                                                <option value="">Seleccione un administrador</option>
+                                                @foreach (var admin in administradores)
+                                                {
+                                                    <option value="@admin.Id">@admin.NombreCompleto (@admin.Email)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group full-width">
+                                        <label class="form-label">Sucursal <span class="text-danger">*</span></label>
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-building input-icon"></i>
+                                            <select @bind="selectedSucursalId" class="form-control">
+                                                @foreach (var suc in sucursales)
+                                                {
+                                                    <option value="@suc.IdSucursal">@suc.NombreSucursal</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                }
+
+                                <!-- Estado -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">Estado</label>
+                                    <div class="status-toggle">
+                                        <label class="toggle-switch">
+                                            <InputCheckbox @bind-Value="modelo.Estado" />
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <span class="status-text">@(modelo.Estado ? "Activo" : "Inactivo")</span>
+                                    </div>
+                                </div>
+
+                                <!-- Mensaje Informativo -->
+                                <div class="info-message full-width">
+                                    <i class="bi bi-info-circle-fill"></i>
+                                    <span>
+                                        <strong>Nota:</strong> Al cambiar el teléfono, asegúrate de que no esté registrado en otro cliente.
+                                    </span>
+                                </div>
+
+                                <!-- Botones de Acción -->
+                                <div class="form-actions full-width">
+                                    <button type="submit" class="btn-submit" disabled="@guardando">
+                                        @if (guardando)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2"></span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-lg me-2"></i>
+                                        }
+                                        @(guardando ? "Guardando..." : "Guardar Cambios")
+                                    </button>
+                                    <button type="button" class="btn-cancel" @onclick="Volver">
+                                        <i class="bi bi-x-lg me-2"></i>
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Lateral: Información y Ayuda -->
+            <div class="col-lg-4">
+                <!-- Tarjeta de Información -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="bi bi-person-badge"></i>
+                        <h4>Información del Cliente</h4>
+                    </div>
+                    <div class="info-card-body">
+                        <div class="info-item">
+                            <span class="info-label">ID:</span>
+                            <span class="info-value">CL-@cliente.Id</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fecha registro:</span>
+                            <span class="info-value">@cliente.FechaRegistro.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Registrado por:</span>
+                            <span class="info-value">@cliente.IdUsuario</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta de Consejo -->
+                <div class="tip-card">
+                    <i class="bi bi-lightbulb"></i>
+                    <div>
+                        <h5>Consejo de Edición</h5>
+                        <p>Al cambiar el teléfono, verifica que no exista otro cliente con el mismo número para evitar duplicados.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Toasts -->
+    @if (!string.IsNullOrEmpty(mensajeExito))
+    {
+        <div class="toast-notification toast-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@mensajeExito</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="toast-notification toast-error">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>@error</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    private int ClienteId => int.TryParse(Id, out var id) ? id : 0;
+
+    private Cliente? cliente;
+    private List<CategoriaProducto> categorias = new();
+    private List<Sucursal> sucursales = new();
+    private List<ApplicationUser> administradores = new();
+    private bool cargando = true;
+    private bool guardando = false;
+    private string? error;
+    private string? mensajeExito;
+    private ClienteModel modelo = new();
+
+    // Variables para SuperAdmin
+    private bool esSuperAdmin = false;
+    private string selectedAdminId = "";
+    private int selectedSucursalId = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        cargando = true;
+        try
+        {
+            await CargarUsuarioActual();
+            
+            if (esSuperAdmin)
+            {
+                await CargarSucursales();
+                await CargarAdministradores();
+            }
+
+            cliente = await DbContext.Clientes.FirstOrDefaultAsync(c => c.Id == ClienteId);
+            
+            if (cliente != null)
+            {
+                modelo = new ClienteModel
+                {
+                    NombreCompleto = cliente.NombreCompleto,
+                    Telefono = cliente.Telefono ?? "",
+                    Correo = cliente.Correo,
+                    IdCategoriaProducto = cliente.IdCategoriaProducto,
+                    Estado = cliente.Estado == 1
+                };
+                
+                // Si es SuperAdmin, cargar los valores actuales
+                if (esSuperAdmin)
+                {
+                    selectedAdminId = cliente.IdUsuario ?? "";
+                    selectedSucursalId = cliente.IdSucursal;
+                }
+            }
+            
+            categorias = await DbContext.CategoriaProductos.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            error = $"Error cargando datos: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task CargarUsuarioActual()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        esSuperAdmin = user.IsInRole("SuperAdministrador");
+    }
+
+    private async Task CargarAdministradores()
+    {
+        var admins = await UserManager.GetUsersInRoleAsync("Administrador");
+        administradores = admins.ToList();
+    }
+
+    private async Task CargarSucursales()
+    {
+        try
+        {
+            sucursales = await DbContext.Sucursales.ToListAsync();
+            if (sucursales.Any())
+            {
+                selectedSucursalId = sucursales.First().IdSucursal;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando sucursales: {ex.Message}");
+        }
+    }
+
+    private async Task GuardarCliente()
+    {
+        if (cliente == null) return;
+
+        guardando = true;
+        error = null;
+        mensajeExito = null;
+
+        try
+        {
+            // Verificar si el teléfono ya existe en otro cliente
+            var existe = await DbContext.Clientes.AnyAsync(c => c.Telefono == modelo.Telefono && c.Id != ClienteId);
+            if (existe)
+            {
+                error = "Ya existe otro cliente con este número de teléfono.";
+                return;
+            }
+
+            // Actualizar datos básicos
+            cliente.NombreCompleto = modelo.NombreCompleto;
+            cliente.Telefono = modelo.Telefono;
+            cliente.Correo = modelo.Correo;
+            cliente.IdCategoriaProducto = modelo.IdCategoriaProducto > 0 ? modelo.IdCategoriaProducto : null;
+            cliente.Estado = modelo.Estado ? 1 : 0;
+
+            // Si es SuperAdmin, actualizar también el administrador y sucursal
+            if (esSuperAdmin)
+            {
+                if (string.IsNullOrEmpty(selectedAdminId))
+                {
+                    error = "Debes seleccionar un administrador";
+                    return;
+                }
+                cliente.IdUsuario = selectedAdminId;
+                cliente.IdSucursal = selectedSucursalId;
+            }
+
+            await DbContext.SaveChangesAsync();
+
+            mensajeExito = $"✅ Cliente {cliente.NombreCompleto} actualizado correctamente.";
+            
+            await Task.Delay(2000);
+            NavigationManager.NavigateTo("/clientes");
+        }
+        catch (Exception ex)
+        {
+            error = $"Error inesperado: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/clientes");
+    }
+
+    private class ClienteModel
+    {
+        [Required(ErrorMessage = "El nombre completo es obligatorio")]
+        [StringLength(180, MinimumLength = 3, ErrorMessage = "El nombre debe tener entre 3 y 180 caracteres")]
+        public string NombreCompleto { get; set; } = "";
+
+        [Required(ErrorMessage = "El teléfono es obligatorio")]
+        [RegularExpression(@"^[0-9+\s-]{8,20}$", ErrorMessage = "Formato de teléfono inválido")]
+        public string Telefono { get; set; } = "";
+
+        [EmailAddress(ErrorMessage = "Formato de correo inválido")]
+        public string? Correo { get; set; }
+
+        public int? IdCategoriaProducto { get; set; }
+        
+        public bool Estado { get; set; } = true;
+    }
+}
+
+<style>
+    .editar-cliente-container {
+        padding-bottom: 2rem;
+        min-height: 100vh;
+    }
+
+    /* Header */
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #e5e7eb;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        background: #0f172a;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .subtitle {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: #f9fafb;
+        transform: translateX(-2px);
+    }
+
+    /* Form Card */
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .header-left i {
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+
+    .header-left h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .required-badge {
+        font-size: 0.7rem;
+        color: #6b7280;
+        background: #e5e7eb;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .card-body {
+        padding: 2rem 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.85rem;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        color: #9ca3af;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.7rem 1rem 0.7rem 2.5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0f172a;
+        box-shadow: 0 0 0 3px rgba(15,23,42,0.1);
+    }
+
+    .validation-message {
+        color: #ef4444;
+        font-size: 0.75rem;
+    }
+
+    .validation-summary {
+        background: #fee2e2;
+        border: 1px solid #ef4444;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        color: #991b1b;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        grid-column: 1 / -1;
+    }
+
+    .status-toggle {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .3s;
+        border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: #10b981;
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+
+    .status-text {
+        font-size: 0.85rem;
+        color: #374151;
+    }
+
+    .info-message {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #3b82f6;
+        font-size: 0.85rem;
+        margin: 1rem 0;
+        border-left: 4px solid #3b82f6;
+    }
+
+    .info-message i {
+        font-size: 1.25rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .btn-submit {
+        background: #0f172a;
+        border: none;
+        color: white;
+        padding: 0.7rem 2rem;
+        border-radius: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 160px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+        background: #020617;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        padding: 0.7rem 2rem;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel:hover {
+        background: #f9fafb;
+        transform: translateY(-1px);
+    }
+
+    /* Info Card */
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .info-card-header i {
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+
+    .info-card-header h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .info-card-body {
+        padding: 1.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .info-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-label {
+        width: 100px;
+        color: #6b7280;
+    }
+
+    .info-value {
+        color: #1f2937;
+        font-weight: 500;
+    }
+
+    /* Tip Card */
+    .tip-card {
+        background: rgba(15, 23, 42, 0.05);
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .tip-card i {
+        font-size: 1.5rem;
+        color: #0f172a;
+    }
+
+    .tip-card h5 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+    }
+
+    .tip-card p {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    /* Loading & Error */
+    .loading-container, .error-container {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .error-container i {
+        font-size: 3rem;
+        color: #ef4444;
+        margin-bottom: 1rem;
+    }
+
+    /* Toasts */
+    .toast-notification {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        z-index: 1000;
+        border-left: 4px solid;
+        animation: slideIn 0.3s ease;
+        max-width: 400px;
+    }
+
+    .toast-success {
+        border-left-color: #10b981;
+    }
+
+    .toast-success i {
+        color: #10b981;
+    }
+
+    .toast-error {
+        border-left-color: #ef4444;
+    }
+
+    .toast-error i {
+        color: #ef4444;
+    }
+
+    .toast-notification span {
+        font-size: 0.9rem;
+        color: #374151;
+    }
+
+    /* Layout de columnas */
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -0.75rem;
+    }
+
+    .col-lg-8 {
+        width: 66.666%;
+        padding: 0 0.75rem;
+    }
+
+    .col-lg-4 {
+        width: 33.333%;
+        padding: 0 0.75rem;
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .text-danger { color: #ef4444; }
+    .me-2 { margin-right: 0.5rem; }
+    .spinner-border {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-submit, .btn-cancel {
+            width: 100%;
+        }
+
+        .row {
+            flex-direction: column;
+        }
+
+        .col-lg-8, .col-lg-4 {
+            width: 100%;
+        }
+    }
+</style>

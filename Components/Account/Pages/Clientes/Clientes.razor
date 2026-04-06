@@ -1,0 +1,1528 @@
+@page "/clientes"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Models 
+@using RamsCottons.Data
+
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+
+<PageTitle>Clientes | RAMS Cottons</PageTitle>
+
+<div class="clientes-container">
+    <br>
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="title-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div>
+                    <h1>Gestión de Clientes</h1>
+                    <p class="subtitle">Administre la base de datos de clientes</p>
+                </div>
+            </div>
+            <button class="btn-create" @onclick="CrearCliente">
+                <i class="bi bi-plus-lg"></i>
+                <span>Nuevo Cliente</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <i class="bi bi-table"></i>
+                <h3>Tabla de Clientes</h3>
+            </div>
+            <div class="panel-actions">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" @bind="filtroBusqueda" @bind:event="oninput" placeholder="Buscar clientes...">
+                </div>
+                <div class="action-buttons">
+                    <button class="btn-filter" @onclick="ToggleFilters">
+                        <i class="bi bi-funnel"></i>
+                        Filtros
+                    </button>
+                    <button class="btn-refresh" @onclick="CargarClientes">
+                        <i class="bi bi-arrow-clockwise @(cargando ? "fa-spin" : "")"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-panel @(mostrarFiltros ? "show" : "")">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Categoría</label>
+                    <select class="select-custom" @bind="filtroCategoria">
+                        <option value="0">Todas las categorías</option>
+                        @foreach (var cat in categorias)
+                        {
+                            <option value="@cat.IdCategoria">@cat.NombreCat</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Estado</label>
+                    <select class="select-custom" @bind="filtroEstado">
+                        <option value="">Todos</option>
+                        <option value="activo">Activos</option>
+                        <option value="inactivo">Inactivos</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Ordenar por</label>
+                    <select class="select-custom" @bind="ordenarPor">
+                        <option value="reciente">Más recientes primero</option>
+                        <option value="antiguo">Más antiguos primero</option>
+                        <option value="nombre">Nombre A-Z</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Filas por página</label>
+                    <select class="select-custom" @bind="elementosPorPagina">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="15" selected>15</option>
+                        <option value="20">20</option>
+                        <option value="25">25</option>
+                        <option value="30">30</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button class="btn-clear-filters" @onclick="LimpiarFiltros">
+                        <i class="bi bi-x-circle"></i>
+                        Limpiar Filtros
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    @if (cargando)
+    {
+        <div class="loading-container">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+            <p class="mt-3 text-muted">Cargando clientes...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Table -->
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="crud-table">
+                    <thead>
+                        <tr>
+                            <th class="col-checkbox">
+                                <input type="checkbox" 
+                                       @onchange="ToggleSelectAll" 
+                                       checked="@(clientesSeleccionados.Count == clientesPaginados.Count() && clientesPaginados.Any())" />
+                            </th>
+                            <th>Cliente</th>
+                            <th>Teléfono</th>
+                            <th>Email</th>
+                            <th>Categoría</th>
+                            <th>Fecha Registro</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                            </tr>
+                        </thead>
+                    <tbody>
+                        @if (!clientesFiltrados.Any())
+                        {
+                             <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="no-data">
+                                        <i class="bi bi-people-fill display-4 text-muted"></i>
+                                        <p>No hay clientes registrados</p>
+                                        <button class="btn btn-sm btn-primary mt-3" @onclick="CrearCliente">
+                                            <i class="bi bi-plus-lg"></i> Crear primer cliente
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var cliente in clientesPaginados)
+                            {
+                                var categoria = categorias.FirstOrDefault(c => c.IdCategoria == cliente.IdCategoriaProducto);
+                                
+                                <tr class="cliente-row">
+                                    <td class="col-checkbox">
+                                        <input type="checkbox" 
+                                               @onchange="() => ToggleSeleccionCliente(cliente.Id)" 
+                                               checked="@clientesSeleccionados.Contains(cliente.Id)" />
+                                    </td>
+                                    <td>
+                                        <div class="user-info">
+                                            <div class="user-avatar">
+                                                @cliente.NombreCompleto.Substring(0,1).ToUpper()
+                                            </div>
+                                            <div class="user-details">
+                                                <span class="user-name">@cliente.NombreCompleto</span>
+                                                <small class="text-muted">ID: @cliente.Id</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@cliente.Telefono</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(cliente.Correo))
+                                        {
+                                            @cliente.Correo
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (categoria != null)
+                                        {
+                                            <span class="categoria-badge" style="background: @GetCategoriaColor(categoria.NombreCat)">
+                                                @categoria.NombreCat
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>@cliente.FechaRegistro.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="status-badge @(cliente.Estado == 1 ? "status-active" : "status-inactive")">
+                                            <i class="bi @(cliente.Estado == 1 ? "bi-check-circle-fill" : "bi-x-circle-fill")"></i>
+                                            @(cliente.Estado == 1 ? "Activo" : "Inactivo")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn-action btn-view" @onclick="() => VerCliente(cliente.Id)" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn-action btn-edit" @onclick="() => EditarCliente(cliente.Id)" title="Editar cliente">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn-action btn-qr" @onclick="() => GenerarQR(cliente.Id)" title="Generar QR">
+                                                <i class="bi bi-qr-code"></i>
+                                            </button>
+                                            <button class="btn-action btn-delete" @onclick="() => ConfirmarEliminar(cliente)" title="Eliminar cliente">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer con paginación -->
+            @if (clientesFiltrados.Any())
+            {
+                <div class="table-footer">
+                    <div class="footer-info">
+                        <div class="total-count">
+                            Mostrando <span>@clientesPaginados.Count()</span> de <span>@clientesFiltrados.Count()</span> clientes
+                        </div>
+                        <div class="pagination-info">
+                            Página @paginaActual de @totalPaginas
+                        </div>
+                    </div>
+
+                    @if (totalPaginas > 1)
+                    {
+                        <div class="pagination-wrapper">
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination">
+                                    <li class="page-item @(paginaActual == 1 ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => CambiarPagina(paginaActual - 1)">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </button>
+                                    </li>
+                                    @for (int i = 1; i <= totalPaginas; i++)
+                                    {
+                                        if (i == 1 || i == totalPaginas || (i >= paginaActual - 2 && i <= paginaActual + 2))
+                                        {
+                                            <li class="page-item @(i == paginaActual ? "active" : "")">
+                                                <button class="page-link" @onclick="() => CambiarPagina(i)">@i</button>
+                                            </li>
+                                        }
+                                        else if (i == paginaActual - 3 || i == paginaActual + 3)
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        }
+                                    }
+                                    <li class="page-item @(paginaActual == totalPaginas ? "disabled" : "")">
+                                        <button class="page-link" @onclick="() => CambiarPagina(paginaActual + 1)">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Barra de acciones masivas -->
+@if (clientesSeleccionados.Any())
+{
+    <div class="batch-actions-bar">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>@clientesSeleccionados.Count cliente(s) seleccionado(s)</span>
+        <button class="btn-send-whatsapp" @onclick="AbrirModalPromociones">
+            <i class="bi bi-whatsapp"></i> Enviar promoción
+        </button>
+        <button class="btn-clear-selection" @onclick="LimpiarSeleccion">
+            <i class="bi bi-x"></i> Limpiar
+        </button>
+    </div>
+}
+
+<!-- Modal para seleccionar promoción -->
+@if (mostrarModalPromociones)
+{
+    <div class="modal-overlay" @onclick="CerrarModal">
+        <div class="modal-content" @onclick:preventDefault="true">
+            <div class="modal-header">
+                <h3><i class="bi bi-megaphone-fill"></i> Seleccionar Promoción</h3>
+                <button class="modal-close" @onclick="CerrarModal">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                @if (promocionesActivas.Any())
+                {
+                    <div class="promociones-list">
+                        @foreach (var promo in promocionesActivas)
+                        {
+                            var enlace = $"https://marquis-leavenless-nonseparably.ngrok-free.dev/promociones/{promo.TokenUnico}";
+                            <div class="promocion-item" @onclick="() => EnviarPromocion(promo, enlace)">
+                                <div class="promocion-icon">
+                                    <i class="bi bi-megaphone-fill"></i>
+                                </div>
+                                <div class="promocion-info">
+                                    <strong>@promo.Titulo</strong>
+                                    <p>@promo.Descripcion</p>
+                                    <small><i class="bi bi-calendar"></i> Vence: @promo.FechaFin.ToString("dd/MM/yyyy")</small>
+                                </div>
+                                <div class="promocion-action">
+                                    <i class="bi bi-whatsapp"></i>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="no-promos">
+                        <i class="bi bi-megaphone"></i>
+                        <p>No hay promociones activas</p>
+                        <button class="btn-create-promo" @onclick="CrearPromocion">
+                            <i class="bi bi-plus-lg"></i> Crear nueva promoción
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Eliminar -->
+@if (mostrarModalEliminar && clienteEliminar != null)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Confirmar eliminación</h5>
+                    <button class="btn-close-custom" @onclick="CerrarModalEliminar">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-4"
+                         style="width: 80px; height: 80px;">
+                        <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-3">¿Eliminar cliente?</h5>
+                    <p class="text-muted mb-4">
+                        Estás a punto de eliminar a
+                        <span class="fw-bold text-dark">@clienteEliminar.NombreCompleto</span>
+                        <br>Esta acción no se puede deshacer.
+                    </p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <button class="btn btn-light px-5 py-2 rounded-3" @onclick="CerrarModalEliminar">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-danger px-5 py-2 rounded-3" @onclick="EliminarCliente">
+                        <i class="bi bi-trash3 me-2"></i>
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Cliente> clientes = new();
+    private List<CategoriaProducto> categorias = new();
+    private List<Promocion> promocionesActivas = new();
+    private bool cargando = true;
+    private bool mostrarFiltros = false;
+
+    // Filtros
+    private string filtroBusqueda = "";
+    private int filtroCategoria = 0;
+    private string filtroEstado = "";
+    private string ordenarPor = "reciente";
+    private int paginaActual = 1;
+    private int elementosPorPagina = 15;
+
+    private bool mostrarModalEliminar = false;
+    private Cliente? clienteEliminar;
+    
+    // Variables para selección múltiple y envío
+    private HashSet<int> clientesSeleccionados = new();
+    private bool mostrarModalPromociones = false;
+
+    // Propiedades para el usuario actual
+    private string? userId;
+    private bool esSuperAdmin;
+    private bool esAdmin;
+    private bool esGerente;
+    private bool esVendedor;
+    private int idSucursalUsuario = 0;
+
+    private IEnumerable<Cliente> clientesFiltrados
+    {
+        get
+        {
+            var query = clientes.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(filtroBusqueda))
+            {
+                query = query.Where(c =>
+                    c.NombreCompleto.Contains(filtroBusqueda, StringComparison.OrdinalIgnoreCase) ||
+                    (c.Telefono != null && c.Telefono.Contains(filtroBusqueda)) ||
+                    (c.Correo != null && c.Correo.Contains(filtroBusqueda, StringComparison.OrdinalIgnoreCase))
+                );
+            }
+
+            if (filtroCategoria > 0)
+            {
+                query = query.Where(c => c.IdCategoriaProducto == filtroCategoria);
+            }
+
+            if (filtroEstado == "activo")
+            {
+                query = query.Where(c => c.Estado == 1);
+            }
+            else if (filtroEstado == "inactivo")
+            {
+                query = query.Where(c => c.Estado == 0);
+            }
+
+            if (esVendedor && !string.IsNullOrEmpty(userId))
+            {
+                query = query.Where(c => c.IdUsuario == userId);
+            }
+            else if (esAdmin && idSucursalUsuario > 0)
+            {
+                query = query.Where(c => c.IdSucursal == idSucursalUsuario);
+            }
+
+            query = ordenarPor switch
+            {
+                "antiguo" => query.OrderBy(c => c.FechaRegistro),
+                "nombre" => query.OrderBy(c => c.NombreCompleto),
+                _ => query.OrderByDescending(c => c.FechaRegistro)
+            };
+
+            return query;
+        }
+    }
+
+    private int totalPaginas => (int)Math.Ceiling((double)clientesFiltrados.Count() / elementosPorPagina);
+    
+    private IEnumerable<Cliente> clientesPaginados =>
+        clientesFiltrados
+            .Skip((paginaActual - 1) * elementosPorPagina)
+            .Take(elementosPorPagina);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+        await CargarUsuarioActual();
+    }
+
+    private async Task CargarUsuarioActual()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        esSuperAdmin = user.IsInRole("SuperAdministrador");
+        esAdmin = user.IsInRole("Administrador");
+        esGerente = user.IsInRole("Gerente");
+        esVendedor = user.IsInRole("Vendedor");
+        
+        var usuario = await UserManager.GetUserAsync(user);
+        
+        if (usuario != null)
+        {
+            if (esVendedor)
+            {
+                userId = usuario.Id;
+            }
+            else if (esAdmin || esGerente)
+            {
+                idSucursalUsuario = usuario.IdSucursal;
+            }
+            
+            if (esSuperAdmin)
+            {
+                idSucursalUsuario = 0;
+            }
+        }
+    }
+
+    private async Task CargarDatos()
+    {
+        await CargarClientes();
+        await CargarCategorias();
+    }
+
+    private async Task CargarClientes()
+    {
+        cargando = true;
+        try
+        {
+            clientes = await DbContext.Clientes.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            await MostrarNotificacionError($"Error al cargar clientes: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task CargarCategorias()
+    {
+        try
+        {
+            categorias = await DbContext.CategoriaProductos.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando categorías: {ex.Message}");
+        }
+    }
+
+    // Funciones de selección múltiple
+    private void ToggleSeleccionCliente(int clienteId)
+    {
+        if (clientesSeleccionados.Contains(clienteId))
+        {
+            clientesSeleccionados.Remove(clienteId);
+        }
+        else
+        {
+            clientesSeleccionados.Add(clienteId);
+        }
+    }
+
+    private void ToggleSelectAll()
+    {
+        if (clientesSeleccionados.Count == clientesPaginados.Count())
+        {
+            clientesSeleccionados.Clear();
+        }
+        else
+        {
+            clientesSeleccionados.Clear();
+            foreach (var cliente in clientesPaginados)
+            {
+                clientesSeleccionados.Add(cliente.Id);
+            }
+        }
+    }
+
+    private void LimpiarSeleccion()
+    {
+        clientesSeleccionados.Clear();
+    }
+
+    // Funciones de envío masivo
+    private async Task AbrirModalPromociones()
+    {
+        if (clientesSeleccionados.Count == 0)
+        {
+            await MostrarNotificacionInfo("No has seleccionado ningún cliente");
+            return;
+        }
+        
+        promocionesActivas = await DbContext.Promociones
+            .Where(p => p.Activo && p.FechaFin >= DateTime.Today)
+            .OrderBy(p => p.FechaFin)
+            .ToListAsync();
+        
+        if (promocionesActivas.Count == 0)
+        {
+            await MostrarNotificacionInfo("No hay promociones activas para enviar");
+            return;
+        }
+        
+        mostrarModalPromociones = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModalPromociones = false;
+        promocionesActivas.Clear();
+    }
+
+    private async Task EnviarPromocion(Promocion promo, string enlace)
+{
+    mostrarModalPromociones = false;
+    
+    var mensaje = $"*{promo.Titulo}*\n\n{promo.Descripcion}\n\n{enlace}\n\n¡Aprovecha esta oferta!";
+    var mensajeCodificado = Uri.EscapeDataString(mensaje);
+    
+    var clientesParaEnviar = clientesSeleccionados
+        .Select(id => clientes.FirstOrDefault(c => c.Id == id))
+        .Where(c => c != null && !string.IsNullOrEmpty(c.Telefono))
+        .ToList();
+
+    if (clientesParaEnviar.Count == 0)
+    {
+        await MostrarNotificacionError("Ninguno de los clientes seleccionados tiene un teléfono válido");
+        return;
+    }
+
+    // Obtener usuario actual
+    var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+    var user = authState.User;
+    var usuarioActual = await UserManager.GetUserAsync(user);
+    var usuarioId = usuarioActual?.Id ?? "";
+
+    foreach (var cliente in clientesParaEnviar)
+    {
+        var telefonoLimpio = cliente!.Telefono!.Replace(" ", "").Replace("-", "").Replace("+", "");
+        var linkWhatsApp = $"https://wa.me/52{telefonoLimpio}?text={mensajeCodificado}";
+        await JS.InvokeVoidAsync("open", linkWhatsApp, "_blank");
+        
+        // 🔥 GUARDAR EN HISTORIAL
+        var historial = new HistorialEnvio
+        {
+            ClienteId = cliente.Id,
+            PromocionId = promo.Id,
+            UsuarioEnvioId = usuarioId,
+            Mensaje = mensaje,
+            EnlacePromocion = enlace,
+            EnlaceWhatsApp = linkWhatsApp,
+            FechaEnvio = DateTime.Now,
+            Estatus = "Enviado",
+            Observaciones = $"Enviado a {cliente.Telefono}"
+        };
+        DbContext.HistorialEnvios.Add(historial);
+        
+        await Task.Delay(500);
+    }
+    
+    await DbContext.SaveChangesAsync();
+
+    clientesSeleccionados.Clear();
+    
+    await MostrarNotificacionExito($"Se envió la promoción a {clientesParaEnviar.Count} clientes");
+}
+
+    private void CrearPromocion()
+    {
+        NavigationManager.NavigateTo("/promociones/crear");
+    }
+
+    // Notificaciones con SweetAlert
+    private async Task MostrarNotificacionExito(string mensaje)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "¡Éxito!",
+            text = mensaje,
+            icon = "success",
+            confirmButtonText = "Aceptar",
+            confirmButtonColor = "#0f172a",
+        });
+    }
+
+    private async Task MostrarNotificacionError(string mensaje)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Error",
+            text = mensaje,
+            icon = "error",
+            confirmButtonText = "Aceptar",
+            confirmButtonColor = "#ef4444"
+        });
+    }
+
+    private async Task MostrarNotificacionInfo(string mensaje)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Información",
+            text = mensaje,
+            icon = "info",
+            confirmButtonText = "Aceptar",
+            confirmButtonColor = "#3b82f6"
+        });
+    }
+
+    // Funciones existentes
+    private void CrearCliente() => NavigationManager.NavigateTo("/clientes/crear");
+    private void VerCliente(int id) => NavigationManager.NavigateTo($"/clientes/ver/{id}");
+    private void EditarCliente(int id) => NavigationManager.NavigateTo($"/clientes/editar/{id}");
+    private void GenerarQR(int id) => NavigationManager.NavigateTo($"/clientes/qr/{id}");
+    private void ToggleFilters() => mostrarFiltros = !mostrarFiltros;
+
+    private void LimpiarFiltros()
+    {
+        filtroBusqueda = "";
+        filtroCategoria = 0;
+        filtroEstado = "";
+        ordenarPor = "reciente";
+        paginaActual = 1;
+    }
+
+    private void CambiarPagina(int pagina)
+    {
+        if (pagina >= 1 && pagina <= totalPaginas)
+        {
+            paginaActual = pagina;
+        }
+    }
+
+    private void ConfirmarEliminar(Cliente cliente)
+    {
+        clienteEliminar = cliente;
+        mostrarModalEliminar = true;
+    }
+
+    private void CerrarModalEliminar()
+    {
+        mostrarModalEliminar = false;
+        clienteEliminar = null;
+    }
+
+    private async Task EliminarCliente()
+    {
+        if (clienteEliminar == null) return;
+
+        try
+        {
+            DbContext.Clientes.Remove(clienteEliminar);
+            await DbContext.SaveChangesAsync();
+            await CargarClientes();
+            await MostrarNotificacionExito($"Cliente {clienteEliminar.NombreCompleto} eliminado correctamente");
+        }
+        catch (Exception ex)
+        {
+            await MostrarNotificacionError($"Error al eliminar cliente: {ex.Message}");
+        }
+        finally
+        {
+            CerrarModalEliminar();
+        }
+    }
+
+    private string GetCategoriaColor(string? categoria)
+    {
+        return categoria?.ToLower() switch
+        {
+            "promoción" => "#f97316",
+            "ropa" => "#3b82f6",
+            "calzado" => "#10b981",
+            "accesorios" => "#8b5cf6",
+            _ => "#6b7280"
+        };
+    }
+}
+
+<style>
+    .clientes-container {
+        padding-bottom: 2rem;
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #e5e7eb;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        background: #0f172a;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .subtitle {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .btn-create {
+        background: #0f172a;
+        border: none;
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-create:hover {
+        background: #020617;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .control-panel {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #e5e7eb;
+    }
+
+    .panel-header {
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .panel-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .panel-title i {
+        color: #0f172a;
+    }
+
+    .panel-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .search-box {
+        position: relative;
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 0.4rem 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 250px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .search-box i {
+        color: #9ca3af;
+        font-size: 0.9rem;
+    }
+
+    .search-box input {
+        border: none;
+        background: none;
+        outline: none;
+        width: 100%;
+        font-size: 0.85rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-filter, .btn-refresh {
+        padding: 0.4rem 0.75rem;
+        border: 1px solid #e5e7eb;
+        background: white;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-refresh {
+        padding: 0.4rem;
+    }
+
+    .btn-filter:hover, .btn-refresh:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+
+    .filters-panel {
+        padding: 1rem 1.25rem;
+        border-top: 1px solid #e5e7eb;
+        display: none;
+    }
+
+    .filters-panel.show {
+        display: block;
+        animation: slideDown 0.3s ease;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .filter-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .filter-group {
+        flex: 1;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.75rem;
+    }
+
+    .select-custom {
+        padding: 0.4rem 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: white;
+        font-size: 0.85rem;
+        width: 100%;
+    }
+
+    .btn-clear-filters {
+        padding: 0.4rem 0.75rem;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        color: #374151;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .btn-clear-filters:hover {
+        background: #f3f4f6;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .crud-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .crud-table thead {
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .crud-table th {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .crud-table td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: middle;
+        font-size: 0.85rem;
+    }
+
+    .cliente-row:hover {
+        background: #f9fafb;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        background: #0f172a;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-name {
+        font-weight: 600;
+        color: #1f2937;
+        font-size: 0.9rem;
+    }
+
+    .text-muted {
+        color: #6b7280;
+        font-size: 0.7rem;
+    }
+
+    .categoria-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: white;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        font-size: 0.9rem;
+        background: #f3f4f6;
+        color: #4b5563;
+    }
+
+    .btn-view:hover {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .btn-qr:hover {
+        background: #8b5cf6;
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background: #ef4444;
+        color: white;
+    }
+
+    .table-footer {
+        padding: 1rem 1.25rem;
+        background: #f9fafb;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .footer-info {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .total-count, .pagination-info {
+        font-size: 0.8rem;
+        color: #6b7280;
+    }
+
+    .total-count span, .pagination-info span {
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .pagination-wrapper {
+        display: flex;
+    }
+
+    .pagination {
+        display: flex;
+        gap: 0.25rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .page-item {
+        display: inline-block;
+    }
+
+    .page-item.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .page-item.active .page-link {
+        background: #0f172a;
+        color: white;
+        border-color: #0f172a;
+    }
+
+    .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 0.5rem;
+        border: 1px solid #e5e7eb;
+        background: white;
+        color: #374151;
+        text-decoration: none;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+
+    .page-link:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+
+    .loading-container {
+        background: white;
+        border-radius: 12px;
+        padding: 3rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 2rem;
+        color: #6b7280;
+    }
+
+    .no-data i {
+        color: #9ca3af;
+        margin-bottom: 1rem;
+    }
+
+    /* Batch actions bar */
+    .batch-actions-bar {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: white;
+        border-radius: 50px;
+        padding: 0.75rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        z-index: 100;
+        border: 1px solid #e5e7eb;
+        animation: slideUp 0.3s ease;
+    }
+
+    .batch-actions-bar span {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    .btn-send-whatsapp {
+        background: #25D366;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-send-whatsapp:hover {
+        background: #128C7E;
+        transform: scale(1.02);
+    }
+
+    .btn-clear-selection {
+        background: #f3f4f6;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .btn-clear-selection:hover {
+        background: #e5e7eb;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(5px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 24px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow: hidden;
+        animation: modalFadeIn 0.3s ease;
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 0.5rem;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        max-height: 60vh;
+    }
+
+    .promociones-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .promocion-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid #e5e7eb;
+    }
+
+    .promocion-item:hover {
+        background: #f3f4f6;
+        transform: translateX(5px);
+        border-color: #25D366;
+    }
+
+    .promocion-icon {
+        width: 45px;
+        height: 45px;
+        background: #0f172a;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .promocion-info {
+        flex: 1;
+    }
+
+    .promocion-info strong {
+        display: block;
+        font-size: 0.9rem;
+        color: #1f2937;
+    }
+
+    .promocion-info p {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin: 0.2rem 0;
+    }
+
+    .promocion-info small {
+        font-size: 0.65rem;
+        color: #f59e0b;
+    }
+
+    .promocion-action i {
+        font-size: 1.2rem;
+        color: #25D366;
+    }
+
+    .no-promos {
+        text-align: center;
+        padding: 2rem;
+    }
+
+    .no-promos i {
+        font-size: 3rem;
+        color: #9ca3af;
+        margin-bottom: 1rem;
+    }
+
+    .btn-create-promo {
+        margin-top: 1rem;
+        background: #0f172a;
+        color: white;
+        border: none;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .col-checkbox {
+        width: 40px;
+        text-align: center;
+    }
+
+    input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #0f172a;
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes modalFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .panel-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .panel-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .search-box {
+            width: 100%;
+        }
+
+        .filter-row {
+            flex-direction: column;
+        }
+
+        .table-footer {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .footer-info {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>

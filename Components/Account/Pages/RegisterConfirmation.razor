@@ -1,0 +1,45 @@
+﻿@page "/Account/RegisterConfirmation"
+@layout RamsCottons.Components.Layout.AuthLayout
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using System.Text
+@using RamsCottons.Data
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager NavigationManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Confirmación | Rams Cottons</PageTitle>
+
+<div class="login-container">
+    <div class="login-card" style="text-align: center;">
+        <div style="background: rgba(255, 102, 0, 0.1); width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+            <svg xmlns="http://www.w3.org/2000/svg" style="width: 35px; color: #ff6600;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+        </div>
+
+        <h2 class="login-title">¡Casi listo!</h2>
+        <p class="login-subtitle">Hemos enviado un correo a <strong>@Email</strong> para activar tu cuenta.</p>
+        
+        <div style="margin: 25px 0; padding: 15px; background: #f9f9f9; border-radius: 8px; font-size: 14px;">
+            <p>¿No lo encuentras? Revisa tu carpeta de <b>SPAM</b> o promociones.</p>
+        </div>
+
+        <a href="Account/Login" class="login-button" style="text-decoration: none; display: block;">Volver al Login</a>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] private string? Email { get; set; }
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+
+protected override Task OnInitializedAsync()
+{
+    if (Email is null)
+    {
+        RedirectManager.RedirectTo("");
+    }
+
+    return Task.CompletedTask;
+}
+}

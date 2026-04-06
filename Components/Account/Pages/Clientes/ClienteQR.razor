@@ -1,0 +1,410 @@
+@page "/cliente/{Id}"
+@layout Layout.BlankLayout
+@rendermode InteractiveServer
+
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Models
+@using RamsCottons.Data
+@using RamsCottons.Services
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject QrGeneratorService QrGeneratorService
+
+<PageTitle>Mi Tarjeta | RAMS Cottons</PageTitle>
+
+<div class="container">
+    @if (cargando)
+    {
+        <div class="loading">Cargando...</div>
+    }
+    else if (cliente == null)
+    {
+        <div class="error">Cliente no encontrado</div>
+    }
+    else
+    {
+        <div class="wrapper">
+            <!-- Tarjeta para capturar -->
+            <div id="tarjetaCaptura" class="card">
+                <!-- Logo -->
+                <div class="logo">
+                    <img src="images/logo.png" alt="RAMS COTTONS" />
+                </div>
+
+                <!-- Folio -->
+                <div class="folio">
+                    FOLIO: <strong>CL-@cliente.Id.ToString("D6")</strong>
+                </div>
+
+                <!-- Nombre -->
+                <h1 class="nombre">@cliente.NombreCompleto</h1>
+
+                <!-- Categoría -->
+                <div class="categoria">
+                    @(nombreCategoria ?? "Cliente Premium")
+                </div>
+
+                <!-- Contacto alineado a la izquierda -->
+                <div class="contacto-lista">
+                    <div class="contacto-item">
+                        <i class="bi bi-telephone"></i>
+                        <span>@cliente.Telefono</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(cliente.Correo))
+                    {
+                        <div class="contacto-item">
+                            <i class="bi bi-envelope"></i>
+                            <span>@cliente.Correo</span>
+                        </div>
+                    }
+                    <div class="contacto-item">
+                        <i class="bi bi-calendar3"></i>
+                        <span>Desde @cliente.FechaRegistro.ToString("dd MMM yyyy")</span>
+                    </div>
+                </div>
+
+                <!-- QR más grande -->
+                <div class="qr-grande">
+                    <img src="@qrImagenBase64" alt="QR" />
+                    <p>Escanea para compartir</p>
+                </div>
+
+                <!-- Estado -->
+                <div class="estado @(cliente.Estado == 1 ? "activo" : "inactivo")">
+                    <i class="bi @(cliente.Estado == 1 ? "bi-check-circle" : "bi-x-circle")"></i>
+                    @(cliente.Estado == 1 ? "ACTIVO" : "INACTIVO")
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="botones">
+                <a href="https://wa.me/52@cliente.Telefono?text=Hola%20@cliente.NombreCompleto"
+                   class="btn-whatsapp"
+                   target="_blank">
+                    <i class="bi bi-whatsapp"></i> WhatsApp
+                </a>
+                <button class="btn-descargar" onclick="descargarTarjeta()">
+                    <i class="bi bi-download"></i> Descargar
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<script>
+    function descargarTarjeta() {
+        const element = document.getElementById('tarjetaCaptura');
+        
+        html2canvas(element, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'tarjeta_rams.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    }
+</script>
+
+@code {
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    private int ClienteId => int.TryParse(Id, out var id) ? id : 0;
+
+    private Cliente? cliente;
+    private string? nombreCategoria;
+    private bool cargando = true;
+    private string qrImagenBase64 = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+        await GenerarQRTarjeta();
+    }
+
+    private async Task CargarDatos()
+    {
+        cargando = true;
+        try
+        {
+            cliente = await DbContext.Clientes.FirstOrDefaultAsync(c => c.Id == ClienteId);
+            
+            if (cliente != null && cliente.IdCategoriaProducto.HasValue)
+            {
+                var categoria = await DbContext.CategoriaProductos
+                    .FirstOrDefaultAsync(c => c.IdCategoria == cliente.IdCategoriaProducto.Value);
+                nombreCategoria = categoria?.NombreCat;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+    
+    private async Task GenerarQRTarjeta()
+    {
+        if (cliente == null) return;
+        
+        try
+        {
+            var url = $"{NavigationManager.BaseUri}cliente/{cliente.Id}";
+            qrImagenBase64 = QrGeneratorService.GenerarQRBase64(url, 12);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generando QR: {ex.Message}");
+        }
+    }
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .container {
+        min-height: 100vh;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+
+    .wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        max-width: 400px;
+        width: 100%;
+    }
+
+    /* Tarjeta */
+    .card {
+        width: 100%;
+        background: white;
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Logo */
+    .logo {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .logo img {
+        height: 50px;
+        width: auto;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Folio */
+    .folio {
+        background: #f0f0f0;
+        padding: 0.5rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+        color: #333;
+        text-align: center;
+    }
+
+    /* Nombre */
+    .nombre {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+
+    /* Categoría */
+    .categoria {
+        display: inline-block;
+        background: #f59e0b;
+        color: white;
+        padding: 0.3rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        width: auto;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Contacto */
+    .contacto-lista {
+        margin-bottom: 1rem;
+    }
+
+    .contacto-item {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .contacto-item i {
+        width: 24px;
+        font-size: 1rem;
+        color: #f59e0b;
+    }
+
+    .contacto-item span {
+        font-size: 0.85rem;
+        color: #555;
+        word-break: break-all;
+    }
+
+    /* QR */
+    .qr-grande {
+        text-align: center;
+        margin: 0.2rem 0 0.2rem 0;
+    }
+
+    .qr-grande img {
+        width: 140px;
+        height: 140px;
+        background: white;
+        padding: 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        margin-bottom: 0;
+    }
+
+    .qr-grande p {
+        font-size: 0.7rem;
+        color: #999;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Estado */
+    .estado {
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        margin: 0;
+        padding: 0;
+    }
+
+    .estado.activo {
+        color: #10b981;
+    }
+
+    .estado.inactivo {
+        color: #ef4444;
+    }
+
+    /* Botones */
+    .botones {
+        display: flex;
+        gap: 0.8rem;
+        width: 100%;
+    }
+
+    .btn-whatsapp {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.8rem;
+        border-radius: 40px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        border: none;
+        background: #25D366;
+        color: white;
+    }
+
+    .btn-whatsapp:hover {
+        background: #128C7E;
+        transform: scale(1.02);
+    }
+
+    .btn-descargar {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.8rem;
+        border-radius: 40px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        border: none;
+        background: #1e293b;
+        color: white;
+    }
+
+    .btn-descargar:hover {
+        background: #0f172a;
+        transform: scale(1.02);
+    }
+
+    /* Loading y Error */
+    .loading, .error {
+        background: white;
+        padding: 2rem;
+        border-radius: 16px;
+        text-align: center;
+        max-width: 300px;
+        width: 100%;
+    }
+
+    /* Responsive */
+    @@media (max-width: 480px) {
+        .container {
+            padding: 1rem;
+        }
+
+        .card {
+            padding: 1.5rem;
+        }
+
+        .nombre {
+            font-size: 1.2rem;
+        }
+
+        .qr-grande img {
+            width: 120px;
+            height: 120px;
+        }
+
+        .contacto-item span {
+            font-size: 0.75rem;
+        }
+
+        .btn-whatsapp, .btn-descargar {
+            font-size: 0.75rem;
+            padding: 0.7rem;
+        }
+    }
+</style>

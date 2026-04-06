@@ -1,0 +1,862 @@
+@page "/clientes/crear"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Models
+@using RamsCottons.Data
+@using System.ComponentModel.DataAnnotations
+
+@attribute [Authorize]
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject RoleManager<IdentityRole> RoleManager
+
+<PageTitle>Nuevo Cliente | RAMS Cottons</PageTitle>
+
+<div class="crear-cliente-container">
+    <br>
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="title-icon">
+                    <i class="bi bi-person-plus-fill"></i>
+                </div>
+                <div>
+                    <h1>Nuevo Cliente</h1>
+                    <p class="subtitle">Registre un nuevo cliente en el sistema</p>
+                </div>
+            </div>
+            <button class="btn-back" @onclick="Volver">
+                <i class="bi bi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Columna Principal: Formulario -->
+        <div class="col-lg-8">
+            <div class="form-card">
+                <div class="card-header">
+                    <div class="header-left">
+                        <i class="bi bi-pencil-square"></i>
+                        <h3>Información del Cliente</h3>
+                    </div>
+                    <span class="required-badge">* Campos obligatorios</span>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="modelo" OnValidSubmit="GuardarCliente" FormName="crearCliente">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="validation-summary" />
+
+                        <div class="form-grid">
+                            <!-- Nombre Completo -->
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Nombre Completo <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-person input-icon"></i>
+                                    <InputText @bind-Value="modelo.NombreCompleto"
+                                            class="form-control"
+                                            placeholder="Ej: Juan Carlos Pérez" />
+                                </div>
+                                <ValidationMessage For="() => modelo.NombreCompleto" class="validation-message" />
+                            </div>
+
+                            <!-- Teléfono y Email -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Teléfono <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-telephone input-icon"></i>
+                                    <InputText @bind-Value="modelo.Telefono"
+                                            class="form-control"
+                                            placeholder="+521234567890" />
+                                </div>
+                                <ValidationMessage For="() => modelo.Telefono" class="validation-message" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Correo Electrónico
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-envelope input-icon"></i>
+                                    <InputText @bind-Value="modelo.Correo"
+                                            class="form-control"
+                                            placeholder="cliente@correo.com" />
+                                </div>
+                                <ValidationMessage For="() => modelo.Correo" class="validation-message" />
+                            </div>
+
+                            <!-- Categoría -->
+                            <div class="form-group full-width">
+                                <label class="form-label">Categoría</label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-tags input-icon"></i>
+                                    <select @bind="modelo.IdCategoriaProducto" class="form-control">
+                                        <option value="">Seleccione una categoría</option>
+                                        @foreach (var cat in categorias)
+                                        {
+                                            <option value="@cat.IdCategoria">@cat.NombreCat</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 🔥 SUPERADMIN: Campos extra para asignar a otro administrador -->
+                            @if (esSuperAdmin)
+                            {
+                                <div class="form-group full-width">
+                                    <label class="form-label">Asignar a Administrador <span class="text-danger">*</span></label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-person-badge input-icon"></i>
+                                        <select @bind="selectedAdminId" class="form-control">
+                                            <option value="">Seleccione un administrador</option>
+                                            @foreach (var admin in administradores)
+                                            {
+                                                <option value="@admin.Id">@admin.NombreCompleto (@admin.Email)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group full-width">
+                                    <label class="form-label">Sucursal <span class="text-danger">*</span></label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-building input-icon"></i>
+                                        <select @bind="selectedSucursalId" class="form-control">
+                                            @foreach (var suc in sucursales)
+                                            {
+                                                <option value="@suc.IdSucursal">@suc.NombreSucursal</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Mensaje Informativo -->
+                            <div class="info-message full-width">
+                                <i class="bi bi-info-circle-fill"></i>
+                                <span>
+                                    <strong>Nota:</strong> El cliente quedará registrado con estado activo. Puedes generar su código QR después.
+                                </span>
+                            </div>
+
+                            <!-- Botones de Acción -->
+                            <div class="form-actions full-width">
+                                <button type="submit" class="btn-submit" disabled="@guardando">
+                                    @if (guardando)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-check-lg me-2"></i>
+                                    }
+                                    @(guardando ? "Guardando..." : "Guardar Cliente")
+                                </button>
+                                <button type="button" class="btn-cancel" @onclick="Volver">
+                                    <i class="bi bi-x-lg me-2"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna Lateral: Información y Ayuda -->
+        <div class="col-lg-4">
+            <!-- Tarjeta de Proceso -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="bi bi-diagram-3"></i>
+                    <h4>Proceso de Registro</h4>
+                </div>
+                <div class="info-card-body">
+                    <div class="process-step">
+                        <div class="step-number">1</div>
+                        <div class="step-text">Completa el formulario con los datos del cliente</div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">2</div>
+                        <div class="step-text">El sistema valida la información</div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">3</div>
+                        <div class="step-text">El cliente queda registrado en la base de datos</div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-number">4</div>
+                        <div class="step-text">Genera el código QR para el cliente</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de Consejo -->
+            <div class="tip-card">
+                <i class="bi bi-lightbulb"></i>
+                <div>
+                    <h5>Consejo de Registro</h5>
+                    <p>Utiliza un teléfono válido y un correo electrónico real para que el cliente pueda recibir sus promociones y código QR.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toasts para notificaciones -->
+    @if (!string.IsNullOrEmpty(mensajeExito))
+    {
+        <div class="toast-notification toast-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@mensajeExito</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="toast-notification toast-error">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>@error</span>
+        </div>
+    }
+</div>
+
+@code {
+    private List<CategoriaProducto> categorias = new();
+    private List<Sucursal> sucursales = new();
+    private List<ApplicationUser> administradores = new();
+    private bool guardando = false;
+    private string? error;
+    private string? mensajeExito;
+    private ClienteModel modelo = new();
+
+    // Variables para SuperAdmin
+    private bool esSuperAdmin = false;
+    private string selectedAdminId = "";
+    private int selectedSucursalId = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        await CargarCategorias();
+        await CargarSucursales();
+        await CargarUsuarioActual();
+        
+        if (esSuperAdmin)
+        {
+            await CargarAdministradores();
+        }
+    }
+
+    private async Task CargarUsuarioActual()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        esSuperAdmin = user.IsInRole("SuperAdministrador");
+    }
+
+    private async Task CargarAdministradores()
+    {
+        // Obtener todos los usuarios con rol Administrador
+        var admins = await UserManager.GetUsersInRoleAsync("Administrador");
+        administradores = admins.ToList();
+    }
+
+    private async Task CargarSucursales()
+    {
+        try
+        {
+            sucursales = await DbContext.Sucursales.ToListAsync();
+            if (sucursales.Any())
+            {
+                selectedSucursalId = sucursales.First().IdSucursal;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando sucursales: {ex.Message}");
+        }
+    }
+
+    private async Task CargarCategorias()
+    {
+        try
+        {
+            categorias = await DbContext.CategoriaProductos.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            error = $"Error cargando categorías: {ex.Message}";
+        }
+    }
+
+    private async Task GuardarCliente()
+    {
+        guardando = true;
+        error = null;
+        mensajeExito = null;
+
+        try
+        {
+            string idUsuario;
+            int idSucursal;
+
+            if (esSuperAdmin)
+            {
+                // Validar que seleccionó un administrador
+                if (string.IsNullOrEmpty(selectedAdminId))
+                {
+                    error = "Debes seleccionar un administrador";
+                    return;
+                }
+                idUsuario = selectedAdminId;
+                idSucursal = selectedSucursalId;
+            }
+            else
+            {
+                // Obtener usuario actual
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+                var usuario = await UserManager.GetUserAsync(user);
+                
+                if (usuario == null)
+                {
+                    error = "No se pudo identificar al usuario actual.";
+                    return;
+                }
+                idUsuario = usuario.Id;
+                
+                // Obtener la sucursal del usuario (por ahora temporal)
+                // TODO: Obtener id_sucursal del usuario
+                idSucursal = 1;
+            }
+
+            // Verificar si el teléfono ya existe
+            var existe = await DbContext.Clientes.AnyAsync(c => c.Telefono == modelo.Telefono);
+            if (existe)
+            {
+                error = "Ya existe un cliente con este número de teléfono.";
+                return;
+            }
+
+            var cliente = new Cliente
+            {
+                NombreCompleto = modelo.NombreCompleto,
+                Telefono = modelo.Telefono,
+                Correo = modelo.Correo,
+                IdUsuario = idUsuario,
+                IdSucursal = idSucursal,
+                IdCategoriaProducto = modelo.IdCategoriaProducto > 0 ? modelo.IdCategoriaProducto : null,
+                FechaRegistro = DateTime.Now,
+                Estado = 1
+            };
+
+            DbContext.Clientes.Add(cliente);
+            await DbContext.SaveChangesAsync();
+
+            mensajeExito = $"✅ Cliente {modelo.NombreCompleto} registrado correctamente.";
+            
+            await Task.Delay(2000);
+            NavigationManager.NavigateTo("/clientes");
+        }
+        catch (Exception ex)
+        {
+            error = $"Error inesperado: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/clientes");
+    }
+
+    private class ClienteModel
+    {
+        [Required(ErrorMessage = "El nombre completo es obligatorio")]
+        [StringLength(180, MinimumLength = 3, ErrorMessage = "El nombre debe tener entre 3 y 180 caracteres")]
+        public string NombreCompleto { get; set; } = "";
+
+        [Required(ErrorMessage = "El teléfono es obligatorio")]
+        [RegularExpression(@"^[0-9+\s-]{8,20}$", ErrorMessage = "Formato de teléfono inválido")]
+        public string Telefono { get; set; } = "";
+
+        [EmailAddress(ErrorMessage = "Formato de correo inválido")]
+        public string? Correo { get; set; }
+
+        public int? IdCategoriaProducto { get; set; }
+    }
+}
+
+<style>
+    .crear-cliente-container {
+        padding-bottom: 2rem;
+        min-height: 100vh;
+    }
+
+    /* Header */
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #e5e7eb;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        background: #0f172a;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .subtitle {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: #f9fafb;
+        transform: translateX(-2px);
+    }
+
+    /* Form Card */
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .header-left i {
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+
+    .header-left h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .required-badge {
+        font-size: 0.7rem;
+        color: #6b7280;
+        background: #e5e7eb;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .card-body {
+        padding: 2rem 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.85rem;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        color: #9ca3af;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.7rem 1rem 0.7rem 2.5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0f172a;
+        box-shadow: 0 0 0 3px rgba(15,23,42,0.1);
+    }
+
+    .validation-message {
+        color: #ef4444;
+        font-size: 0.75rem;
+    }
+
+    .validation-summary {
+        background: #fee2e2;
+        border: 1px solid #ef4444;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        color: #991b1b;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        grid-column: 1 / -1;
+    }
+
+    /* Info Card */
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .info-card-header i {
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+
+    .info-card-header h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .info-card-body {
+        padding: 1.5rem;
+    }
+
+    /* Process Steps */
+    .process-step {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .process-step:last-child {
+        margin-bottom: 0;
+    }
+
+    .step-number {
+        width: 28px;
+        height: 28px;
+        background: #e5e7eb;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: #374151;
+    }
+
+    .step-text {
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+
+    /* Tip Card */
+    .tip-card {
+        background: rgba(15, 23, 42, 0.05);
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .tip-card i {
+        font-size: 1.5rem;
+        color: #0f172a;
+    }
+
+    .tip-card h5 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+    }
+
+    .tip-card p {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    /* Info Message */
+    .info-message {
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #3b82f6;
+        font-size: 0.85rem;
+        margin: 1rem 0;
+        border-left: 4px solid #3b82f6;
+    }
+
+    .info-message i {
+        font-size: 1.25rem;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .btn-submit {
+        background: #0f172a;
+        border: none;
+        color: white;
+        padding: 0.7rem 2rem;
+        border-radius: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 160px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+        background: #020617;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        padding: 0.7rem 2rem;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-cancel:hover {
+        background: #f9fafb;
+        transform: translateY(-1px);
+    }
+
+    /* Toasts */
+    .toast-notification {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        z-index: 1000;
+        border-left: 4px solid;
+        animation: slideIn 0.3s ease;
+        max-width: 400px;
+    }
+
+    .toast-success {
+        border-left-color: #10b981;
+    }
+
+    .toast-success i {
+        color: #10b981;
+    }
+
+    .toast-error {
+        border-left-color: #ef4444;
+    }
+
+    .toast-error i {
+        color: #ef4444;
+    }
+
+    .toast-notification span {
+        font-size: 0.9rem;
+        color: #374151;
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* Utilidades */
+    .text-danger { color: #ef4444; }
+    .me-2 { margin-right: 0.5rem; }
+    .mt-3 { margin-top: 0.75rem; }
+    .spinner-border {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Layout de columnas */
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -0.75rem;
+    }
+
+    .col-lg-8 {
+        width: 66.666%;
+        padding: 0 0.75rem;
+    }
+
+    .col-lg-4 {
+        width: 33.333%;
+        padding: 0 0.75rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-submit, .btn-cancel {
+            width: 100%;
+        }
+
+        .row {
+            flex-direction: column;
+        }
+
+        .col-lg-8, .col-lg-4 {
+            width: 100%;
+        }
+    }
+</style>

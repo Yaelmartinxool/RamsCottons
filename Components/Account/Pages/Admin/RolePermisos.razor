@@ -1,0 +1,858 @@
+@page "/admin/roles/permisos/{RoleName}"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Data
+
+@attribute [Authorize(Roles = "SuperAdministrador")]
+
+@inject RoleManager<IdentityRole> RoleManager
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+
+<PageTitle>Permisos del Rol | RAMS Cottons</PageTitle>
+<br>
+<div class="page-wrapper">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="title-icon" style="background: @GetRoleColor(RoleName);">
+                    <i class="@GetRoleIcon(RoleName)"></i>
+                </div>
+                <div>
+                    <h1>Permisos: @RoleName</h1>
+                    <p class="subtitle">@GetRoleDescription(RoleName)</p>
+                </div>
+            </div>
+            <button class="btn-back" @onclick="Volver">
+                <i class="bi bi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    @if (cargando)
+    {
+        <div class="loading-container">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-3 text-muted">Cargando permisos...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10b98120, #05966920); color: #059669;">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">@permisosAsignados.Count</span>
+                    <span class="stat-label">Permisos Asignados</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f620, #2563eb20); color: #2563eb;">
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">@totalPermisos</span>
+                    <span class="stat-label">Total Permisos</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input 
+                    type="text" 
+                    placeholder="Buscar permiso..." 
+                    @bind="filtroBusqueda"
+                    @bind:event="oninput"
+                />
+            </div>
+            <div class="filter-results">
+                <span class="results-badge">
+                    <i class="bi bi-funnel me-1"></i>
+                    @permisosFiltrados.Count de @totalPermisos
+                </span>
+            </div>
+        </div>
+
+        <!-- Permissions Table -->
+        <div class="table-container">
+            <div class="table-responsive">
+                <table class="crud-table">
+                    <thead>
+                        <tr>
+                            <th>Permiso</th>
+                            <th>Módulo</th>
+                            <th>Estado</th>
+                            </tr>
+                        </thead>
+                    <tbody>
+                        @if (!permisosFiltrados.Any())
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center py-5">
+                                    <div class="no-data">
+                                        @if (string.IsNullOrWhiteSpace(filtroBusqueda))
+                                        {
+                                            <i class="bi bi-shield-slash display-4 text-muted"></i>
+                                            <p class="mb-0">No hay permisos disponibles</p>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-search display-4 text-muted"></i>
+                                            <p class="mb-0">No se encontraron permisos</p>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var permiso in permisosFiltrados)
+                            {
+                                var estaAsignado = permisosAsignados.Any(p => p.Id == permiso.Id);
+                                
+                                <tr class="@(estaAsignado ? "asignado" : "")">
+                                    <td>
+                                        <div class="permiso-info">
+                                            <div class="permiso-icon" style="background: @GetPermisoColor(permiso.Modulo);">
+                                                <i class="@GetPermisoIcon(permiso.Nombre)"></i>
+                                            </div>
+                                            <div class="permiso-details">
+                                                <span class="permiso-nombre">@permiso.Nombre</span>
+                                                <span class="permiso-descripcion">@(string.IsNullOrEmpty(permiso.Descripcion) ? GetPermisoDefaultDesc(permiso.Nombre) : permiso.Descripcion)</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="modulo-badge" style="background: @GetModuloColor(permiso.Modulo);">
+                                            @permiso.Modulo
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (Mode == "edit")
+                                        {
+                                            <label class="checkbox-switch">
+                                                <input type="checkbox" 
+                                                       checked="@estaAsignado" 
+                                                       @onchange="(e) => CambiarPermiso(permiso.Id, (bool)e.Value!)" />
+                                                <span class="slider"></span>
+                                            </label>
+                                        }
+                                        else
+                                        {
+                                            if (estaAsignado)
+                                            {
+                                                <span class="estado-badge asignado">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                                    Asignado
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="estado-badge no-asignado">
+                                                    <i class="bi bi-circle me-1"></i>
+                                                    No asignado
+                                                </span>
+                                            }
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (RoleName?.ToLower() == "superadministrador")
+        {
+            <div class="admin-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                El rol SuperAdministrador tiene todos los permisos por defecto.
+            </div>
+        }
+        else if (RoleName?.ToLower() == "administrador")
+        {
+            <div class="admin-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                El rol Administrador tiene permisos completos dentro de su sucursal.
+            </div>
+        }
+        else if (RoleName?.ToLower() == "gerente")
+        {
+            <div class="admin-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                El rol Gerente tiene permisos de supervisión y reportes.
+            </div>
+        }
+        else if (RoleName?.ToLower() == "vendedor")
+        {
+            <div class="admin-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                El rol Vendedor tiene permisos básicos de registro de clientes.
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public string? RoleName { get; set; } = string.Empty;
+    [SupplyParameterFromQuery] public string? Mode { get; set; }
+
+    private List<Permiso> todosPermisos = new();
+    private List<Permiso> permisosAsignados = new();
+    private List<Permiso> permisosFiltrados => AplicarFiltro();
+    private int totalPermisos => todosPermisos.Count;
+    private bool cargando = true;
+    private string filtroBusqueda = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+  private async Task CargarDatos()
+{
+    cargando = true;
+
+    try
+    {
+        if (string.IsNullOrEmpty(RoleName))
+        {
+            NavigationManager.NavigateTo("/admin/roles");
+            return;
+        }
+
+        var rol = await RoleManager.FindByNameAsync(RoleName);
+        if (rol == null)
+        {
+            NavigationManager.NavigateTo("/admin/roles");
+            return;
+        }
+
+        // Cargar todos los permisos
+        todosPermisos = await DbContext.Permisos.OrderBy(p => p.Modulo).ThenBy(p => p.Nombre).ToListAsync();
+
+        // Cargar los permisos asignados a este rol
+        var permisosAsignadosIds = await DbContext.RolesPermisos
+            .Where(rp => rp.RoleId == rol.Id)
+            .Select(rp => rp.PermisoId)
+            .ToListAsync();
+
+        permisosAsignados = todosPermisos.Where(p => permisosAsignadosIds.Contains(p.Id)).ToList();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error cargando permisos: {ex.Message}");
+    }
+    finally
+    {
+        cargando = false;
+    }
+}
+
+    private async Task CambiarPermiso(int permisoId, bool estaAsignado)
+{
+    if (string.IsNullOrEmpty(RoleName))
+    {
+        Console.WriteLine("RoleName es nulo o vacío");
+        return;
+    }
+
+    var rol = await RoleManager.FindByNameAsync(RoleName);
+    if (rol == null)
+    {
+        Console.WriteLine($"Rol '{RoleName}' no encontrado");
+        return;
+    }
+
+    if (estaAsignado)
+    {
+        // Agregar permiso
+        var rolPermiso = new RolPermiso
+        {
+            RoleId = rol.Id,
+            PermisoId = permisoId,
+            FechaAsignacion = DateTime.Now
+        };
+        DbContext.RolesPermisos.Add(rolPermiso);
+    }
+    else
+    {
+        // Quitar permiso
+        var rolPermiso = await DbContext.RolesPermisos
+            .FirstOrDefaultAsync(rp => rp.RoleId == rol.Id && rp.PermisoId == permisoId);
+        if (rolPermiso != null)
+        {
+            DbContext.RolesPermisos.Remove(rolPermiso);
+        }
+    }
+
+    await DbContext.SaveChangesAsync();
+    await CargarDatos(); // Recargar la lista
+}
+
+    private List<Permiso> AplicarFiltro()
+    {
+        if (string.IsNullOrWhiteSpace(filtroBusqueda))
+            return todosPermisos;
+
+        var busqueda = filtroBusqueda.ToLower().Trim();
+        return todosPermisos
+            .Where(p => p.Nombre.ToLower().Contains(busqueda) ||
+                       (p.Descripcion != null && p.Descripcion.ToLower().Contains(busqueda)) ||
+                       (p.Modulo != null && p.Modulo.ToLower().Contains(busqueda)))
+            .ToList();
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/admin/roles");
+    }
+
+    private string GetRoleColor(string? roleName)
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+            return "linear-gradient(135deg, #64748b, #475569)";
+
+        return roleName switch
+        {
+            "SuperAdministrador" => "linear-gradient(135deg, #7c3aed, #5b21b6)",
+            "Administrador" => "linear-gradient(135deg, #1e293b, #0f172a)",
+            "Gerente" => "linear-gradient(135deg, #0891b2, #0e7490)",
+            "Vendedor" => "linear-gradient(135deg, #059669, #047857)",
+            _ => "linear-gradient(135deg, #64748b, #475569)"
+        };
+    }
+
+    private string GetRoleIcon(string? roleName)
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+            return "bi bi-person-badge";
+
+        return roleName switch
+        {
+            "SuperAdministrador" => "bi bi-shield-fill-check",
+            "Administrador" => "bi bi-person-fill-gear",
+            "Gerente" => "bi bi-graph-up",
+            "Vendedor" => "bi bi-shop",
+            _ => "bi bi-person-badge"
+        };
+    }
+
+    private string GetRoleDescription(string? roleName)
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+            return "Rol personalizado";
+
+        return roleName switch
+        {
+            "SuperAdministrador" => "Control total del sistema, todos los permisos",
+            "Administrador" => "Administración por sucursal, puede crear usuarios",
+            "Gerente" => "Supervisión, reportes, ver todo",
+            "Vendedor" => "Registrar clientes y ver promociones",
+            _ => "Rol personalizado"
+        };
+    }
+
+    private string GetPermisoColor(string? modulo)
+    {
+        if (string.IsNullOrWhiteSpace(modulo))
+            return "linear-gradient(135deg, #64748b, #475569)";
+
+        return modulo.ToLower() switch
+        {
+            "usuarios" => "linear-gradient(135deg, #3b82f6, #2563eb)",
+            "roles" => "linear-gradient(135deg, #8b5cf6, #7c3aed)",
+            "clientes" => "linear-gradient(135deg, #10b981, #059669)",
+            "promociones" => "linear-gradient(135deg, #f97316, #ea580c)",
+            "whatsapp" => "linear-gradient(135deg, #25D366, #128C7E)",
+            "sucursales" => "linear-gradient(135deg, #06b6d4, #0891b2)",
+            "categorías" => "linear-gradient(135deg, #f59e0b, #d97706)",
+            "reportes" => "linear-gradient(135deg, #ef4444, #dc2626)",
+            "configuración" => "linear-gradient(135deg, #6b7280, #4b5563)",
+            _ => "linear-gradient(135deg, #64748b, #475569)"
+        };
+    }
+
+    private string GetModuloColor(string? modulo)
+    {
+        return GetPermisoColor(modulo);
+    }
+
+    private string GetPermisoIcon(string? permisoNombre)
+    {
+        if (string.IsNullOrWhiteSpace(permisoNombre))
+            return "bi bi-shield";
+
+        if (permisoNombre.Contains("Ver")) return "bi bi-eye";
+        if (permisoNombre.Contains("Crear")) return "bi bi-plus-circle";
+        if (permisoNombre.Contains("Editar")) return "bi bi-pencil";
+        if (permisoNombre.Contains("Eliminar")) return "bi bi-trash";
+        if (permisoNombre.Contains("Exportar")) return "bi bi-download";
+        if (permisoNombre.Contains("Importar")) return "bi bi-upload";
+        if (permisoNombre.Contains("Activar")) return "bi bi-toggle-on";
+        if (permisoNombre.Contains("Asignar")) return "bi bi-link";
+        if (permisoNombre.Contains("Generar QR")) return "bi bi-qr-code";
+        if (permisoNombre.Contains("Respaldar")) return "bi bi-database";
+        if (permisoNombre.Contains("Logs")) return "bi bi-file-text";
+        
+        return "bi bi-shield";
+    }
+
+    private string GetPermisoDefaultDesc(string? permisoNombre)
+    {
+        if (string.IsNullOrWhiteSpace(permisoNombre))
+            return "Permiso del sistema";
+
+        if (permisoNombre.Contains("Ver")) return "Visualizar información";
+        if (permisoNombre.Contains("Crear")) return "Crear nuevos registros";
+        if (permisoNombre.Contains("Editar")) return "Modificar información existente";
+        if (permisoNombre.Contains("Eliminar")) return "Eliminar registros";
+        
+        return "Permiso del sistema";
+    }
+}
+
+<style>
+    /* ===== ESTILOS CORREGIDOS CON SCROLL ===== */
+    :root {
+        --primary: #0f172a;
+        --primary-dark: #020617;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --info: #3b82f6;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f8fafc;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+    }
+
+    /* IMPORTANTE: Esto permite que toda la página haga scroll */
+    .page-wrapper {
+        padding-bottom: 2rem;
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid var(--gray-200);
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        position: relative;
+    }
+
+    .title-icon i {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -48%);
+    }
+
+    h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .subtitle {
+        color: var(--gray-500);
+        font-size: 0.8rem;
+        margin: 0.25rem 0 0 0;
+    }
+
+    .btn-back {
+        background: var(--gray-100);
+        border: 1px solid var(--gray-200);
+        color: var(--gray-700);
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-back:hover {
+        background: white;
+        border-color: var(--gray-300);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid var(--gray-200);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        line-height: 1.2;
+    }
+
+    .stat-label {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .filters-container {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .search-box {
+        flex: 1;
+        position: relative;
+    }
+
+    .search-box i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        font-size: 0.9rem;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 0.6rem 1rem 0.6rem 2.5rem;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        background: var(--gray-50);
+        transition: all 0.2s ease;
+    }
+
+    .search-box input:focus {
+        outline: none;
+        border-color: var(--primary);
+        background: white;
+        box-shadow: 0 0 0 3px rgba(15,23,42,0.1);
+    }
+
+    .filter-results {
+        color: var(--gray-500);
+        font-size: 0.8rem;
+    }
+
+    .results-badge {
+        background: var(--gray-100);
+        color: var(--gray-700);
+        padding: 0.35rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        max-height: none;
+    }
+
+    .crud-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .crud-table thead {
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .crud-table th {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .crud-table td {
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--gray-200);
+        vertical-align: middle;
+        font-size: 0.85rem;
+    }
+
+    .crud-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .crud-table tr.asignado {
+        background: rgba(16, 185, 129, 0.02);
+    }
+
+    .crud-table tr.asignado:hover {
+        background: rgba(16, 185, 129, 0.05);
+    }
+
+    .permiso-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .permiso-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+    }
+
+    .permiso-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .permiso-nombre {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 0.9rem;
+    }
+
+    .permiso-descripcion {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin-top: 0.1rem;
+    }
+
+    .modulo-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: white;
+        display: inline-block;
+    }
+
+    .estado-badge {
+        padding: 0.35rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .estado-badge.asignado {
+        background: rgba(16, 185, 129, 0.1);
+        color: #047857;
+    }
+
+    .estado-badge.no-asignado {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    /* Checkbox Switch */
+    .checkbox-switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+
+    .checkbox-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.3s;
+        border-radius: 34px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: var(--success);
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(20px);
+    }
+
+    .admin-info {
+        background: rgba(59, 130, 246, 0.05);
+        border: 1px solid rgba(59, 130, 246, 0.1);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1.5rem;
+        color: var(--info);
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        border-left: 4px solid var(--info);
+    }
+
+    .admin-info i {
+        font-size: 1.1rem;
+        color: var(--info);
+    }
+
+    .loading-container {
+        background: white;
+        border-radius: 12px;
+        padding: 3rem;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid var(--gray-200);
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 2rem;
+        color: var(--gray-500);
+    }
+
+    .no-data i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: var(--gray-300);
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .filters-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filter-results {
+            text-align: center;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

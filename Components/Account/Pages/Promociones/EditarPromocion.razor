@@ -1,0 +1,1046 @@
+@page "/promociones/editar/{Id:int}"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using RamsCottons.Models
+@using RamsCottons.Data
+@using System.ComponentModel.DataAnnotations
+@attribute [Authorize(Roles = "SuperAdministrador,Administrador")]
+
+@inject ApplicationDbContext DbContext
+@inject NavigationManager NavigationManager
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IWebHostEnvironment WebHostEnvironment
+@inject IJSRuntime JS
+
+<PageTitle>Editar Promoción | RAMS Cottons</PageTitle>
+
+<div class="editar-promo-container">
+    <br>
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-title">
+                <div class="title-icon">
+                    <i class="bi bi-pencil-fill"></i>
+                </div>
+                <div>
+                    <h1>Editar Promoción</h1>
+                    <p class="subtitle">Modifique los datos de la promoción</p>
+                </div>
+            </div>
+            <button class="btn-back" @onclick="Volver">
+                <i class="bi bi-arrow-left"></i>
+                <span>Volver</span>
+            </button>
+        </div>
+    </div>
+
+    @if (cargando)
+    {
+        <div class="loading-container">
+            <div class="spinner-border text-primary"></div>
+            <p>Cargando información de la promoción...</p>
+        </div>
+    }
+    else if (promocion == null)
+    {
+        <div class="error-container">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <h3>Promoción no encontrada</h3>
+            <p>La promoción que intentas editar no existe o ha sido eliminada.</p>
+            <button class="btn-back" @onclick="Volver">Volver</button>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="form-card">
+                    <div class="card-header">
+                        <div class="header-left">
+                            <i class="bi bi-pencil-square"></i>
+                            <h3>Información de la Promoción</h3>
+                        </div>
+                        <span class="required-badge">* Campos obligatorios</span>
+                    </div>
+                    <div class="card-body">
+                        <EditForm Model="modelo" OnValidSubmit="GuardarPromocion" FormName="editarPromocion">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="validation-summary" />
+
+                            <div class="form-grid">
+                                <!-- Título -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Título de la Promoción <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-tag input-icon"></i>
+                                        <InputText @bind-Value="modelo.Titulo" class="form-control" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.Titulo" class="validation-message" />
+                                </div>
+
+                                <!-- Descripción -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Descripción <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-file-text input-icon"></i>
+                                        <InputTextArea @bind-Value="modelo.Descripcion" class="form-control" rows="3" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.Descripcion" class="validation-message" />
+                                </div>
+
+                                <!-- Precio -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Precio <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-currency-dollar input-icon"></i>
+                                        <InputNumber @bind-Value="modelo.Precio" class="form-control" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.Precio" class="validation-message" />
+                                </div>
+
+                                <!-- Descuento -->
+                                <div class="form-group">
+                                    <label class="form-label">Descuento (%)</label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-percent input-icon"></i>
+                                        <InputNumber @bind-Value="modelo.DescuentoPorcentaje" class="form-control" />
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Descuento (Monto)</label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-currency-dollar input-icon"></i>
+                                        <InputNumber @bind-Value="modelo.DescuentoMonto" class="form-control" />
+                                    </div>
+                                </div>
+
+                                <!-- Fechas -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Fecha de Inicio <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-calendar-plus input-icon"></i>
+                                        <InputDate @bind-Value="modelo.FechaInicio" class="form-control" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.FechaInicio" class="validation-message" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Fecha de Fin <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-calendar-x input-icon"></i>
+                                        <InputDate @bind-Value="modelo.FechaFin" class="form-control" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.FechaFin" class="validation-message" />
+                                </div>
+
+                                <!-- 🔥 SUPERADMIN: Reasignar a otro administrador -->
+                                @if (esSuperAdmin)
+                                {
+                                    <div class="form-group full-width">
+                                        <label class="form-label">
+                                            Asignar a Administrador <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-person-badge input-icon"></i>
+                                            <select @bind="selectedAdminId" class="form-control">
+                                                <option value="">Seleccione un administrador</option>
+                                                @foreach (var admin in administradores)
+                                                {
+                                                    <option value="@admin.Id">@admin.NombreCompleto (@admin.Email)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <ValidationMessage For="() => selectedAdminId" class="validation-message" />
+                                    </div>
+                                }
+
+                                <!-- Archivo actual -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">Archivo actual</label>
+                                    @if (!string.IsNullOrEmpty(promocion.pdf_url))
+                                    {
+                                        if (promocion.pdf_url.EndsWith(".pdf"))
+                                        {
+                                            <div class="current-file">
+                                                <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+                                                <span>@promocion.pdf_nombre</span>
+                                                <a href="@promocion.pdf_url" target="_blank" class="btn-view-file">
+                                                    <i class="bi bi-eye"></i> Ver
+                                                </a>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="current-file">
+                                                <i class="bi bi-file-earmark-image-fill text-primary"></i>
+                                                <span>@promocion.pdf_nombre</span>
+                                                <a href="@promocion.pdf_url" target="_blank" class="btn-view-file">
+                                                    <i class="bi bi-eye"></i> Ver
+                                                </a>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted">No hay archivo subido</p>
+                                    }
+                                </div>
+
+                                <!-- Reemplazar archivo -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">Reemplazar archivo (opcional)</label>
+                                    <div class="file-upload-container">
+                                        <label for="fileInput" class="file-upload-btn">
+                                            <i class="bi bi-cloud-upload-fill"></i>
+                                            <span>Seleccionar archivo</span>
+                                        </label>
+                                        <span class="file-name">
+                                            @(string.IsNullOrEmpty(nombreArchivo) ? "Ningún archivo seleccionado" : nombreArchivo)
+                                        </span>
+                                        <InputFile id="fileInput" OnChange="OnFileSelected" accept=".pdf,.jpg,.jpeg,.png" style="display:none" />
+                                    </div>
+                                </div>
+
+                                <!-- Estado -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">Estado</label>
+                                    <div class="status-toggle">
+                                        <label class="toggle-switch">
+                                            <InputCheckbox @bind-Value="modelo.Activo" />
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                        <span class="status-text">@(modelo.Activo ? "Activa" : "Inactiva")</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="form-actions">
+                                <button type="submit" class="btn-submit" disabled="@guardando">
+                                    @if (guardando)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-check-lg me-2"></i>
+                                    }
+                                    @(guardando ? "Guardando..." : "Guardar Cambios")
+                                </button>
+                                <button type="button" class="btn-cancel" @onclick="Volver">
+                                    <i class="bi bi-x-lg me-2"></i>
+                                    Cancelar
+                                </button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <i class="bi bi-info-circle"></i>
+                        <h4>Información</h4>
+                    </div>
+                    <div class="info-card-body">
+                        <div class="info-item">
+                            <span class="info-label">ID:</span>
+                            <span class="info-value">@promocion.Id</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Token único:</span>
+                            <span class="info-value">@promocion.TokenUnico</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Creada:</span>
+                            <span class="info-value">@promocion.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Enlace:</span>
+                            <span class="info-value">
+                                <a href="@($"https://marquis-leavenless-nonseparably.ngrok-free.dev/promociones/{promocion.TokenUnico}")" target="_blank">
+                                    Ver promoción
+                                </a>
+                            </span>
+                        </div>
+                        @if (!esSuperAdmin && promocion.ApplicationUserId != null)
+                        {
+                            <div class="info-item">
+                                <span class="info-label">Creado por:</span>
+                                <span class="info-value">@nombreCreador</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Promocion? promocion;
+    private PromocionModel modelo = new();
+    private bool cargando = true;
+    private bool guardando = false;
+    private string? error;
+    private string? mensajeExito;
+    private string? nombreArchivo;
+    private string? archivoBase64;
+    private string? archivoContentType;
+    private string? nombreCreador;
+    
+    // Variables para SuperAdmin
+    private bool esSuperAdmin = false;
+    private List<ApplicationUser> administradores = new();
+    private string selectedAdminId = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPromocion();
+        await CargarUsuarioActual();
+        await CargarAdministradores();
+    }
+
+    private async Task CargarUsuarioActual()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        esSuperAdmin = user.IsInRole("SuperAdministrador");
+    }
+
+    private async Task CargarAdministradores()
+    {
+        if (esSuperAdmin)
+        {
+            var admins = await UserManager.GetUsersInRoleAsync("Administrador");
+            administradores = admins.ToList();
+        }
+    }
+
+    private async Task CargarPromocion()
+    {
+        cargando = true;
+        try
+        {
+            promocion = await DbContext.Promociones.FirstOrDefaultAsync(p => p.Id == Id);
+            
+            if (promocion != null)
+            {
+                modelo = new PromocionModel
+                {
+                    Titulo = promocion.Titulo,
+                    Descripcion = promocion.Descripcion ?? "",
+                    Precio = promocion.Precio,
+                    DescuentoPorcentaje = promocion.DescuentoPorcentaje,
+                    DescuentoMonto = promocion.DescuentoMonto,
+                    FechaInicio = promocion.FechaInicio,
+                    FechaFin = promocion.FechaFin,
+                    Activo = promocion.Activo
+                };
+                nombreArchivo = promocion.pdf_nombre;
+                
+                // Cargar nombre del creador
+                if (!string.IsNullOrEmpty(promocion.ApplicationUserId))
+                {
+                    var creador = await UserManager.FindByIdAsync(promocion.ApplicationUserId);
+                    nombreCreador = creador?.NombreCompleto ?? creador?.Email;
+                }
+                
+                // Si es SuperAdmin, cargar el administrador asignado
+                if (esSuperAdmin && !string.IsNullOrEmpty(promocion.ApplicationUserId))
+                {
+                    selectedAdminId = promocion.ApplicationUserId;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        try
+        {
+            if (file.Size > 10 * 1024 * 1024)
+            {
+                error = "El archivo no puede superar los 10MB";
+                return;
+            }
+
+            nombreArchivo = file.Name;
+            archivoContentType = file.ContentType;
+            
+            using var stream = file.OpenReadStream(10_000_000);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            archivoBase64 = Convert.ToBase64String(ms.ToArray());
+            
+            error = null;
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al cargar el archivo: {ex.Message}";
+        }
+    }
+
+    private async Task GuardarPromocion()
+    {
+        if (promocion == null) return;
+
+        guardando = true;
+        error = null;
+        mensajeExito = null;
+
+        try
+        {
+            // Validar fechas
+            if (modelo.FechaInicio > modelo.FechaFin)
+            {
+                error = "La fecha de inicio no puede ser mayor a la fecha de fin";
+                return;
+            }
+
+            // Validar que SuperAdmin seleccionó un administrador
+            if (esSuperAdmin && string.IsNullOrEmpty(selectedAdminId))
+            {
+                error = "Debes seleccionar un administrador";
+                return;
+            }
+
+            // Actualizar datos
+            promocion.Titulo = modelo.Titulo;
+            promocion.Descripcion = modelo.Descripcion ?? "";
+            promocion.Precio = modelo.Precio;
+            promocion.DescuentoPorcentaje = modelo.DescuentoPorcentaje;
+            promocion.DescuentoMonto = modelo.DescuentoMonto;
+            promocion.FechaInicio = modelo.FechaInicio;
+            promocion.FechaFin = modelo.FechaFin;
+            promocion.Activo = modelo.Activo;
+            promocion.FechaActualizacion = DateTime.Now;
+            
+            // Si es SuperAdmin, actualizar el administrador asignado
+            if (esSuperAdmin)
+            {
+                promocion.ApplicationUserId = selectedAdminId;
+            }
+
+            // Si se subió un nuevo archivo
+            if (!string.IsNullOrEmpty(archivoBase64))
+            {
+                var uploadsFolder = Path.Combine(WebHostEnvironment.WebRootPath, "uploads", "promociones");
+                Directory.CreateDirectory(uploadsFolder);
+                
+                var fileName = $"{promocion.TokenUnico}_{DateTime.Now.Ticks}{Path.GetExtension(nombreArchivo)}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+                
+                var bytes = Convert.FromBase64String(archivoBase64);
+                await File.WriteAllBytesAsync(filePath, bytes);
+                
+                promocion.pdf_url = $"/uploads/promociones/{fileName}";
+                promocion.pdf_nombre = nombreArchivo;
+                promocion.pdf_ruta = filePath;
+            }
+
+            await DbContext.SaveChangesAsync();
+
+            mensajeExito = $"✅ Promoción '{modelo.Titulo}' actualizada correctamente!";
+            
+            await Task.Delay(1500);
+            NavigationManager.NavigateTo("/promociones");
+        }
+        catch (Exception ex)
+        {
+            error = $"Error inesperado: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private void Volver()
+    {
+        NavigationManager.NavigateTo("/promociones");
+    }
+
+    private class PromocionModel
+    {
+        [Required(ErrorMessage = "El título es obligatorio")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "El título debe tener entre 3 y 100 caracteres")]
+        public string Titulo { get; set; } = "";
+
+        [Required(ErrorMessage = "La descripción es obligatoria")]
+        [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres")]
+        public string Descripcion { get; set; } = "";
+
+        [Required(ErrorMessage = "El precio es obligatorio")]
+        [Range(0.01, 999999.99, ErrorMessage = "El precio debe ser mayor a 0")]
+        public decimal Precio { get; set; }
+
+        [Range(0, 100, ErrorMessage = "El descuento debe estar entre 0 y 100%")]
+        public decimal? DescuentoPorcentaje { get; set; }
+
+        [Range(0, 999999, ErrorMessage = "El monto debe ser mayor a 0")]
+        public decimal? DescuentoMonto { get; set; }
+
+        [Required(ErrorMessage = "La fecha de inicio es obligatoria")]
+        public DateTime FechaInicio { get; set; } = DateTime.Today;
+
+        [Required(ErrorMessage = "La fecha de fin es obligatoria")]
+        public DateTime FechaFin { get; set; } = DateTime.Today.AddDays(30);
+        
+        public bool Activo { get; set; } = true;
+    }
+}
+<style>
+    .editar-promo-container {
+        padding-bottom: 2rem;
+        min-height: 100vh;
+    }
+
+    /* Header */
+    .dashboard-header {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #e5e7eb;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .title-icon {
+        width: 50px;
+        height: 50px;
+        background: #0f172a;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .subtitle {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .btn-back {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-back:hover {
+        background: #f9fafb;
+        transform: translateX(-2px);
+    }
+
+    /* Form Card */
+    .form-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .header-left i {
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+
+    .header-left h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .required-badge {
+        font-size: 0.7rem;
+        color: #6b7280;
+        background: #e5e7eb;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .card-body {
+        padding: 2rem 1.5rem;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #374151;
+        font-size: 0.85rem;
+    }
+
+    .input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        color: #9ca3af;
+        font-size: 1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.7rem 1rem 0.7rem 2.5rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    textarea.form-control {
+        padding: 0.7rem 1rem 0.7rem 2.5rem;
+        resize: vertical;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #0f172a;
+        box-shadow: 0 0 0 3px rgba(15,23,42,0.1);
+    }
+
+    .validation-message {
+        color: #ef4444;
+        font-size: 0.75rem;
+    }
+
+    .validation-summary {
+        background: #fee2e2;
+        border: 1px solid #ef4444;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        color: #991b1b;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        grid-column: 1 / -1;
+    }
+
+    /* File Upload */
+    .file-upload-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .file-upload-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: #0f172a;
+        color: white;
+        padding: 0.7rem 1.2rem;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .file-upload-btn:hover {
+        background: #020617;
+        transform: translateY(-1px);
+    }
+
+    .file-name {
+        font-size: 0.85rem;
+        color: #6b7280;
+    }
+
+    .current-file {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 1rem;
+        background: #f3f4f6;
+        border-radius: 10px;
+    }
+
+    .current-file i {
+        font-size: 1.2rem;
+    }
+
+    .btn-view-file {
+        background: #0f172a;
+        color: white;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        text-decoration: none;
+        font-size: 0.7rem;
+    }
+
+    /* Status Toggle */
+    .status-toggle {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 24px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .3s;
+        border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: #10b981;
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(26px);
+    }
+
+    .status-text {
+        font-size: 0.85rem;
+        color: #374151;
+    }
+
+    /* Info Card */
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card-header {
+        padding: 1.25rem 1.5rem;
+        background: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .info-card-header i {
+        color: #0f172a;
+        font-size: 1.25rem;
+    }
+
+    .info-card-header h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+    }
+
+    .info-card-body {
+        padding: 1.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .info-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-label {
+        width: 100px;
+        color: #6b7280;
+    }
+
+    .info-value {
+        color: #1f2937;
+        font-weight: 500;
+        word-break: break-all;
+    }
+
+    .info-value a {
+        color: #f59e0b;
+        text-decoration: none;
+    }
+
+    .info-value a:hover {
+        text-decoration: underline;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        grid-column: 1 / -1;
+    }
+
+    .btn-submit, .btn-cancel {
+        flex: 1;
+        padding: 0.7rem;
+        border-radius: 10px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-submit {
+        background: #0f172a;
+        border: none;
+        color: white;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+        background: #020617;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-submit:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel {
+        background: white;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+    }
+
+    .btn-cancel:hover {
+        background: #f9fafb;
+        transform: translateY(-1px);
+    }
+
+    /* Loading & Error */
+    .loading-container, .error-container {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .error-container i {
+        font-size: 3rem;
+        color: #ef4444;
+        margin-bottom: 1rem;
+    }
+
+    /* Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-inactive {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    /* Layout */
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -0.75rem;
+    }
+
+    .col-lg-8 {
+        width: 66.666%;
+        padding: 0 0.75rem;
+    }
+
+    .col-lg-4 {
+        width: 33.333%;
+        padding: 0 0.75rem;
+    }
+
+    .text-muted {
+        color: #6b7280;
+    }
+
+    .text-danger {
+        color: #ef4444;
+    }
+
+    .me-2 {
+        margin-right: 0.5rem;
+    }
+
+    .spinner-border {
+        width: 1rem;
+        height: 1rem;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+        display: inline-block;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .row {
+            flex-direction: column;
+        }
+
+        .col-lg-8, .col-lg-4 {
+            width: 100%;
+        }
+
+        .info-item {
+            flex-direction: column;
+        }
+
+        .info-label {
+            width: auto;
+            margin-bottom: 0.25rem;
+        }
+    }
+</style>
