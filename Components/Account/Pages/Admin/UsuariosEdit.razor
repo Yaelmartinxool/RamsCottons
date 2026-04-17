@@ -12,6 +12,7 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject RoleManager<IdentityRole> RoleManager
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Editar Usuario | RAMS Cottons</PageTitle>
 <br>
@@ -86,20 +87,21 @@ else
                                     </div>
                                     <ValidationMessage For="() => modelo.NombreCompleto" class="validation-message" />
                                 </div>
+
                                 <!-- Nombre de Usuario (Login) -->
-<div class="form-group full-width">
-    <label class="form-label">
-        Nombre de Usuario <span class="text-danger">*</span>
-    </label>
-    <div class="input-wrapper">
-        <i class="bi bi-at input-icon"></i>
-        <InputText @bind-Value="modelo.UserName"
-                class="form-control"
-                placeholder="usuario" />
-    </div>
-    <ValidationMessage For="() => modelo.UserName" class="validation-message" />
-    <span class="field-hint">Nombre único para iniciar sesión</span>
-</div>
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Nombre de Usuario <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-at input-icon"></i>
+                                        <InputText @bind-Value="modelo.UserName"
+                                                class="form-control"
+                                                placeholder="usuario" />
+                                    </div>
+                                    <ValidationMessage For="() => modelo.UserName" class="validation-message" />
+                                    <span class="field-hint">Nombre único para iniciar sesión</span>
+                                </div>
 
                                 <!-- Email y Teléfono -->
                                 <div class="form-group">
@@ -232,7 +234,26 @@ else
                                     </div>
                                 </div>
 
-                
+                                <!-- 🔥 CAMPO PARA ASIGNAR ADMINISTRADOR (SOLO PARA SUPERADMIN) -->
+                                @if (esSuperAdmin && (modelo.Rol == "Vendedor" || modelo.Rol == "Gerente"))
+                                {
+                                    <div class="form-group full-width">
+                                        <label class="form-label">
+                                            Asignar a Administrador <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-person-badge input-icon"></i>
+                                            <select @bind="selectedAdminSucursal" class="form-control">
+                                                <option value="0">Seleccione un administrador</option>
+                                                @foreach (var admin in administradores)
+                                                {
+                                                    <option value="@admin.IdSucursal">@admin.NombreCompleto (Sucursal @admin.IdSucursal)</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <span class="field-hint">Selecciona a qué administrador pertenecerá este usuario</span>
+                                    </div>
+                                }
 
                                 <!-- Botones de Acción -->
                                 <div class="form-actions full-width">
@@ -275,7 +296,6 @@ else
                             <span class="info-label">Nombre de usuario:</span>
                             <span class="info-value">@usuario.UserName</span>
                         </div>
-                
                     </div>
                 </div>
 
@@ -286,34 +306,34 @@ else
                         <h4>Roles Disponibles</h4>
                     </div>
                     <div class="info-card-body">
-                     <div class="role-info-item">
-    <span class="role-tag role-tag-superadmin">
-        <i class="bi bi-shield-fill-check me-1"></i>
-        SuperAdministrador
-    </span>
-    <p class="role-description">Control total del sistema, todos los permisos.</p>
-</div>
-<div class="role-info-item">
-    <span class="role-tag role-tag-admin">
-        <i class="bi bi-person-fill-gear me-1"></i>
-        Administrador
-    </span>
-    <p class="role-description">Administración por sucursal, puede crear usuarios.</p>
-</div>
-<div class="role-info-item">
-    <span class="role-tag role-tag-gerente">
-        <i class="bi bi-graph-up me-1"></i>
-        Gerente
-    </span>
-    <p class="role-description">Supervisión, reportes, acceso a todas las sucursales.</p>
-</div>
-<div class="role-info-item">
-    <span class="role-tag role-tag-vendedor">
-        <i class="bi bi-shop me-1"></i>
-        Vendedor
-    </span>
-    <p class="role-description">Registrar clientes y ver promociones.</p>
-</div>
+                        <div class="role-info-item">
+                            <span class="role-tag role-tag-superadmin">
+                                <i class="bi bi-shield-fill-check me-1"></i>
+                                SuperAdministrador
+                            </span>
+                            <p class="role-description">Control total del sistema, todos los permisos.</p>
+                        </div>
+                        <div class="role-info-item">
+                            <span class="role-tag role-tag-admin">
+                                <i class="bi bi-person-fill-gear me-1"></i>
+                                Administrador
+                            </span>
+                            <p class="role-description">Administración por sucursal, puede crear usuarios.</p>
+                        </div>
+                        <div class="role-info-item">
+                            <span class="role-tag role-tag-gerente">
+                                <i class="bi bi-graph-up me-1"></i>
+                                Gerente
+                            </span>
+                            <p class="role-description">Supervisión, reportes, acceso a todas las sucursales.</p>
+                        </div>
+                        <div class="role-info-item">
+                            <span class="role-tag role-tag-vendedor">
+                                <i class="bi bi-shop me-1"></i>
+                                Vendedor
+                            </span>
+                            <p class="role-description">Registrar clientes y ver promociones.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -358,6 +378,10 @@ else
     private string? error;
     private string? mensajeExito;
     private List<IdentityRole> roles = new();
+    private bool esSuperAdmin = false;
+    private List<ApplicationUser> administradores = new();
+    private int? selectedAdminSucursal = null;
+    private int sucursalUsuarioActual = 0;
 
     private EditModel modelo = new();
 
@@ -382,17 +406,33 @@ else
 
             if (usuario is not null)
             {
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+                esSuperAdmin = user.IsInRole("SuperAdministrador");
+
+                var usuarioActual = await UserManager.GetUserAsync(user);
+                if (usuarioActual != null)
+                {
+                    sucursalUsuarioActual = usuarioActual.IdSucursal ?? 0;
+                }
+
+                if (esSuperAdmin)
+                {
+                    administradores = (await UserManager.GetUsersInRoleAsync("Administrador")).ToList();
+                    selectedAdminSucursal = usuario.IdSucursal ?? 0;
+                }
+
                 var userRoles = await UserManager.GetRolesAsync(usuario);
                 
-               modelo = new EditModel
-{
-    NombreCompleto = usuario.NombreCompleto,
-    UserName = usuario.UserName,
-    Email = usuario.Email,
-    Telefono = usuario.Telefono,
-    Activo = usuario.Activo,
-    Rol = userRoles.FirstOrDefault() ?? ""
-};
+                modelo = new EditModel
+                {
+                    NombreCompleto = usuario.NombreCompleto,
+                    UserName = usuario.UserName,
+                    Email = usuario.Email,
+                    Telefono = usuario.Telefono,
+                    Activo = usuario.Activo,
+                    Rol = userRoles.FirstOrDefault() ?? ""
+                };
             }
         }
         catch (Exception ex)
@@ -410,147 +450,157 @@ else
         modelo.Rol = rol;
     }
 
-private string GetRoleDescription(string? rol)
-{
-    return rol switch
+    private string GetRoleDescription(string? rol)
     {
-        "SuperAdministrador" => "Control total del sistema, todos los permisos",
-        "Administrador" => "Administración por sucursal, puede crear usuarios",
-        "Gerente" => "Supervisión, reportes, ver todo",
-        "Vendedor" => "Registrar clientes y ver promociones",
-        _ => "Acceso al sistema"
-    };
-}
+        return rol switch
+        {
+            "SuperAdministrador" => "Control total del sistema, todos los permisos",
+            "Administrador" => "Administración por sucursal, puede crear usuarios",
+            "Gerente" => "Supervisión, reportes, ver todo",
+            "Vendedor" => "Registrar clientes y ver promociones",
+            _ => "Acceso al sistema"
+        };
+    }
 
-   private async Task Guardar()
-{
-    if (usuario is null)
-        return;
-
-    guardando = true;
-    error = null;
-    mensajeExito = null;
-
-    try
+    private async Task Guardar()
     {
-        // Verificar si el email ya está en uso por otro usuario
-        if (usuario.Email != modelo.Email)
-        {
-            var existingUser = await UserManager.FindByEmailAsync(modelo.Email!);
-            if (existingUser != null && existingUser.Id != usuario.Id)
-            {
-                error = "Ya existe otro usuario con este correo electrónico.";
-                return;
-            }
-        }
-
-        // VERIFICAR NOMBRE DE USUARIO (AGREGA ESTO)
-        if (usuario.UserName != modelo.UserName)
-        {
-            var existingUser = await UserManager.FindByNameAsync(modelo.UserName!);
-            if (existingUser != null && existingUser.Id != usuario.Id)
-            {
-                error = "Ya existe otro usuario con este nombre de usuario.";
-                return;
-            }
-        }
-
-        // Actualizar datos básicos
-        usuario.NombreCompleto = modelo.NombreCompleto;
-        usuario.UserName = modelo.UserName;
-        usuario.Email = modelo.Email;
-        usuario.Telefono = modelo.Telefono;
-        usuario.Activo = modelo.Activo;
-
-        var updateResult = await UserManager.UpdateAsync(usuario);
-
-        if (!updateResult.Succeeded)
-        {
-            error = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+        if (usuario is null)
             return;
-        }
 
-        // Actualizar rol
-        var rolesActuales = await UserManager.GetRolesAsync(usuario);
-        if (rolesActuales.Any())
+        guardando = true;
+        error = null;
+        mensajeExito = null;
+
+        try
         {
-            await UserManager.RemoveFromRolesAsync(usuario, rolesActuales);
+            if (usuario.Email != modelo.Email)
+            {
+                var existingUser = await UserManager.FindByEmailAsync(modelo.Email!);
+                if (existingUser != null && existingUser.Id != usuario.Id)
+                {
+                    error = "Ya existe otro usuario con este correo electrónico.";
+                    return;
+                }
+            }
+
+            if (usuario.UserName != modelo.UserName)
+            {
+                var existingUser = await UserManager.FindByNameAsync(modelo.UserName!);
+                if (existingUser != null && existingUser.Id != usuario.Id)
+                {
+                    error = "Ya existe otro usuario con este nombre de usuario.";
+                    return;
+                }
+            }
+
+            usuario.NombreCompleto = modelo.NombreCompleto;
+            usuario.UserName = modelo.UserName;
+            usuario.Email = modelo.Email;
+            usuario.Telefono = modelo.Telefono;
+            usuario.Activo = modelo.Activo;
+
+            var updateResult = await UserManager.UpdateAsync(usuario);
+
+            if (!updateResult.Succeeded)
+            {
+                error = string.Join(", ", updateResult.Errors.Select(e => e.Description));
+                return;
+            }
+
+            var rolesActuales = await UserManager.GetRolesAsync(usuario);
+            if (rolesActuales.Any())
+            {
+                await UserManager.RemoveFromRolesAsync(usuario, rolesActuales);
+            }
+            
+            if (!string.IsNullOrEmpty(modelo.Rol))
+            {
+                await UserManager.AddToRoleAsync(usuario, modelo.Rol);
+            }
+
+            // 🔥 ACTUALIZAR SUCURSAL (SOLO PARA VENDEDOR O GERENTE)
+            if (esSuperAdmin && (modelo.Rol == "Vendedor" || modelo.Rol == "Gerente"))
+            {
+                usuario.IdSucursal = selectedAdminSucursal;
+            }
+            else if (!esSuperAdmin && (modelo.Rol == "Vendedor" || modelo.Rol == "Gerente"))
+            {
+                usuario.IdSucursal = sucursalUsuarioActual;
+            }
+            else
+            {
+                usuario.IdSucursal = null;
+            }
+
+            await UserManager.UpdateAsync(usuario);
+
+            mensajeExito = $"Usuario {modelo.NombreCompleto} actualizado correctamente.";
+            
+            await CargarUsuario();
+
+            await Task.Delay(2000);
+            NavigationManager.NavigateTo("/admin/usuarios");
         }
-        
-        if (!string.IsNullOrEmpty(modelo.Rol))
+        catch (Exception ex)
         {
-            await UserManager.AddToRoleAsync(usuario, modelo.Rol);
+            error = $"Error inesperado: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private Task ReenviarConfirmacion()
+    {
+        if (usuario is null || usuario.EmailConfirmed)
+            return Task.CompletedTask;
+
+        reenviandoConfirmacion = true;
+        error = null;
+        mensajeExito = null;
+
+        try
+        {
+            mensajeExito = $"📧 Correo de confirmación reenviado a {usuario.Email}";
+        }
+        catch (Exception ex)
+        {
+            error = $"Error al reenviar correo: {ex.Message}";
+        }
+        finally
+        {
+            reenviandoConfirmacion = false;
         }
 
-        mensajeExito = $"Usuario {modelo.NombreCompleto} actualizado correctamente.";
-        
-        // Recargar datos actualizados
-        await CargarUsuario();
-
-        // Redirigir después de 2 segundos
-        await Task.Delay(2000);
-        NavigationManager.NavigateTo("/admin/usuarios");
-    }
-    catch (Exception ex)
-    {
-        error = $"Error inesperado: {ex.Message}";
-    }
-    finally
-    {
-        guardando = false;
-    }
-}
-
-   private Task ReenviarConfirmacion()
-{
-    if (usuario is null || usuario.EmailConfirmed)
         return Task.CompletedTask;
-
-    reenviandoConfirmacion = true;
-    error = null;
-    mensajeExito = null;
-
-    try
-    {
-        mensajeExito = $"📧 Correo de confirmación reenviado a {usuario.Email}";
     }
-    catch (Exception ex)
-    {
-        error = $"Error al reenviar correo: {ex.Message}";
-    }
-    finally
-    {
-        reenviandoConfirmacion = false;
-    }
-
-    return Task.CompletedTask;
-}
 
     private void Volver()
     {
         NavigationManager.NavigateTo("/admin/usuarios");
     }
 
-private class EditModel
-{
-    [Required(ErrorMessage = "El nombre completo es obligatorio")]
-    public string? NombreCompleto { get; set; }
+    private class EditModel
+    {
+        [Required(ErrorMessage = "El nombre completo es obligatorio")]
+        public string? NombreCompleto { get; set; }
 
-    [Required(ErrorMessage = "El nombre de usuario es obligatorio")]
-    public string? UserName { get; set; }
+        [Required(ErrorMessage = "El nombre de usuario es obligatorio")]
+        public string? UserName { get; set; }
 
-    [Required(ErrorMessage = "El correo es obligatorio")]
-    [EmailAddress(ErrorMessage = "Formato de correo inválido")]
-    public string? Email { get; set; }
+        [Required(ErrorMessage = "El correo es obligatorio")]
+        [EmailAddress(ErrorMessage = "Formato de correo inválido")]
+        public string? Email { get; set; }
 
-    [Required(ErrorMessage = "El teléfono es obligatorio")]
-    public string? Telefono { get; set; }
+        [Required(ErrorMessage = "El teléfono es obligatorio")]
+        public string? Telefono { get; set; }
 
-    public bool Activo { get; set; }
+        public bool Activo { get; set; }
 
-    [Required(ErrorMessage = "Debes seleccionar un rol")]
-    public string Rol { get; set; } = "";
-}
+        [Required(ErrorMessage = "Debes seleccionar un rol")]
+        public string Rol { get; set; } = "";
+    }
 }
 
 <style>

@@ -16,6 +16,7 @@
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject NavigationManager NavigationManager
 @inject PermisoService PermisoService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Crear Usuario | RAMS Cottons</PageTitle>
 <br>
@@ -177,6 +178,27 @@
                                 </div>
                             </div>
 
+                            <!-- Campo para asignar a Administrador (solo para SuperAdmin cuando el rol es Vendedor o Gerente) -->
+                            @if (esSuperAdmin && (model.Rol == "Vendedor" || model.Rol == "Gerente"))
+                            {
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Asignar a Administrador <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-person-badge input-icon"></i>
+                                        <select @bind="selectedAdminId" class="form-control">
+                                            <option value="">Seleccione un administrador</option>
+                                            @foreach (var admin in administradores)
+                                            {
+                                                <option value="@admin.IdSucursal">@admin.NombreCompleto (Sucursal @admin.IdSucursal)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <span class="field-hint">Selecciona a qué administrador pertenecerá este usuario</span>
+                                </div>
+                            }
+
                             <!-- Mensaje Informativo -->
                             <div class="info-message full-width">
                                 <i class="bi bi-info-circle-fill"></i>
@@ -306,6 +328,10 @@
 
 @code {
     private List<IdentityRole> roles = new();
+    private List<ApplicationUser> administradores = new();
+    private int? selectedAdminId = null;
+    private bool esSuperAdmin = false;
+    private int? sucursalAdminActual = null;
     private bool cargando;
     private string? error;
     private string? mensajeExito;
@@ -315,11 +341,30 @@
     protected override async Task OnInitializedAsync()
     {
         roles = await RoleManager.Roles.ToListAsync();
+        
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        esSuperAdmin = user.IsInRole("SuperAdministrador");
+        
+        if (esSuperAdmin)
+        {
+            administradores = (await UserManager.GetUsersInRoleAsync("Administrador")).ToList();
+        }
+        else
+        {
+            var usuarioActual = await UserManager.GetUserAsync(user);
+            sucursalAdminActual = usuarioActual?.IdSucursal;
+        }
     }
 
     private void SeleccionarRol(string rol)
     {
         model.Rol = rol;
+        // Resetear selección de administrador cuando cambia el rol
+        if (rol != "Vendedor" && rol != "Gerente")
+        {
+            selectedAdminId = null;
+        }
     }
 
     private string GetRoleDescription(string? rol)
@@ -342,6 +387,16 @@
 
         try
         {
+            // Validar selección de administrador para Vendedor/Gerente creados por SuperAdmin
+            if (esSuperAdmin && (model.Rol == "Vendedor" || model.Rol == "Gerente"))
+            {
+                if (selectedAdminId == null || selectedAdminId == 0)
+                {
+                    error = "Debes seleccionar un administrador para este Vendedor/Gerente.";
+                    return;
+                }
+            }
+
             // Verificar si el nombre de usuario ya existe
             var existenteUser = await UserManager.FindByNameAsync(model.UserName);
             if (existenteUser != null)
@@ -369,6 +424,20 @@
                 FechaRegistro = DateTime.Now
             };
 
+            // Asignar sucursal según el caso
+            if (esSuperAdmin && (model.Rol == "Vendedor" || model.Rol == "Gerente"))
+            {
+                user.IdSucursal = selectedAdminId;
+            }
+            else if (!esSuperAdmin && (model.Rol == "Vendedor" || model.Rol == "Gerente"))
+            {
+                user.IdSucursal = sucursalAdminActual;
+            }
+            else
+            {
+                user.IdSucursal = null;
+            }
+
             var result = await UserManager.CreateAsync(user, model.Password);
 
             if (!result.Succeeded)
@@ -382,7 +451,6 @@
             {
                 await UserManager.AddToRoleAsync(user, model.Rol);
                 
-                // Asignar permisos automáticos si es Gerente o Vendedor
                 if (model.Rol == "Gerente" || model.Rol == "Vendedor")
                 {
                     await PermisoService.AsignarPermisosPorRol(model.Rol);
@@ -409,6 +477,7 @@
             mensajeExito = $"✅ Usuario {model.NombreCompleto} creado. Se envió correo a {model.Email}.";
 
             model = new Modelo();
+            selectedAdminId = null;
             await Task.Delay(3000);
             NavigationManager.NavigateTo("/admin/usuarios");
         }

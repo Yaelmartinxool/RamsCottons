@@ -139,15 +139,15 @@
                                     </label>
                                     <div class="input-wrapper">
                                         <i class="bi bi-person-badge input-icon"></i>
-                                        <select @bind="selectedAdminId" class="form-control">
-                                            <option value="">Seleccione un administrador</option>
+                                        <select @bind="selectedAdminSucursal" class="form-control">
+                                            <option value="0">Seleccione un administrador</option>
                                             @foreach (var admin in administradores)
                                             {
-                                                <option value="@admin.Id">@admin.NombreCompleto (@admin.Email)</option>
+                                                <option value="@admin.IdSucursal">@admin.NombreCompleto (@admin.Email) - Sucursal @admin.IdSucursal</option>
                                             }
                                         </select>
                                     </div>
-                                    <ValidationMessage For="() => selectedAdminId" class="validation-message" />
+                                    <ValidationMessage For="() => selectedAdminSucursal" class="validation-message" />
                                 </div>
                             }
 
@@ -288,10 +288,19 @@
     private string? archivoContentType;
     private string usuarioId = "";
     
-    // Variables para SuperAdmin
+    // Variables para SuperAdmin y sucursal
     private bool esSuperAdmin = false;
-    private List<ApplicationUser> administradores = new();
-    private string selectedAdminId = "";
+    private List<AdministradorInfo> administradores = new();
+    private int selectedAdminSucursal = 0;
+    private int sucursalUsuarioActual = 0;
+
+    private class AdministradorInfo
+    {
+        public string Id { get; set; } = "";
+        public string NombreCompleto { get; set; } = "";
+        public string Email { get; set; } = "";
+        public int IdSucursal { get; set; }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -310,6 +319,7 @@
         if (usuario != null)
         {
             usuarioId = usuario.Id;
+            sucursalUsuarioActual = usuario.IdSucursal ?? 0;
         }
     }
 
@@ -318,7 +328,13 @@
         if (esSuperAdmin)
         {
             var admins = await UserManager.GetUsersInRoleAsync("Administrador");
-            administradores = admins.ToList();
+            administradores = admins.Select(a => new AdministradorInfo
+            {
+                Id = a.Id,
+                NombreCompleto = a.NombreCompleto ?? "",
+                Email = a.Email ?? "",
+                IdSucursal = a.IdSucursal ?? 0
+            }).ToList();
         }
     }
 
@@ -381,7 +397,7 @@
             }
 
             // Validar que SuperAdmin seleccionó un administrador
-            if (esSuperAdmin && string.IsNullOrEmpty(selectedAdminId))
+            if (esSuperAdmin && selectedAdminSucursal == 0)
             {
                 error = "Debes seleccionar un administrador";
                 return;
@@ -406,17 +422,6 @@
             
             var archivoUrl = $"/uploads/promociones/{fileName}";
 
-            // Determinar a quién asignar la promoción
-            string assignedUserId;
-            if (esSuperAdmin)
-            {
-                assignedUserId = selectedAdminId;
-            }
-            else
-            {
-                assignedUserId = usuarioId;
-            }
-
             // Crear promoción
             var promocion = new Promocion
             {
@@ -432,9 +437,25 @@
                 pdf_ruta = filePath,
                 pdf_url = archivoUrl,
                 Activo = true,
-                FechaCreacion = DateTime.Now,
-                ApplicationUserId = assignedUserId
+                FechaCreacion = DateTime.Now
             };
+
+            // 🔥 Asignar ApplicationUserId y IdSucursal según el rol
+            if (esSuperAdmin)
+            {
+                // Buscar el ID del administrador seleccionado (para asignar ApplicationUserId)
+                var adminSeleccionado = administradores.FirstOrDefault(a => a.IdSucursal == selectedAdminSucursal);
+                if (adminSeleccionado != null)
+                {
+                    promocion.ApplicationUserId = adminSeleccionado.Id;
+                }
+                promocion.IdSucursal = selectedAdminSucursal;
+            }
+            else
+            {
+                promocion.ApplicationUserId = usuarioId;
+                promocion.IdSucursal = sucursalUsuarioActual;
+            }
 
             DbContext.Promociones.Add(promocion);
             await DbContext.SaveChangesAsync();
@@ -447,6 +468,7 @@
             nombreArchivo = null;
             archivoBase64 = null;
             archivoContentType = null;
+            selectedAdminSucursal = 0;
             
             // Redirigir a clientes
             await Task.Delay(1500);

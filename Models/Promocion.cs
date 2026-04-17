@@ -53,9 +53,11 @@ namespace RamsCottons.Models
         public string? pdf_ruta { get; set; }
         public string? pdf_url { get; set; }
         
-        // ✅ OPCIONAL: Propiedad de navegación (si la necesitas)
+        // ✅ NUEVA PROPIEDAD: Sucursal de la promoción
+        public int? IdSucursal { get; set; }
+        
+        // ✅ Relación de navegación
         [ForeignKey("ApplicationUserId")]
         public virtual ApplicationUser? ApplicationUser { get; set; }
     }
 }
-

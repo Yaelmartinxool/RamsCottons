@@ -10,6 +10,8 @@
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Reportes | RAMS Cottons</PageTitle>
 
@@ -165,7 +167,9 @@
 
                     <div class="table-responsive">
                         <table class="report-table">
-                            <thead><tr><th>Título</th><th>Precio</th><th>Descuento</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr></thead>
+                            <thead>
+                                <tr><th>Título</th><th>Precio</th><th>Descuento</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr>
+                            </thead>
                             <tbody>
                                 @foreach (var promo in ultimasPromociones)
                                 {
@@ -215,7 +219,9 @@
 
                     <div class="table-responsive">
                         <table class="report-table">
-                            <thead><tr><th>Cliente</th><th>Teléfono</th><th>Promoción</th><th>Fecha Envío</th></tr></thead>
+                            <thead>
+                                <tr><th>Cliente</th><th>Teléfono</th><th>Promoción</th><th>Fecha Envío</th></tr>
+                            </thead>
                             <tbody>
                                 @foreach (var envio in enviosConDatos)
                                 {
@@ -284,6 +290,12 @@
     private int filtroDias = 30;
     private int filtroDiasEnvios = 30;
     
+    // Variables de sucursal y rol
+    private int idSucursalUsuario = 0;
+    private bool esSuperAdmin = false;
+    private bool esAdmin = false;
+    private bool esGerente = false;
+    
     // Clientes
     private int totalClientes = 0;
     private int clientesActivos = 0;
@@ -316,11 +328,28 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await CargarUsuarioActual();
         await CargarResumen();
         await CargarClientes();
         await CargarPromociones();
         await CargarEnvios();
         cargando = false;
+    }
+
+    private async Task CargarUsuarioActual()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        esSuperAdmin = user.IsInRole("SuperAdministrador");
+        esAdmin = user.IsInRole("Administrador");
+        esGerente = user.IsInRole("Gerente");
+        
+        var usuario = await UserManager.GetUserAsync(user);
+        if (usuario != null)
+        {
+            idSucursalUsuario = usuario.IdSucursal ?? 0;
+        }
     }
 
     private async Task CambiarTab(int tab)
@@ -331,32 +360,58 @@
 
     private async Task CargarResumen()
     {
-        totalClientes = await DbContext.Clientes.CountAsync();
-        clientesActivos = await DbContext.Clientes.CountAsync(c => c.Estado == 1);
+        // Clientes con filtro de sucursal
+        var queryClientes = DbContext.Clientes.AsQueryable();
+        if (!esSuperAdmin && idSucursalUsuario > 0)
+        {
+            queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
+        }
+        
+        totalClientes = await queryClientes.CountAsync();
+        clientesActivos = await queryClientes.CountAsync(c => c.Estado == 1);
         clientesInactivos = totalClientes - clientesActivos;
         
         var inicioMes = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-        clientesNuevosMes = await DbContext.Clientes.CountAsync(c => c.FechaRegistro >= inicioMes);
+        clientesNuevosMes = await queryClientes.CountAsync(c => c.FechaRegistro >= inicioMes);
         
-        totalPromociones = await DbContext.Promociones.CountAsync();
-        promocionesActivas = await DbContext.Promociones.CountAsync(p => p.Activo);
+        // Promociones con filtro de sucursal
+        var queryPromos = DbContext.Promociones.AsQueryable();
+        if (!esSuperAdmin && idSucursalUsuario > 0)
+        {
+            queryPromos = queryPromos.Where(p => p.IdSucursal == idSucursalUsuario);
+        }
+        
+        totalPromociones = await queryPromos.CountAsync();
+        promocionesActivas = await queryPromos.CountAsync(p => p.Activo);
         promocionesInactivas = totalPromociones - promocionesActivas;
         
         var fechaLimite = DateTime.Now.AddDays(7);
-        promocionesPorVencer = await DbContext.Promociones.CountAsync(p => p.Activo && p.FechaFin <= fechaLimite);
+        promocionesPorVencer = await queryPromos.CountAsync(p => p.Activo && p.FechaFin <= fechaLimite);
         
-        totalEnvios = await DbContext.HistorialEnvios.CountAsync();
+        // Envíos con filtro de sucursal (a través de clientes)
+        var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
+        totalEnvios = await DbContext.HistorialEnvios.Where(e => clientesIds.Contains(e.ClienteId)).CountAsync();
+        
         totalUsuarios = await DbContext.Users.CountAsync();
     }
 
     private async Task CargarClientes()
     {
         var query = DbContext.Clientes.AsQueryable();
+        
+        // Filtro por sucursal
+        if (!esSuperAdmin && idSucursalUsuario > 0)
+        {
+            query = query.Where(c => c.IdSucursal == idSucursalUsuario);
+        }
+        
+        // Filtro por días
         if (filtroDias > 0)
         {
             var fechaLimite = DateTime.Now.AddDays(-filtroDias);
             query = query.Where(c => c.FechaRegistro >= fechaLimite);
         }
+        
         totalClientes = await query.CountAsync();
         clientesActivos = await query.CountAsync(c => c.Estado == 1);
         clientesInactivos = totalClientes - clientesActivos;
@@ -365,14 +420,31 @@
 
     private async Task CargarPromociones()
     {
-        ultimasPromociones = await DbContext.Promociones.OrderByDescending(p => p.FechaCreacion).Take(10).ToListAsync();
+        var query = DbContext.Promociones.AsQueryable();
+        
+        // Filtro por sucursal
+        if (!esSuperAdmin && idSucursalUsuario > 0)
+        {
+            query = query.Where(p => p.IdSucursal == idSucursalUsuario);
+        }
+        
+        ultimasPromociones = await query.OrderByDescending(p => p.FechaCreacion).Take(10).ToListAsync();
     }
 
     private async Task CargarEnvios()
     {
+        // Obtener clientes de la sucursal
+        var queryClientes = DbContext.Clientes.AsQueryable();
+        if (!esSuperAdmin && idSucursalUsuario > 0)
+        {
+            queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
+        }
+        var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
+        
         var query = from h in DbContext.HistorialEnvios
                     join c in DbContext.Clientes on h.ClienteId equals c.Id
                     join p in DbContext.Promociones on h.PromocionId equals p.Id
+                    where clientesIds.Contains(h.ClienteId)
                     select new { h.FechaEnvio, ClienteNombre = c.NombreCompleto, ClienteTelefono = c.Telefono, PromocionTitulo = p.Titulo };
         
         if (filtroDiasEnvios > 0)
@@ -404,7 +476,13 @@
             
             if (tabActivo == 1)
             {
-                var clientes = await DbContext.Clientes.ToListAsync();
+                var query = DbContext.Clientes.AsQueryable();
+                if (!esSuperAdmin && idSucursalUsuario > 0)
+                {
+                    query = query.Where(c => c.IdSucursal == idSucursalUsuario);
+                }
+                var clientes = await query.ToListAsync();
+                
                 csv = "Nombre,Teléfono,Correo,Fecha Registro,Estado\n";
                 foreach (var c in clientes)
                     csv += $"\"{c.NombreCompleto}\",\"{c.Telefono}\",\"{c.Correo ?? ""}\",\"{c.FechaRegistro:dd/MM/yyyy}\",\"{(c.Estado == 1 ? "Activo" : "Inactivo")}\"\n";
@@ -412,7 +490,13 @@
             }
             else if (tabActivo == 2)
             {
-                var promos = await DbContext.Promociones.ToListAsync();
+                var query = DbContext.Promociones.AsQueryable();
+                if (!esSuperAdmin && idSucursalUsuario > 0)
+                {
+                    query = query.Where(p => p.IdSucursal == idSucursalUsuario);
+                }
+                var promos = await query.ToListAsync();
+                
                 csv = "Título,Precio,Descuento,Inicio,Fin,Estado\n";
                 foreach (var p in promos)
                     csv += $"\"{p.Titulo}\",{p.Precio},\"{(p.DescuentoPorcentaje.HasValue ? $"{p.DescuentoPorcentaje}%" : "-")}\",\"{p.FechaInicio:dd/MM/yyyy}\",\"{p.FechaFin:dd/MM/yyyy}\",\"{(p.Activo ? "Activa" : "Inactiva")}\"\n";
@@ -420,10 +504,19 @@
             }
             else if (tabActivo == 3)
             {
+                var queryClientes = DbContext.Clientes.AsQueryable();
+                if (!esSuperAdmin && idSucursalUsuario > 0)
+                {
+                    queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
+                }
+                var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
+                
                 var envios = await (from h in DbContext.HistorialEnvios
                                     join c in DbContext.Clientes on h.ClienteId equals c.Id
                                     join p in DbContext.Promociones on h.PromocionId equals p.Id
+                                    where clientesIds.Contains(h.ClienteId)
                                     select new { c.NombreCompleto, c.Telefono, p.Titulo, h.FechaEnvio }).ToListAsync();
+                
                 csv = "Cliente,Teléfono,Promoción,Fecha Envío\n";
                 foreach (var e in envios)
                     csv += $"\"{e.NombreCompleto}\",\"{e.Telefono}\",\"{e.Titulo}\",\"{e.FechaEnvio:dd/MM/yyyy HH:mm}\"\n";
@@ -465,7 +558,12 @@
         {
             if (tabActivo == 1)
             {
-                var todos = await DbContext.Clientes.ToListAsync();
+                var query = DbContext.Clientes.AsQueryable();
+                if (!esSuperAdmin && idSucursalUsuario > 0)
+                {
+                    query = query.Where(c => c.IdSucursal == idSucursalUsuario);
+                }
+                var todos = await query.ToListAsync();
                 DbContext.Clientes.RemoveRange(todos);
                 await DbContext.SaveChangesAsync();
                 await CargarClientes();
@@ -474,7 +572,12 @@
             }
             else if (tabActivo == 2)
             {
-                var todos = await DbContext.Promociones.ToListAsync();
+                var query = DbContext.Promociones.AsQueryable();
+                if (!esSuperAdmin && idSucursalUsuario > 0)
+                {
+                    query = query.Where(p => p.IdSucursal == idSucursalUsuario);
+                }
+                var todos = await query.ToListAsync();
                 DbContext.Promociones.RemoveRange(todos);
                 await DbContext.SaveChangesAsync();
                 await CargarPromociones();
@@ -483,7 +586,14 @@
             }
             else if (tabActivo == 3)
             {
-                var todos = await DbContext.HistorialEnvios.ToListAsync();
+                var queryClientes = DbContext.Clientes.AsQueryable();
+                if (!esSuperAdmin && idSucursalUsuario > 0)
+                {
+                    queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
+                }
+                var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
+                
+                var todos = await DbContext.HistorialEnvios.Where(e => clientesIds.Contains(e.ClienteId)).ToListAsync();
                 DbContext.HistorialEnvios.RemoveRange(todos);
                 await DbContext.SaveChangesAsync();
                 await CargarEnvios();

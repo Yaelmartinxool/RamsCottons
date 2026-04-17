@@ -492,7 +492,7 @@ else
             if (usuario != null)
             {
                 usuarioActualId = usuario.Id;
-                sucursalUsuarioActual = usuario.IdSucursal;
+                sucursalUsuarioActual = usuario.IdSucursal ?? 0;
                 
                 esSuperAdmin = user.IsInRole("SuperAdministrador");
                 esAdmin = user.IsInRole("Administrador");

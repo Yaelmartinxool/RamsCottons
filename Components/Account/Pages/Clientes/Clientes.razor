@@ -454,12 +454,7 @@
             {
                 query = query.Where(c => c.Estado == 0);
             }
-
-            if (esVendedor && !string.IsNullOrEmpty(userId))
-            {
-                query = query.Where(c => c.IdUsuario == userId);
-            }
-            else if (esAdmin && idSucursalUsuario > 0)
+            if ((esVendedor || esAdmin || esGerente) && idSucursalUsuario > 0)
             {
                 query = query.Where(c => c.IdSucursal == idSucursalUsuario);
             }
@@ -505,12 +500,13 @@
             if (esVendedor)
             {
                 userId = usuario.Id;
+                idSucursalUsuario = usuario.IdSucursal ?? 0; 
             }
             else if (esAdmin || esGerente)
             {
-                idSucursalUsuario = usuario.IdSucursal;
+                idSucursalUsuario = usuario.IdSucursal ?? 0;
             }
-            
+                        
             if (esSuperAdmin)
             {
                 idSucursalUsuario = 0;
