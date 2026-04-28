@@ -449,6 +449,13 @@
             if (esSuperAdmin)
             {
                 promocion.ApplicationUserId = selectedAdminId;
+                
+                // 🔥 ACTUALIZAR TAMBIÉN LA SUCURSAL DEL ADMINISTRADOR SELECCIONADO
+                var adminSeleccionado = administradores.FirstOrDefault(a => a.Id == selectedAdminId);
+                if (adminSeleccionado != null)
+                {
+                    promocion.IdSucursal = adminSeleccionado.IdSucursal ?? 0;
+                }
             }
 
             // Si se subió un nuevo archivo
