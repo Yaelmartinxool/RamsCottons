@@ -6,16 +6,1361 @@
 @using Microsoft.EntityFrameworkCore
 @using RamsCottons.Models 
 @using RamsCottons.Data
+@using RamsCottons.Models.CycData
+@using RamsCottons.Services
 
 @attribute [Authorize]
 
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavigationManager
 @inject UserManager<ApplicationUser> UserManager
+@inject WhatsAppService _whatsApp
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
+@inject SucursalService SucursalService
 
 <PageTitle>Clientes | RAMS Cottons</PageTitle>
+
+<style>
+/* ===== ESTILOS GENERALES ===== */
+
+.clientes-container {
+    padding-bottom: 2rem;
+    min-height: 100vh;
+}
+
+.dashboard-header {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border: 1px solid #e5e7eb;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    width: 50px;
+    height: 50px;
+    background: #0f172a;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.header-title h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.subtitle {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.btn-create {
+    background: #0f172a;
+    border: none;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-create:hover {
+    background: #020617;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* ===== CONTROL PANEL ===== */
+
+.control-panel {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border: 1px solid #e5e7eb;
+}
+
+.panel-header {
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.panel-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.panel-title i {
+    color: #0f172a;
+}
+
+.panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.search-box {
+    position: relative;
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 250px;
+    border: 1px solid #e5e7eb;
+}
+
+.search-box i {
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+.search-box input {
+    border: none;
+    background: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-filter,
+.btn-refresh {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    background: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-refresh {
+    padding: 0.4rem;
+}
+
+.btn-filter:hover,
+.btn-refresh:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+/* ===== FILTROS ===== */
+
+.filters-panel {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid #e5e7eb;
+    display: none;
+}
+
+.filters-panel.show {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+.filter-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-row:last-child {
+    margin-bottom: 0;
+}
+
+.filter-group {
+    flex: 1;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.75rem;
+}
+
+.select-custom {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    font-size: 0.85rem;
+    width: 100%;
+}
+
+.form-control-plaintext {
+    padding: 0.4rem 0.75rem;
+    background: #f3f4f6;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #374151;
+}
+
+.btn-clear-filters {
+    padding: 0.4rem 0.75rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    color: #374151;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    justify-content: center;
+}
+
+.btn-clear-filters:hover {
+    background: #f3f4f6;
+}
+
+/* ===== BUSCADOR DE SUCURSAL CON DROPDOWN ===== */
+
+.sucursal-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    transition: all 0.2s ease;
+    gap: 0.5rem;
+    overflow: visible;
+}
+
+.sucursal-search-wrapper:focus-within {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+}
+
+.sucursal-search-wrapper > i:first-child {
+    position: static !important;
+    left: auto !important;
+    color: #9ca3af;
+    font-size: 1rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.sucursal-search-input {
+    border: none;
+    background: none;
+    outline: none;
+    flex: 1;
+    min-width: 0;
+    font-size: 0.85rem;
+    color: #374151;
+    padding: 0;
+    margin: 0;
+}
+
+.sucursal-search-input::placeholder {
+    color: #9ca3af;
+}
+
+.sucursal-search-arrow {
+    color: #9ca3af;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.sucursal-search-arrow.rotated {
+    transform: rotate(180deg);
+}
+
+.sucursal-dropdown {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    animation: dropdownFadeIn 0.15s ease;
+}
+
+.sucursal-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.8rem;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sucursal-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.sucursal-dropdown-item:hover {
+    background: #f9fafb;
+}
+
+.sucursal-dropdown-item.selected {
+    background: rgba(15, 23, 42, 0.05);
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.sucursal-dropdown-item i {
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+.sucursal-dropdown-item.selected i {
+    color: #0f172a;
+}
+
+.sucursal-almacen {
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    min-width: 28px;
+    text-align: center;
+}
+
+.sucursal-dropdown-item.selected .sucursal-almacen {
+    background: #0f172a;
+    color: white;
+}
+
+.sucursal-nombre {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sucursal-dropdown-empty {
+    padding: 1rem;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sucursal-dropdown-empty i {
+    font-size: 1.5rem;
+    opacity: 0.5;
+}
+
+/* ===== TABLA ===== */
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.crud-table {
+    width: 100% !important;
+    border-collapse: collapse;
+    background: white;
+    min-width: 100% !important;
+    table-layout: fixed;
+}
+
+.crud-table thead {
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.crud-table th {
+    padding: 0.6rem 0.4rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.crud-table td {
+    padding: 0.6rem 0.4rem;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+    font-size: 0.85rem;
+    overflow: hidden;
+}
+
+.cliente-row:hover {
+    background: #f9fafb;
+}
+
+/* ===== CHECKBOX ===== */
+
+.crud-table th:nth-child(1),
+.crud-table td:nth-child(1) {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    padding: 0.4rem 0.2rem !important;
+    text-align: center;
+}
+
+input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    accent-color: #0f172a;
+    margin: 0;
+    vertical-align: middle;
+}
+
+.whatsapp-blocked {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    font-size: 0.75rem;
+    opacity: 0.5;
+    cursor: not-allowed;
+    vertical-align: middle;
+}
+
+.whatsapp-blocked i {
+    font-size: 0.75rem;
+}
+
+/* ===== COLUMNAS DE LA TABLA ===== */
+
+.crud-table th:nth-child(2),
+.crud-table td:nth-child(2) {
+    width: 190px !important;
+    min-width: 170px;
+    max-width: 200px;
+}
+
+.crud-table th:nth-child(3),
+.crud-table td:nth-child(3) {
+    width: 80px !important;
+    min-width: 110px;
+    max-width: 130px;
+    white-space: nowrap;
+}
+
+.crud-table th:nth-child(4),
+.crud-table td:nth-child(4) {
+    width: 50px !important;
+    min-width: 50px;
+    max-width: 60px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #94a3b8;
+}
+
+.crud-table th:nth-child(5),
+.crud-table td:nth-child(5) {
+    width: 90px !important;
+    min-width: 100px;
+    max-width: 120px;
+}
+
+.crud-table th:nth-child(6),
+.crud-table td:nth-child(6) {
+    width: 160px !important;
+    min-width: 110px;
+    max-width: 140px;
+}
+
+.crud-table th:nth-child(7),
+.crud-table td:nth-child(7) {
+    width: 250px !important;
+    min-width: 230px;
+    max-width: 270px;
+    font-size: 0.75rem;
+}
+
+.crud-table th:nth-child(8),
+.crud-table td:nth-child(8) {
+    width: 100px !important;
+    min-width: 100px;
+    max-width: 120px;
+    white-space: nowrap;
+}
+
+.crud-table th:nth-child(9),
+.crud-table td:nth-child(9) {
+    width: 90px !important;
+    min-width: 90px;
+    max-width: 110px;
+}
+
+.crud-table th:nth-child(10),
+.crud-table td:nth-child(10) {
+    width: 150px !important;
+    min-width: 140px;
+    max-width: 160px;
+}
+
+/* ===== COLUMNA CLIENTE ===== */
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    background: #0f172a;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.85rem;
+    line-height: 1.3;
+    white-space: normal;
+    word-break: break-word;
+    max-width: 100%;
+}
+
+.text-muted {
+    color: #6b7280;
+    font-size: 0.65rem;
+}
+
+/* ===== BADGES ===== */
+
+.categoria-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1.5px solid;
+    background: transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.categoria-badge:hover {
+    transform: translateY(-1px);
+}
+
+.categoria-ropa {
+    color: #1d4ed8;
+    border-color: #93c5fd;
+    background: #eff6ff;
+}
+
+.categoria-promocion {
+    color: #b45309;
+    border-color: #fcd34d;
+    background: #fffbeb;
+}
+
+.categoria-calzado {
+    color: #047857;
+    border-color: #6ee7b7;
+    background: #ecfdf5;
+}
+
+.categoria-accesorios {
+    color: #6d28d9;
+    border-color: #d8b4fe;
+    background: #faf5ff;
+}
+
+.categoria-default {
+    color: #4b5563;
+    border-color: #d1d5db;
+    background: #f9fafb;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.status-active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.origen-cell {
+    overflow: visible !important;
+    white-space: nowrap;
+}
+
+.origen-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid;
+    white-space: nowrap;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+    max-width: 100%;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+.origen-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.origen-redes {
+    background: #f5edff !important;
+    border-color: #dfc8ff !important;
+    color: #6d28d9 !important;
+}
+
+.origen-web {
+    background: #eaf3ff !important;
+    border-color: #b9d7ff !important;
+    color: #1d4ed8 !important;
+}
+
+.origen-mayoreo {
+    background: #fff7df !important;
+    border-color: #f8d67a !important;
+    color: #a85b00 !important;
+}
+
+.origen-tiendas {
+    background: #fff0f6 !important;
+    border-color: #f8b4cf !important;
+    color: #be185d !important;
+}
+
+.origen-sin {
+    background: #f8fafc !important;
+    border-color: #e5e7eb !important;
+    color: #9ca3af !important;
+}
+
+/* ===== BADGE SUCURSAL ===== */
+
+.sucursal-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+    color: #334155;
+    font-weight: 500;
+    white-space: normal;
+    line-height: 1.35;
+    max-width: 100%;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+/* ===== ACCIONES ===== */
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-action {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 0.8rem;
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.btn-view:hover { background: #3b82f6; color: white; }
+.btn-edit:hover { background: #f59e0b; color: white; }
+.btn-qr:hover   { background: #8b5cf6; color: white; }
+.btn-delete:hover { background: #ef4444; color: white; }
+
+/* ===== FOOTER DE TABLA ===== */
+
+.table-footer {
+    padding: 1rem 1.25rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.total-count,
+.pagination-info {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.total-count span,
+.pagination-info span {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.pagination-wrapper { display: flex; }
+
+.pagination {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.page-item { display: inline-block; }
+.page-item.disabled { opacity: 0.5; pointer-events: none; }
+
+.page-item.active .page-link {
+    background: #0f172a;
+    color: white;
+    border-color: #0f172a;
+}
+
+.page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 0.5rem;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #374151;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.page-link:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+/* ===== LOADING / NO DATA ===== */
+
+.loading-container {
+    background: white;
+    border-radius: 12px;
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.no-data i {
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+/* ===== BATCH ACTIONS BAR ===== */
+
+.batch-actions-bar {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: white;
+    border-radius: 50px;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    border: 1px solid #e5e7eb;
+    animation: slideUp 0.3s ease;
+}
+
+.batch-actions-bar span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.btn-send-whatsapp {
+    background: #25D366;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-send-whatsapp:hover {
+    background: #128C7E;
+    transform: scale(1.02);
+}
+
+.btn-clear-selection {
+    background: #f3f4f6;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.btn-clear-selection:hover { background: #e5e7eb; }
+
+/* ===== MODALES ===== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 24px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    animation: modalFadeIn 0.3s ease;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    max-height: 60vh;
+}
+
+.promociones-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.promocion-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid #e5e7eb;
+}
+
+.promocion-item:hover {
+    background: #f3f4f6;
+    transform: translateX(5px);
+    border-color: #25D366;
+}
+
+.promocion-icon {
+    width: 45px;
+    height: 45px;
+    background: #0f172a;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.promocion-info { flex: 1; }
+
+.promocion-info strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #1f2937;
+}
+
+.promocion-info p {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0.2rem 0;
+}
+
+.promocion-info small {
+    font-size: 0.65rem;
+    color: #f59e0b;
+}
+
+.promocion-action i {
+    font-size: 1.2rem;
+    color: #25D366;
+}
+
+.no-promos {
+    text-align: center;
+    padding: 2rem;
+}
+
+.no-promos i {
+    font-size: 3rem;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+.btn-create-promo {
+    margin-top: 1rem;
+    background: #0f172a;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.clientes-container button.btn-create-first,
+.clientes-container .btn-create-first,
+button.btn-create-first,
+.btn-create-first {
+    /* Reset TOTAL de Bootstrap */
+    all: unset !important;
+    
+    /* Mis estilos */
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+
+    background-color: #0f172a !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+
+    border: none !important;
+    border-radius: 8px !important;
+    outline: none !important;
+
+    padding: 10px 20px !important;
+    margin-top: 16px !important;
+
+    font-family: inherit !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    text-align: center !important;
+    text-decoration: none !important;
+
+    cursor: pointer !important;
+    white-space: nowrap !important;
+
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: fit-content !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+
+    box-sizing: border-box !important;
+    box-shadow: none !important;
+    
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
+
+    /* Resetear estados del botón */
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+}
+
+/* Hover */
+.clientes-container button.btn-create-first:hover,
+.clientes-container .btn-create-first:hover,
+button.btn-create-first:hover,
+.btn-create-first:hover {
+    background-color: #020617 !important;
+    background: #020617 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* Focus */
+.clientes-container button.btn-create-first:focus,
+.clientes-container .btn-create-first:focus,
+button.btn-create-first:focus,
+.btn-create-first:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.2) !important;
+}
+
+/* Ícono dentro del botón */
+.clientes-container .btn-create-first i,
+.clientes-container button.btn-create-first i,
+button.btn-create-first i,
+.btn-create-first i,
+.btn-create-first .bi {
+    font-family: "bootstrap-icons" !important;
+    font-size: 16px !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    line-height: 1 !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    display: inline-block !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Span del texto */
+.clientes-container .btn-create-first span,
+button.btn-create-first span,
+.btn-create-first span {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* ===== ANIMACIONES ===== */
+
+@@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@@keyframes dropdownFadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== RESPONSIVE - TABLET (≤768px) ===== */
+
+@@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .panel-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .panel-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .search-box {
+        width: 100%;
+        min-width: unset;
+        padding: 0.6rem 0.75rem;
+    }
+
+    .search-box input { font-size: 1rem; }
+    .action-buttons   { width: 100%; }
+
+    .btn-filter {
+        flex: 1;
+        width: 100%;
+        justify-content: center;
+        padding: 0.7rem 0.75rem;
+        font-size: 1rem;
+    }
+
+    .btn-refresh { padding: 0.7rem; font-size: 1rem; }
+    .filter-row  { flex-direction: column; }
+
+    .table-footer {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .footer-info {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem;
+    }
+
+    .crud-table { min-width: 1350px !important; }
+
+    .crud-table th,
+    .crud-table td { padding: 0.6rem 0.5rem; }
+
+    .crud-table th { font-size: 0.6rem; }
+    .crud-table td { font-size: 0.75rem; }
+
+    .user-avatar { width: 32px; height: 32px; font-size: 0.85rem; border-radius: 6px; }
+    .user-name   { font-size: 0.8rem; }
+    .text-muted  { font-size: 0.6rem; }
+
+    .categoria-badge { font-size: 0.6rem; padding: 0.2rem 0.5rem; }
+    .status-badge    { font-size: 0.6rem; padding: 0.2rem 0.5rem; gap: 0.15rem; }
+    .btn-action      { width: 28px; height: 28px; font-size: 0.75rem; }
+
+    .action-buttons { gap: 0.2rem; }
+    input[type="checkbox"] { width: 16px; height: 16px; }
+
+    .batch-actions-bar {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        border-radius: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 0.75rem 1rem;
+    }
+
+    .btn-send-whatsapp    { font-size: 0.85rem; padding: 0.5rem 0.8rem; }
+    .btn-clear-selection  { font-size: 0.85rem; padding: 0.5rem 0.8rem; }
+
+     .crud-table th:nth-child(7),
+    .crud-table td:nth-child(7) {
+        width: 280px !important;
+        min-width: 280px !important;
+        max-width: 320px !important;
+        padding: 0.5rem 0.6rem !important;
+    }
+
+    .sucursal-badge {
+        font-size: 0.7rem !important;
+        padding: 0.3rem 0.6rem !important;
+        line-height: 1.4 !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        display: block !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+    
+}
+
+
+/* ===== RESPONSIVE - MÓVIL (≤480px) ===== */
+
+@@media (max-width: 480px) {
+    .crud-table { min-width: 1300px !important; }
+    
+    .crud-table th,
+    .crud-table td { padding: 0.5rem 0.4rem; }
+
+    .crud-table th { font-size: 0.55rem; }
+    .crud-table td { font-size: 0.7rem; }
+
+    .user-avatar { width: 28px; height: 28px; font-size: 0.75rem; border-radius: 6px; }
+    .user-name   { font-size: 0.7rem; }
+    .text-muted  { font-size: 0.55rem; }
+
+    .btn-action { width: 26px; height: 26px; font-size: 0.7rem; }
+
+    input[type="checkbox"] { width: 14px; height: 14px; }
+
+    .crud-table th:nth-child(7),
+    .crud-table td:nth-child(7) {
+        width: 300px !important;
+        min-width: 300px !important;
+        max-width: 340px !important;
+        padding: 0.5rem 0.6rem !important;
+    }
+
+    .sucursal-badge {
+        font-size: 0.68rem !important;
+        padding: 0.3rem 0.55rem !important;
+        line-height: 1.4 !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        display: block !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+}
+</style>
 
 <div class="clientes-container">
     <br>
@@ -27,7 +1372,7 @@
                     <i class="bi bi-people-fill"></i>
                 </div>
                 <div>
-                    <h1>Gestión de Clientes</h1>
+                    <h1>Gestion de Clientes</h1>
                     <p class="subtitle">Administre la base de datos de clientes</p>
                 </div>
             </div>
@@ -66,9 +1411,9 @@
         <div class="filters-panel @(mostrarFiltros ? "show" : "")">
             <div class="filter-row">
                 <div class="filter-group">
-                    <label>Categoría</label>
+                    <label>Categoria</label>
                     <select class="select-custom" @bind="filtroCategoria">
-                        <option value="0">Todas las categorías</option>
+                        <option value="0">Todas las categorias</option>
                         @foreach (var cat in categorias)
                         {
                             <option value="@cat.IdCategoria">@cat.NombreCat</option>
@@ -86,18 +1431,83 @@
                 </div>
 
                 <div class="filter-group">
-                    <label>Ordenar por</label>
-                    <select class="select-custom" @bind="ordenarPor">
-                        <option value="reciente">Más recientes primero</option>
-                        <option value="antiguo">Más antiguos primero</option>
-                        <option value="nombre">Nombre A-Z</option>
+                    <label>WhatsApp</label>
+                    <select class="select-custom" @bind="filtroWhatsApp">
+                        <option value="todos">Todos</option>
+                        <option value="aceptan">Solo aceptan WhatsApp</option>
+                        <option value="no_aceptan">No aceptan WhatsApp</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Origen</label>
+                    <select class="select-custom" @bind="filtroOrigen">
+                        <option value="">Todos</option>
+                        <option value="Redes Sociales">Redes Sociales</option>
+                        <option value="Pagina web">Página Web</option>
+                        <option value="Mayoreo">Mayoreo</option>
                     </select>
                 </div>
             </div>
 
             <div class="filter-row">
                 <div class="filter-group">
-                    <label>Filas por página</label>
+                    <label>Sucursal</label>
+                    <div class="sucursal-search-wrapper">
+                        <i class="bi bi-shop"></i>
+                        <input type="text" 
+                               class="sucursal-search-input" 
+                               placeholder="Busca y selecciona una sucursal..."
+                               @bind="busquedaSucursal"
+                               @bind:event="oninput"
+                               @onfocus="AbrirDropdownSucursal" />
+                        <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"></i>
+                        
+                        @if (mostrarDropdownSucursal)
+                        {
+                            <div class="sucursal-dropdown">
+                                <div class="sucursal-dropdown-item @(string.IsNullOrEmpty(filtroSucursal) ? "selected" : "")"
+                                     @onmousedown:preventDefault
+                                     @onclick="() => SeleccionarSucursal(null)">
+                                    <i class="bi bi-x-circle"></i>
+                                    <span class="sucursal-nombre">Todas las sucursales</span>
+                                </div>
+                                
+                                @if (sucursalesFiltradas.Any())
+                                {
+                                    @foreach (var sucursal in sucursalesFiltradas)
+                                    {
+                                        <div class="sucursal-dropdown-item @(filtroSucursal == sucursal.Almacen ? "selected" : "")"
+                                             @onmousedown:preventDefault
+                                             @onclick="() => SeleccionarSucursal(sucursal)">
+                                            <span class="sucursal-almacen">@sucursal.Almacen</span>
+                                            <span class="sucursal-nombre">@sucursal.NombreCompleto</span>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="sucursal-dropdown-empty">
+                                        <i class="bi bi-search"></i>
+                                        No se encontraron sucursales
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>Ordenar por</label>
+                    <select class="select-custom" @bind="ordenarPor">
+                        <option value="reciente">Mas recientes primero</option>
+                        <option value="antiguo">Mas antiguos primero</option>
+                        <option value="nombre">Nombre A-Z</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Filas por pagina</label>
                     <select class="select-custom" @bind="elementosPorPagina">
                         <option value="5">5</option>
                         <option value="10">10</option>
@@ -108,7 +1518,9 @@
                         <option value="50">50</option>
                     </select>
                 </div>
+            </div>
 
+            <div class="filter-row">
                 <div class="filter-group">
                     <label>&nbsp;</label>
                     <button class="btn-clear-filters" @onclick="LimpiarFiltros">
@@ -142,24 +1554,27 @@
                                        checked="@(clientesSeleccionados.Count == clientesPaginados.Count() && clientesPaginados.Any())" />
                             </th>
                             <th>Cliente</th>
-                            <th>Teléfono</th>
+                            <th>Telefono</th>
                             <th>Email</th>
-                            <th>Categoría</th>
+                            <th>Categoria</th>
+                            <th>Origen</th>
+                            <th>Sucursal</th>
                             <th>Fecha Registro</th>
                             <th>Estado</th>
                             <th>Acciones</th>
-                            </tr>
-                        </thead>
+                        </tr>
+                    </thead>
                     <tbody>
                         @if (!clientesFiltrados.Any())
                         {
-                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                            <tr>
+                                <td colspan="10" class="text-center py-5">
                                     <div class="no-data">
                                         <i class="bi bi-people-fill display-4 text-muted"></i>
                                         <p>No hay clientes registrados</p>
-                                        <button class="btn btn-sm btn-primary mt-3" @onclick="CrearCliente">
-                                            <i class="bi bi-plus-lg"></i> Crear primer cliente
+                                        <button class="btn-create-first" @onclick="CrearCliente">
+                                            <i class="bi bi-plus-lg"></i>
+                                            <span>Crear primer cliente</span>
                                         </button>
                                     </div>
                                 </td>
@@ -170,12 +1585,22 @@
                             @foreach (var cliente in clientesPaginados)
                             {
                                 var categoria = categorias.FirstOrDefault(c => c.IdCategoria == cliente.IdCategoriaProducto);
-                                
+
                                 <tr class="cliente-row">
                                     <td class="col-checkbox">
-                                        <input type="checkbox" 
-                                               @onchange="() => ToggleSeleccionCliente(cliente.Id)" 
-                                               checked="@clientesSeleccionados.Contains(cliente.Id)" />
+                                        @if (cliente.AceptaWhatsApp)
+                                        {
+                                            <input type="checkbox" 
+                                                   @onchange="() => ToggleSeleccionCliente(cliente.Id)" 
+                                                   checked="@clientesSeleccionados.Contains(cliente.Id)" />
+                                        }
+                                        else
+                                        {
+                                            <span class="whatsapp-blocked" title="Este cliente no acepta promociones por WhatsApp">
+                                                <i class="bi bi-whatsapp text-muted"></i>
+                                                <i class="bi bi-slash-circle text-danger"></i>
+                                            </span>
+                                        }
                                     </td>
                                     <td>
                                         <div class="user-info">
@@ -183,7 +1608,7 @@
                                                 @cliente.NombreCompleto.Substring(0,1).ToUpper()
                                             </div>
                                             <div class="user-details">
-                                                <span class="user-name">@cliente.NombreCompleto</span>
+                                                <span class="user-name">@GetNombreFormateado(cliente.NombreCompleto)</span>
                                                 <small class="text-muted">ID: @cliente.Id</small>
                                             </div>
                                         </div>
@@ -202,8 +1627,32 @@
                                     <td>
                                         @if (categoria != null)
                                         {
-                                            <span class="categoria-badge" style="background: @GetCategoriaColor(categoria.NombreCat)">
+                                            <span class="categoria-badge @GetCategoriaClass(categoria.NombreCat)">
                                                 @categoria.NombreCat
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+<td class="origen-cell">
+    @if (!string.IsNullOrEmpty(cliente.TipoCliente))
+    {
+        <span class="origen-badge @GetOrigenClass(cliente.TipoCliente)">
+            @cliente.TipoCliente
+        </span>
+    }
+    else
+    {
+        <span class="text-muted">-</span>
+    }
+</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(cliente.IdSucursal))
+                                        {
+                                            <span class="sucursal-badge">
+                                                @GetSucursalNombreHtml(cliente.IdSucursal)
                                             </span>
                                         }
                                         else
@@ -241,7 +1690,6 @@
                 </table>
             </div>
 
-            <!-- Table Footer con paginación -->
             @if (clientesFiltrados.Any())
             {
                 <div class="table-footer">
@@ -250,7 +1698,7 @@
                             Mostrando <span>@clientesPaginados.Count()</span> de <span>@clientesFiltrados.Count()</span> clientes
                         </div>
                         <div class="pagination-info">
-                            Página @paginaActual de @totalPaginas
+                            Pagina @paginaActual de @totalPaginas
                         </div>
                     </div>
 
@@ -301,7 +1749,7 @@
         <i class="bi bi-check-circle-fill"></i>
         <span>@clientesSeleccionados.Count cliente(s) seleccionado(s)</span>
         <button class="btn-send-whatsapp" @onclick="AbrirModalPromociones">
-            <i class="bi bi-whatsapp"></i> Enviar promoción
+            <i class="bi bi-whatsapp"></i> Enviar promocion
         </button>
         <button class="btn-clear-selection" @onclick="LimpiarSeleccion">
             <i class="bi bi-x"></i> Limpiar
@@ -309,13 +1757,13 @@
     </div>
 }
 
-<!-- Modal para seleccionar promoción -->
+<!-- Modal para seleccionar promocion -->
 @if (mostrarModalPromociones)
 {
     <div class="modal-overlay" @onclick="CerrarModal">
         <div class="modal-content" @onclick:preventDefault="true">
             <div class="modal-header">
-                <h3><i class="bi bi-megaphone-fill"></i> Seleccionar Promoción</h3>
+                <h3><i class="bi bi-megaphone-fill"></i> Seleccionar Promocion</h3>
                 <button class="modal-close" @onclick="CerrarModal">
                     <i class="bi bi-x-lg"></i>
                 </button>
@@ -326,7 +1774,7 @@
                     <div class="promociones-list">
                         @foreach (var promo in promocionesActivas)
                         {
-                            var enlace = $"https://marquis-leavenless-nonseparably.ngrok-free.dev/promociones/{promo.TokenUnico}";
+                           var enlace = $"https://rams.no-ip.info:8082/promociones/{promo.TokenUnico}";
                             <div class="promocion-item" @onclick="() => EnviarPromocion(promo, enlace)">
                                 <div class="promocion-icon">
                                     <i class="bi bi-megaphone-fill"></i>
@@ -349,7 +1797,7 @@
                         <i class="bi bi-megaphone"></i>
                         <p>No hay promociones activas</p>
                         <button class="btn-create-promo" @onclick="CrearPromocion">
-                            <i class="bi bi-plus-lg"></i> Crear nueva promoción
+                            <i class="bi bi-plus-lg"></i> Crear nueva promocion
                         </button>
                     </div>
                 }
@@ -361,14 +1809,14 @@
 <!-- Modal Eliminar -->
 @if (mostrarModalEliminar && clienteEliminar != null)
 {
-    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px);">
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 1050;">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title">Confirmar eliminación</h5>
-                    <button class="btn-close-custom" @onclick="CerrarModalEliminar">
-                        <i class="bi bi-x"></i>
-                    </button>
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirmar eliminacion
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalEliminar" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center p-4">
                     <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-4"
@@ -377,17 +1825,18 @@
                     </div>
                     <h5 class="fw-bold mb-3">¿Eliminar cliente?</h5>
                     <p class="text-muted mb-4">
-                        Estás a punto de eliminar a
-                        <span class="fw-bold text-dark">@clienteEliminar.NombreCompleto</span>
-                        <br>Esta acción no se puede deshacer.
+                        Estas a punto de eliminar a
+                        <br />
+                        <span class="fw-bold text-dark" style="font-size: 1.1rem;">@clienteEliminar.NombreCompleto</span>
+                        <br />
+                        <span class="text-muted small">Esta accion no se puede deshacer.</span>
                     </p>
                 </div>
                 <div class="modal-footer justify-content-center border-0 pb-4">
-                    <button class="btn btn-light px-5 py-2 rounded-3" @onclick="CerrarModalEliminar">
+                    <button class="btn btn-dark px-5 py-2 rounded-3" @onclick="CerrarModalEliminar">
                         Cancelar
                     </button>
                     <button class="btn btn-danger px-5 py-2 rounded-3" @onclick="EliminarCliente">
-                        <i class="bi bi-trash3 me-2"></i>
                         Eliminar
                     </button>
                 </div>
@@ -400,31 +1849,39 @@
     private List<Cliente> clientes = new();
     private List<CategoriaProducto> categorias = new();
     private List<Promocion> promocionesActivas = new();
+    private List<SucursalCyc> SucursalesDisponibles = new();
+    private Dictionary<string, string> SucursalesCache = new();
     private bool cargando = true;
     private bool mostrarFiltros = false;
 
-    // Filtros
     private string filtroBusqueda = "";
     private int filtroCategoria = 0;
     private string filtroEstado = "";
+    private string filtroWhatsApp = "todos";
+    private string filtroOrigen = "";
+    private string filtroSucursal = "";
     private string ordenarPor = "reciente";
     private int paginaActual = 1;
     private int elementosPorPagina = 15;
 
+    private string busquedaSucursal = "";
+    private bool mostrarDropdownSucursal = false;
+
     private bool mostrarModalEliminar = false;
     private Cliente? clienteEliminar;
-    
-    // Variables para selección múltiple y envío
+
     private HashSet<int> clientesSeleccionados = new();
     private bool mostrarModalPromociones = false;
 
-    // Propiedades para el usuario actual
-    private string? userId;
     private bool esSuperAdmin;
     private bool esAdmin;
-    private bool esGerente;
-    private bool esVendedor;
-    private int idSucursalUsuario = 0;
+
+    private IEnumerable<SucursalCyc> sucursalesFiltradas =>
+        string.IsNullOrWhiteSpace(busquedaSucursal)
+            ? SucursalesDisponibles
+            : SucursalesDisponibles.Where(s =>
+                s.Almacen.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase) ||
+                (s.NombreCompleto != null && s.NombreCompleto.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase)));
 
     private IEnumerable<Cliente> clientesFiltrados
     {
@@ -442,22 +1899,23 @@
             }
 
             if (filtroCategoria > 0)
-            {
                 query = query.Where(c => c.IdCategoriaProducto == filtroCategoria);
-            }
 
             if (filtroEstado == "activo")
-            {
                 query = query.Where(c => c.Estado == 1);
-            }
             else if (filtroEstado == "inactivo")
-            {
                 query = query.Where(c => c.Estado == 0);
-            }
-            if ((esVendedor || esAdmin || esGerente) && idSucursalUsuario > 0)
-            {
-                query = query.Where(c => c.IdSucursal == idSucursalUsuario);
-            }
+
+            if (filtroWhatsApp == "aceptan")
+                query = query.Where(c => c.AceptaWhatsApp == true);
+            else if (filtroWhatsApp == "no_aceptan")
+                query = query.Where(c => c.AceptaWhatsApp == false);
+
+            if (!string.IsNullOrEmpty(filtroOrigen))
+                query = query.Where(c => c.TipoCliente == filtroOrigen);
+
+            if (!string.IsNullOrEmpty(filtroSucursal))
+                query = query.Where(c => c.IdSucursal == filtroSucursal);
 
             query = ordenarPor switch
             {
@@ -471,7 +1929,7 @@
     }
 
     private int totalPaginas => (int)Math.Ceiling((double)clientesFiltrados.Count() / elementosPorPagina);
-    
+
     private IEnumerable<Cliente> clientesPaginados =>
         clientesFiltrados
             .Skip((paginaActual - 1) * elementosPorPagina)
@@ -479,39 +1937,99 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CargarSucursalesDisponibles();
         await CargarDatos();
         await CargarUsuarioActual();
+    }
+private string GetOrigenClass(string? tipoCliente)
+{
+    if (string.IsNullOrWhiteSpace(tipoCliente))
+        return "origen-sin";
+
+    return tipoCliente.Trim().ToLowerInvariant() switch
+    {
+        "redes sociales" => "origen-redes",
+        "página web" => "origen-web",
+        "pagina web" => "origen-web",
+        "mayoreo" => "origen-mayoreo",
+        "clientes de tiendas" => "origen-tiendas",
+        _ => "origen-sin"
+    };
+}
+    private void CargarSucursalesDisponibles()
+    {
+        SucursalesDisponibles = SucursalService.GetAllSucursales();
+        SucursalesCache = SucursalesDisponibles.ToDictionary(s => s.Almacen, s => s.NombreCompleto);
+    }
+
+    private string GetSucursalNombre(string? almacen)
+    {
+        if (string.IsNullOrEmpty(almacen))
+            return "Sin sucursal";
+
+        if (SucursalesCache.TryGetValue(almacen, out var nombre))
+            return nombre;
+
+        return almacen;
+    }
+
+    private MarkupString GetSucursalNombreHtml(string? almacen)
+    {
+        if (string.IsNullOrEmpty(almacen))
+            return new MarkupString("Sin sucursal");
+
+        if (!SucursalesCache.TryGetValue(almacen, out var nombre))
+            return new MarkupString(almacen);
+
+        if (nombre.Length <= 35)
+            return new MarkupString(nombre);
+
+        var indexParentesis = nombre.IndexOf('(');
+        if (indexParentesis > 0)
+        {
+            var parte1 = nombre.Substring(0, indexParentesis).Trim();
+            var parte2 = nombre.Substring(indexParentesis).Trim();
+
+            var contenidoParentesis = parte2.Trim('(', ')', ' ').Trim();
+            if (string.IsNullOrEmpty(contenidoParentesis) || contenidoParentesis == "." || contenidoParentesis.Length <= 2)
+            {
+                return new MarkupString(nombre);
+            }
+
+            return new MarkupString($"{parte1}<br/>{parte2}");
+        }
+
+        return new MarkupString(nombre);
+    }
+
+    private MarkupString GetNombreFormateado(string? nombreCompleto)
+    {
+        if (string.IsNullOrEmpty(nombreCompleto))
+            return new MarkupString("");
+
+        if (nombreCompleto.Length <= 25)
+            return new MarkupString(nombreCompleto);
+
+        var palabras = nombreCompleto.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        
+        if (palabras.Length <= 1)
+            return new MarkupString(nombreCompleto);
+
+        var mitad = (palabras.Length + 1) / 2;
+        
+        var linea1 = string.Join(" ", palabras.Take(mitad));
+        var linea2 = string.Join(" ", palabras.Skip(mitad));
+
+        return new MarkupString($"{linea1}<br/>{linea2}");
     }
 
     private async Task CargarUsuarioActual()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-        
+
         esSuperAdmin = user.IsInRole("SuperAdministrador");
         esAdmin = user.IsInRole("Administrador");
-        esGerente = user.IsInRole("Gerente");
-        esVendedor = user.IsInRole("Vendedor");
-        
-        var usuario = await UserManager.GetUserAsync(user);
-        
-        if (usuario != null)
-        {
-            if (esVendedor)
-            {
-                userId = usuario.Id;
-                idSucursalUsuario = usuario.IdSucursal ?? 0; 
-            }
-            else if (esAdmin || esGerente)
-            {
-                idSucursalUsuario = usuario.IdSucursal ?? 0;
-            }
-                        
-            if (esSuperAdmin)
-            {
-                idSucursalUsuario = 0;
-            }
-        }
     }
 
     private async Task CargarDatos()
@@ -529,7 +2047,7 @@
         }
         catch (Exception ex)
         {
-            await MostrarNotificacionError($"Error al cargar clientes: {ex.Message}");
+            Console.WriteLine($"Error al cargar clientes: {ex.Message}");
         }
         finally
         {
@@ -545,36 +2063,58 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error cargando categorías: {ex.Message}");
+            Console.WriteLine($"Error cargando categorias: {ex.Message}");
         }
     }
 
-    // Funciones de selección múltiple
-    private void ToggleSeleccionCliente(int clienteId)
+    private void AbrirDropdownSucursal()
     {
-        if (clientesSeleccionados.Contains(clienteId))
+        mostrarDropdownSucursal = true;
+    }
+
+    private void SeleccionarSucursal(SucursalCyc? sucursal)
+    {
+        if (sucursal == null)
         {
-            clientesSeleccionados.Remove(clienteId);
+            filtroSucursal = "";
+            busquedaSucursal = "";
         }
         else
         {
-            clientesSeleccionados.Add(clienteId);
+            filtroSucursal = sucursal.Almacen;
+            busquedaSucursal = sucursal.NombreCompleto ?? sucursal.Almacen;
         }
+        
+        mostrarDropdownSucursal = false;
+        paginaActual = 1;
+    }
+
+    private void ToggleSeleccionCliente(int clienteId)
+    {
+        if (clientesSeleccionados.Contains(clienteId))
+            clientesSeleccionados.Remove(clienteId);
+        else
+            clientesSeleccionados.Add(clienteId);
     }
 
     private void ToggleSelectAll()
     {
-        if (clientesSeleccionados.Count == clientesPaginados.Count())
+        var clientesSeleccionables = clientesPaginados
+            .Where(c => c.AceptaWhatsApp == true)
+            .ToList();
+
+        var todosSeleccionados = clientesSeleccionables
+            .All(c => clientesSeleccionados.Contains(c.Id));
+
+        if (todosSeleccionados)
         {
-            clientesSeleccionados.Clear();
+            foreach (var cliente in clientesSeleccionables)
+                clientesSeleccionados.Remove(cliente.Id);
         }
         else
         {
-            clientesSeleccionados.Clear();
-            foreach (var cliente in clientesPaginados)
-            {
+            foreach (var cliente in clientesSeleccionables)
                 clientesSeleccionados.Add(cliente.Id);
-            }
         }
     }
 
@@ -583,26 +2123,25 @@
         clientesSeleccionados.Clear();
     }
 
-    // Funciones de envío masivo
     private async Task AbrirModalPromociones()
     {
         if (clientesSeleccionados.Count == 0)
         {
-            await MostrarNotificacionInfo("No has seleccionado ningún cliente");
+            await MostrarNotificacionInfo("No has seleccionado ningun cliente");
             return;
         }
-        
+
         promocionesActivas = await DbContext.Promociones
             .Where(p => p.Activo && p.FechaFin >= DateTime.Today)
             .OrderBy(p => p.FechaFin)
             .ToListAsync();
-        
+
         if (promocionesActivas.Count == 0)
         {
             await MostrarNotificacionInfo("No hay promociones activas para enviar");
             return;
         }
-        
+
         mostrarModalPromociones = true;
     }
 
@@ -612,13 +2151,10 @@
         promocionesActivas.Clear();
     }
 
-    private async Task EnviarPromocion(Promocion promo, string enlace)
+   private async Task EnviarPromocion(Promocion promo, string enlace)
 {
     mostrarModalPromociones = false;
-    
-    var mensaje = $"*{promo.Titulo}*\n\n{promo.Descripcion}\n\n{enlace}\n\n¡Aprovecha esta oferta!";
-    var mensajeCodificado = Uri.EscapeDataString(mensaje);
-    
+
     var clientesParaEnviar = clientesSeleccionados
         .Select(id => clientes.FirstOrDefault(c => c.Id == id))
         .Where(c => c != null && !string.IsNullOrEmpty(c.Telefono))
@@ -626,58 +2162,164 @@
 
     if (clientesParaEnviar.Count == 0)
     {
-        await MostrarNotificacionError("Ninguno de los clientes seleccionados tiene un teléfono válido");
+        await MostrarNotificacionError("Ninguno de los clientes seleccionados tiene un telefono valido");
         return;
     }
 
-    // Obtener usuario actual
     var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
     var user = authState.User;
     var usuarioActual = await UserManager.GetUserAsync(user);
     var usuarioId = usuarioActual?.Id ?? "";
 
+    var enviados = 0;
+    var fallidos = 0;
+    string? ultimoError = null;   // ✅ NUEVO: Guardar el error
+
     foreach (var cliente in clientesParaEnviar)
     {
-        var telefonoLimpio = cliente!.Telefono!.Replace(" ", "").Replace("-", "").Replace("+", "");
-        var linkWhatsApp = $"https://wa.me/52{telefonoLimpio}?text={mensajeCodificado}";
-        await JS.InvokeVoidAsync("open", linkWhatsApp, "_blank");
-        
-        // 🔥 GUARDAR EN HISTORIAL
-        var historial = new HistorialEnvio
+        try
         {
-            ClienteId = cliente.Id,
-            PromocionId = promo.Id,
-            UsuarioEnvioId = usuarioId,
-            Mensaje = mensaje,
-            EnlacePromocion = enlace,
-            EnlaceWhatsApp = linkWhatsApp,
-            FechaEnvio = DateTime.Now,
-            Estatus = "Enviado",
-            Observaciones = $"Enviado a {cliente.Telefono}"
-        };
-        DbContext.HistorialEnvios.Add(historial);
-        
-        await Task.Delay(500);
+            var telefonoLimpio = cliente!.Telefono!.Replace(" ", "").Replace("-", "").Replace("+", "");
+            if (!telefonoLimpio.StartsWith("52")) telefonoLimpio = "52" + telefonoLimpio;
+
+            var resultado = await _whatsApp.EnviarPlantillaAsync(
+                numeroDestino: telefonoLimpio,
+                nombrePlantilla: "promocion_rams_v3",
+                idioma: "es_MX",
+                parametros: new Dictionary<string, string>
+                {
+                    { "1", cliente.NombreCompleto.Split(' ')[0] },
+                    { "2", $"{promo.Titulo} - {promo.Descripcion}" },
+                    { "3", $"https://rams.no-ip.info:8082/promociones/{promo.TokenUnico}" },
+                    { "4", promo.FechaFin.ToString("dd/MM/yyyy") }
+                }
+            );
+
+            // ✅ LOG en el navegador (F12 → Console)
+            await JS.InvokeVoidAsync("console.log", $"[WhatsApp] Envío a {telefonoLimpio} - Resultado: {resultado}");
+            await JS.InvokeVoidAsync("console.log", $"[WhatsApp] Error: {_whatsApp.UltimoError ?? "Ninguno"}");
+
+            // ✅ Guardar el error para mostrarlo después
+            if (!resultado && !string.IsNullOrEmpty(_whatsApp.UltimoError))
+            {
+                ultimoError = _whatsApp.UltimoError;
+            }
+
+            var historial = new HistorialEnvio
+            {
+                ClienteId = cliente.Id,
+                PromocionId = promo.Id,
+                UsuarioEnvioId = usuarioId,
+                Mensaje = $"{promo.Titulo} - {promo.Descripcion}",
+                EnlacePromocion = enlace,
+                EnlaceWhatsApp = $"https://wa.me/{telefonoLimpio}?text={Uri.EscapeDataString($"{promo.Titulo} - {promo.Descripcion}")}",
+                FechaEnvio = DateTime.Now,
+                Estatus = resultado ? "Enviado" : "Fallido",
+                Observaciones = resultado 
+                    ? $"Enviado a {cliente.Telefono}" 
+                    : $"Error: {_whatsApp.UltimoError ?? "desconocido"}"
+            };
+            DbContext.HistorialEnvios.Add(historial);
+
+            if (resultado)
+                enviados++;
+            else
+                fallidos++;
+        }
+        catch (Exception ex)
+        {
+            fallidos++;
+            ultimoError = ex.Message;
+            
+            var historial = new HistorialEnvio
+            {
+                ClienteId = cliente!.Id,
+                PromocionId = promo.Id,
+                UsuarioEnvioId = usuarioId,
+                Mensaje = $"{promo.Titulo} - {promo.Descripcion}",
+                EnlacePromocion = enlace,
+                EnlaceWhatsApp = "",
+                FechaEnvio = DateTime.Now,
+                Estatus = "Error",
+                Observaciones = $"Error: {ex.Message}"
+            };
+            DbContext.HistorialEnvios.Add(historial);
+        }
+
+        await Task.Delay(200);
     }
-    
+
     await DbContext.SaveChangesAsync();
-
     clientesSeleccionados.Clear();
-    
-    await MostrarNotificacionExito($"Se envió la promoción a {clientesParaEnviar.Count} clientes");
-}
 
+    var mensajeResumen = fallidos == 0
+        ? (enviados == 1 
+            ? "Se envió 1 mensaje correctamente" 
+            : $"Se enviaron {enviados} mensajes correctamente")
+        : (enviados == 1 && fallidos == 1 
+            ? "1 enviado, 1 fallo" 
+            : fallidos == 1 
+                ? $"{enviados} enviados, 1 fallo" 
+                : $"{enviados} enviados, {fallidos} fallaron");
+
+    // ✅ HTML del Swal: muestra el error de Meta si hay fallos
+    var htmlError = "";
+    if (fallidos > 0 && !string.IsNullOrEmpty(ultimoError))
+    {
+        // Escapar HTML para que no rompa el Swal
+        var errorEscapado = ultimoError
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;");
+
+        htmlError = $@"
+            <div style='margin-top: 1rem; padding: 0.75rem; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444; text-align: left; max-height: 200px; overflow-y: auto;'>
+                <div style='font-size: 0.75rem; color: #991b1b; font-weight: 700; margin-bottom: 0.35rem;'>
+                    <i class='bi bi-exclamation-triangle-fill'></i> Error de Meta WhatsApp:
+                </div>
+                <div style='font-size: 0.7rem; color: #7f1d1d; word-break: break-all; font-family: monospace; line-height: 1.4;'>
+                    {errorEscapado}
+                </div>
+            </div>";
+    }
+
+    await JS.InvokeVoidAsync("Swal.fire", new
+    {
+        title = fallidos == 0 ? "Promoción enviada" : "Error al enviar",
+        html = $@"
+            <div style='display: flex; justify-content: center; gap: 2.5rem; padding: 1rem 0;'>
+                <div style='text-align: center;'>
+                    <div style='font-size: 1.8rem; font-weight: 700; color: #10b981;'>{enviados}</div>
+                    <div style='font-size: 0.8rem; color: #6b7280;'>Enviados</div>
+                </div>
+                <div style='width: 1px; background: #e5e7eb;'></div>
+                <div style='text-align: center;'>
+                    <div style='font-size: 1.8rem; font-weight: 700; color: #ef4444;'>{fallidos}</div>
+                    <div style='font-size: 0.8rem; color: #6b7280;'>Fallidos</div>
+                </div>
+            </div>
+            <div style='font-size: 0.9rem; color: #4b5563; text-align: center; padding-top: 0.5rem;'>
+                {mensajeResumen}
+            </div>
+            {htmlError}
+        ",
+        icon = fallidos == 0 ? "success" : "warning",
+        confirmButtonText = "Aceptar",
+        confirmButtonColor = "#0f172a",
+        width = fallidos > 0 ? "600px" : "auto"   
+    });
+}
     private void CrearPromocion()
     {
         NavigationManager.NavigateTo("/promociones/crear");
     }
 
-    // Notificaciones con SweetAlert
     private async Task MostrarNotificacionExito(string mensaje)
     {
         await JS.InvokeVoidAsync("Swal.fire", new
         {
-            title = "¡Éxito!",
+            title = "Exito!",
             text = mensaje,
             icon = "success",
             confirmButtonText = "Aceptar",
@@ -701,7 +2343,7 @@
     {
         await JS.InvokeVoidAsync("Swal.fire", new
         {
-            title = "Información",
+            title = "Informacion",
             text = mensaje,
             icon = "info",
             confirmButtonText = "Aceptar",
@@ -709,7 +2351,6 @@
         });
     }
 
-    // Funciones existentes
     private void CrearCliente() => NavigationManager.NavigateTo("/clientes/crear");
     private void VerCliente(int id) => NavigationManager.NavigateTo($"/clientes/ver/{id}");
     private void EditarCliente(int id) => NavigationManager.NavigateTo($"/clientes/editar/{id}");
@@ -721,6 +2362,10 @@
         filtroBusqueda = "";
         filtroCategoria = 0;
         filtroEstado = "";
+        filtroWhatsApp = "todos";
+        filtroOrigen = "";
+        filtroSucursal = "";
+        busquedaSucursal = "";
         ordenarPor = "reciente";
         paginaActual = 1;
     }
@@ -728,9 +2373,7 @@
     private void CambiarPagina(int pagina)
     {
         if (pagina >= 1 && pagina <= totalPaginas)
-        {
             paginaActual = pagina;
-        }
     }
 
     private void ConfirmarEliminar(Cliente cliente)
@@ -751,10 +2394,12 @@
 
         try
         {
+            var nombreCliente = clienteEliminar.NombreCompleto;
             DbContext.Clientes.Remove(clienteEliminar);
             await DbContext.SaveChangesAsync();
+
             await CargarClientes();
-            await MostrarNotificacionExito($"Cliente {clienteEliminar.NombreCompleto} eliminado correctamente");
+            await MostrarNotificacionExito($"Cliente {nombreCliente} eliminado correctamente");
         }
         catch (Exception ex)
         {
@@ -766,759 +2411,15 @@
         }
     }
 
-    private string GetCategoriaColor(string? categoria)
+    private string GetCategoriaClass(string? categoria)
     {
         return categoria?.ToLower() switch
         {
-            "promoción" => "#f97316",
-            "ropa" => "#3b82f6",
-            "calzado" => "#10b981",
-            "accesorios" => "#8b5cf6",
-            _ => "#6b7280"
+            "ropa" => "categoria-ropa",
+            "promocion" => "categoria-promocion",
+            "calzado" => "categoria-calzado",
+            "accesorios" => "categoria-accesorios",
+            _ => "categoria-default"
         };
     }
 }
-
-<style>
-    .clientes-container {
-        padding-bottom: 2rem;
-        min-height: 100vh;
-    }
-
-    .dashboard-header {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        border: 1px solid #e5e7eb;
-    }
-
-    .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .header-title {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .title-icon {
-        width: 50px;
-        height: 50px;
-        background: #0f172a;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-    }
-
-    .header-title h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0;
-    }
-
-    .subtitle {
-        color: #6b7280;
-        font-size: 0.9rem;
-        margin: 0;
-    }
-
-    .btn-create {
-        background: #0f172a;
-        border: none;
-        color: white;
-        padding: 0.6rem 1.2rem;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 500;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .btn-create:hover {
-        background: #020617;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    .control-panel {
-        background: white;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        border: 1px solid #e5e7eb;
-    }
-
-    .panel-header {
-        padding: 1rem 1.25rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .panel-title {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .panel-title i {
-        color: #0f172a;
-    }
-
-    .panel-actions {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .search-box {
-        position: relative;
-        background: #f9fafb;
-        border-radius: 8px;
-        padding: 0.4rem 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        min-width: 250px;
-        border: 1px solid #e5e7eb;
-    }
-
-    .search-box i {
-        color: #9ca3af;
-        font-size: 0.9rem;
-    }
-
-    .search-box input {
-        border: none;
-        background: none;
-        outline: none;
-        width: 100%;
-        font-size: 0.85rem;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .btn-filter, .btn-refresh {
-        padding: 0.4rem 0.75rem;
-        border: 1px solid #e5e7eb;
-        background: white;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        font-size: 0.85rem;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .btn-refresh {
-        padding: 0.4rem;
-    }
-
-    .btn-filter:hover, .btn-refresh:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
-    }
-
-    .filters-panel {
-        padding: 1rem 1.25rem;
-        border-top: 1px solid #e5e7eb;
-        display: none;
-    }
-
-    .filters-panel.show {
-        display: block;
-        animation: slideDown 0.3s ease;
-    }
-
-    .filter-row {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .filter-row:last-child {
-        margin-bottom: 0;
-    }
-
-    .filter-group {
-        flex: 1;
-    }
-
-    .filter-group label {
-        display: block;
-        margin-bottom: 0.25rem;
-        font-weight: 500;
-        color: #374151;
-        font-size: 0.75rem;
-    }
-
-    .select-custom {
-        padding: 0.4rem 0.75rem;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        background: white;
-        font-size: 0.85rem;
-        width: 100%;
-    }
-
-    .btn-clear-filters {
-        padding: 0.4rem 0.75rem;
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        color: #374151;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        width: 100%;
-        justify-content: center;
-    }
-
-    .btn-clear-filters:hover {
-        background: #f3f4f6;
-    }
-
-    .table-container {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        border: 1px solid #e5e7eb;
-        overflow: hidden;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .crud-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-    }
-
-    .crud-table thead {
-        background: #f9fafb;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .crud-table th {
-        padding: 0.85rem 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: #374151;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    .crud-table td {
-        padding: 0.85rem 1rem;
-        border-bottom: 1px solid #e5e7eb;
-        vertical-align: middle;
-        font-size: 0.85rem;
-    }
-
-    .cliente-row:hover {
-        background: #f9fafb;
-    }
-
-    .user-info {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .user-avatar {
-        width: 40px;
-        height: 40px;
-        background: #0f172a;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-
-    .user-details {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .user-name {
-        font-weight: 600;
-        color: #1f2937;
-        font-size: 0.9rem;
-    }
-
-    .text-muted {
-        color: #6b7280;
-        font-size: 0.7rem;
-    }
-
-    .categoria-badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 500;
-        color: white;
-    }
-
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 500;
-    }
-
-    .status-active {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .status-inactive {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .action-buttons {
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-
-    .btn-action {
-        width: 32px;
-        height: 32px;
-        border: none;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        font-size: 0.9rem;
-        background: #f3f4f6;
-        color: #4b5563;
-    }
-
-    .btn-view:hover {
-        background: #3b82f6;
-        color: white;
-    }
-
-    .btn-edit:hover {
-        background: #f59e0b;
-        color: white;
-    }
-
-    .btn-qr:hover {
-        background: #8b5cf6;
-        color: white;
-    }
-
-    .btn-delete:hover {
-        background: #ef4444;
-        color: white;
-    }
-
-    .table-footer {
-        padding: 1rem 1.25rem;
-        background: #f9fafb;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .footer-info {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-    }
-
-    .total-count, .pagination-info {
-        font-size: 0.8rem;
-        color: #6b7280;
-    }
-
-    .total-count span, .pagination-info span {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .pagination-wrapper {
-        display: flex;
-    }
-
-    .pagination {
-        display: flex;
-        gap: 0.25rem;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .page-item {
-        display: inline-block;
-    }
-
-    .page-item.disabled {
-        opacity: 0.5;
-        pointer-events: none;
-    }
-
-    .page-item.active .page-link {
-        background: #0f172a;
-        color: white;
-        border-color: #0f172a;
-    }
-
-    .page-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 32px;
-        height: 32px;
-        padding: 0 0.5rem;
-        border: 1px solid #e5e7eb;
-        background: white;
-        color: #374151;
-        text-decoration: none;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-        font-size: 0.8rem;
-        cursor: pointer;
-    }
-
-    .page-link:hover {
-        background: #f3f4f6;
-        border-color: #d1d5db;
-    }
-
-    .loading-container {
-        background: white;
-        border-radius: 12px;
-        padding: 3rem;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    .no-data {
-        text-align: center;
-        padding: 2rem;
-        color: #6b7280;
-    }
-
-    .no-data i {
-        color: #9ca3af;
-        margin-bottom: 1rem;
-    }
-
-    /* Batch actions bar */
-    .batch-actions-bar {
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        background: white;
-        border-radius: 50px;
-        padding: 0.75rem 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        z-index: 100;
-        border: 1px solid #e5e7eb;
-        animation: slideUp 0.3s ease;
-    }
-
-    .batch-actions-bar span {
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: #1f2937;
-    }
-
-    .btn-send-whatsapp {
-        background: #25D366;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 30px;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-send-whatsapp:hover {
-        background: #128C7E;
-        transform: scale(1.02);
-    }
-
-    .btn-clear-selection {
-        background: #f3f4f6;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 30px;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-    }
-
-    .btn-clear-selection:hover {
-        background: #e5e7eb;
-    }
-
-    /* Modal */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(5px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-    }
-
-    .modal-content {
-        background: white;
-        border-radius: 24px;
-        max-width: 500px;
-        width: 90%;
-        max-height: 80vh;
-        overflow: hidden;
-        animation: modalFadeIn 0.3s ease;
-    }
-
-    .modal-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .modal-header h3 {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .modal-close {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        cursor: pointer;
-        color: #6b7280;
-        padding: 0.5rem;
-    }
-
-    .modal-body {
-        padding: 1.5rem;
-        overflow-y: auto;
-        max-height: 60vh;
-    }
-
-    .promociones-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .promocion-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: #f9fafb;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 1px solid #e5e7eb;
-    }
-
-    .promocion-item:hover {
-        background: #f3f4f6;
-        transform: translateX(5px);
-        border-color: #25D366;
-    }
-
-    .promocion-icon {
-        width: 45px;
-        height: 45px;
-        background: #0f172a;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.2rem;
-    }
-
-    .promocion-info {
-        flex: 1;
-    }
-
-    .promocion-info strong {
-        display: block;
-        font-size: 0.9rem;
-        color: #1f2937;
-    }
-
-    .promocion-info p {
-        font-size: 0.75rem;
-        color: #6b7280;
-        margin: 0.2rem 0;
-    }
-
-    .promocion-info small {
-        font-size: 0.65rem;
-        color: #f59e0b;
-    }
-
-    .promocion-action i {
-        font-size: 1.2rem;
-        color: #25D366;
-    }
-
-    .no-promos {
-        text-align: center;
-        padding: 2rem;
-    }
-
-    .no-promos i {
-        font-size: 3rem;
-        color: #9ca3af;
-        margin-bottom: 1rem;
-    }
-
-    .btn-create-promo {
-        margin-top: 1rem;
-        background: #0f172a;
-        color: white;
-        border: none;
-        padding: 0.6rem 1.2rem;
-        border-radius: 8px;
-        cursor: pointer;
-    }
-
-    .col-checkbox {
-        width: 40px;
-        text-align: center;
-    }
-
-    input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-        accent-color: #0f172a;
-    }
-
-    @@keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes modalFadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @@media (max-width: 768px) {
-        .header-content {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .panel-header {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-
-        .panel-actions {
-            width: 100%;
-            flex-direction: column;
-        }
-
-        .search-box {
-            width: 100%;
-        }
-
-        .filter-row {
-            flex-direction: column;
-        }
-
-        .table-footer {
-            flex-direction: column;
-            gap: 1rem;
-            text-align: center;
-        }
-
-        .footer-info {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-    }
-</style>

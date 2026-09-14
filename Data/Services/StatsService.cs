@@ -15,19 +15,19 @@ namespace RamsCottons.Services
             _context = context;
         }
 
-        public async Task<StatsCache> GetStats()
+        public Task<StatsCache> GetStats()
         {
             // Actualizar caché cada 5 minutos
             if ((DateTime.Now - _lastUpdate).TotalMinutes < 5)
             {
-                return _cache;
+                return Task.FromResult(_cache);
             }
 
             lock (_lock)
             {
                 if ((DateTime.Now - _lastUpdate).TotalMinutes < 5)
                 {
-                    return _cache;
+                    return Task.FromResult(_cache);
                 }
 
                 _cache = new StatsCache
@@ -42,7 +42,7 @@ namespace RamsCottons.Services
                 _lastUpdate = DateTime.Now;
             }
 
-            return _cache;
+            return Task.FromResult(_cache);
         }
     }
 

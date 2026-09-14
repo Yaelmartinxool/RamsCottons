@@ -5,6 +5,8 @@
 @using Microsoft.EntityFrameworkCore
 @using RamsCottons.Models
 @using RamsCottons.Data
+@using RamsCottons.Models.CycData
+@using RamsCottons.Services
 @attribute [Authorize]
 
 @inject ApplicationDbContext DbContext
@@ -12,6 +14,7 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
+@inject SucursalService SucursalService
 
 <PageTitle>Gestión de Promociones | RAMS Cottons</PageTitle>
 
@@ -81,9 +84,7 @@
                         <option value="fechaFin">Fecha de fin</option>
                     </select>
                 </div>
-            </div>
 
-            <div class="filter-row">
                 <div class="filter-group">
                     <label>Filas por página</label>
                     <select class="select-custom" @bind="elementosPorPagina">
@@ -94,6 +95,55 @@
                         <option value="25">25</option>
                         <option value="30">30</option>
                     </select>
+                </div>
+            </div>
+
+            <div class="filter-row">
+                <!-- BUSCADOR DE SUCURSAL CON DROPDOWN -->
+                <div class="filter-group">
+                    <label>Sucursal</label>
+                    <div class="sucursal-search-wrapper">
+                        <i class="bi bi-shop"></i>
+                        <input type="text" 
+                               class="sucursal-search-input" 
+                               placeholder="Busca y selecciona una sucursal..."
+                               @bind="busquedaSucursal"
+                               @bind:event="oninput"
+                               @onfocus="AbrirDropdownSucursal" />
+                        <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"></i>
+                        
+                        @if (mostrarDropdownSucursal)
+                        {
+                            <div class="sucursal-dropdown">
+                                <div class="sucursal-dropdown-item @(string.IsNullOrEmpty(filtroSucursal) ? "selected" : "")"
+                                     @onmousedown:preventDefault
+                                     @onclick="() => SeleccionarSucursal(null)">
+                                    <i class="bi bi-x-circle"></i>
+                                    <span class="sucursal-nombre">Todas las sucursales</span>
+                                </div>
+                                
+                                @if (sucursalesFiltradas.Any())
+                                {
+                                    @foreach (var sucursal in sucursalesFiltradas)
+                                    {
+                                        <div class="sucursal-dropdown-item @(filtroSucursal == sucursal.Almacen ? "selected" : "")"
+                                             @onmousedown:preventDefault
+                                             @onclick="() => SeleccionarSucursal(sucursal)">
+                                            <span class="sucursal-almacen">@sucursal.Almacen</span>
+                                            <span class="sucursal-nombre">@sucursal.NombreCompleto</span>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="sucursal-dropdown-empty">
+                                        <i class="bi bi-search"></i>
+                                        No se encontraron sucursales
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
 
                 <div class="filter-group">
@@ -128,31 +178,33 @@
                             <th>Descuento</th>
                             <th>Fecha Inicio</th>
                             <th>Fecha Fin</th>
+                            <th>Sucursal</th>
                             <th>Estado</th>
                             <th>Enlace</th>
                             <th>Acciones</th>
-                            </tr>
-                        </thead>
+                        </tr>
+                    </thead>
                     <tbody>
                         @if (!promocionesPaginadas.Any())
                         {
                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <div class="no-data">
                                         <i class="bi bi-megaphone display-4 text-muted"></i>
                                         <p class="mb-0">No hay promociones registradas</p>
-                                        <button class="btn btn-sm btn-primary mt-3" @onclick="CrearPromocion">
-                                            <i class="bi bi-plus-lg"></i> Crear primera promoción
-                                        </button>
+<button class="btn-create-promo-empty" @onclick="CrearPromocion">
+    <i class="bi bi-plus-lg"></i>
+    <span>Crear primera promoción</span>
+</button>
                                     </div>
                                 </td>
-                                </tr>
+                            </tr>
                         }
                         else
                         {
                             @foreach (var promo in promocionesPaginadas)
                             {
-                                var enlace = $"https://marquis-leavenless-nonseparably.ngrok-free.dev/promociones/{promo.TokenUnico}";
+                                var enlace = $"https://rams.no-ip.info:8082/promociones/{promo.TokenUnico}";
                                 <tr class="promo-row">
                                     <td class="col-titulo">
                                         <div class="titulo-info">
@@ -161,9 +213,20 @@
                                         </div>
                                         <small class="text-muted">@promo.Descripcion</small>
                                     </td>
-                                    <td class="col-precio">
-                                        <span class="precio">$@promo.Precio.ToString("N2")</span>
-                                    </td>
+<td class="col-precio">
+    @if (promo.TipoPromocion == "Catalogo")
+    {
+        <span class="precio">Varios precios</span>
+    }
+    else if (promo.Precio.HasValue)
+    {
+        <span class="precio">$@promo.Precio.Value.ToString("N2")</span>
+    }
+    else
+    {
+        <span class="text-muted">-</span>
+    }
+</td>
                                     <td class="col-descuento">
                                         @if (promo.DescuentoPorcentaje.HasValue)
                                         {
@@ -183,6 +246,18 @@
                                     </td>
                                     <td class="col-fecha">
                                         @promo.FechaFin.ToString("dd/MM/yyyy")
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(promo.IdSucursal))
+                                        {
+                                            <span class="sucursal-badge">
+                                                @GetSucursalNombreHtml(promo.IdSucursal)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
                                     </td>
                                     <td class="col-estado">
                                         <span class="status-badge @(promo.Activo ? "status-active" : "status-inactive")">
@@ -267,22 +342,78 @@
     }
 </div>
 
+<!-- Modal Eliminar Promoción -->
+@if (mostrarModalEliminar && promocionEliminar != null)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirmar eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalEliminar" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <div class="rounded-circle bg-danger bg-opacity-10 d-flex align-items-center justify-content-center mx-auto mb-4"
+                         style="width: 80px; height: 80px;">
+                        <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 2.5rem;"></i>
+                    </div>
+                    
+                    <h5 class="fw-bold mb-3">¿Eliminar promoción?</h5>
+                    <p class="text-muted mb-4">
+                        Estás a punto de eliminar la promoción
+                        <br />
+                        <span class="fw-bold text-dark" style="font-size: 1.1rem;">@promocionEliminar.Titulo</span>
+                        <br />
+                        <span class="text-muted small">Esta acción no se puede deshacer.</span>
+                    </p>
+                </div>
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <button class="btn btn-dark px-5 py-2 rounded-3" @onclick="CerrarModalEliminar">
+                        Cancelar
+                    </button>
+                    <button class="btn btn-danger px-5 py-2 rounded-3" @onclick="EliminarPromocion">
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<Promocion> promociones = new();
+    private List<SucursalCyc> SucursalesDisponibles = new();
+    private Dictionary<string, string> SucursalesCache = new();
     private bool cargando = true;
     private bool mostrarFiltros = false;
     private string filtro = "";
     private string filtroEstado = "";
+    private string filtroSucursal = "";
     private string ordenarPor = "reciente";
     private int paginaActual = 1;
     private int elementosPorPagina = 15;
     
-    // Variables para roles y sucursal
-    private int idSucursalUsuario = 0;
+    // Modal de confirmación para eliminar
+    private bool mostrarModalEliminar = false;
+    private Promocion? promocionEliminar;
+
+    // Buscador de sucursal
+    private string busquedaSucursal = "";
+    private bool mostrarDropdownSucursal = false;
+
+    // Variables para roles
     private bool esSuperAdmin = false;
     private bool esAdmin = false;
-    private bool esGerente = false;
-    private bool esVendedor = false;
+
+    // Propiedad para filtrar sucursales según búsqueda
+    private IEnumerable<SucursalCyc> sucursalesFiltradas =>
+        string.IsNullOrWhiteSpace(busquedaSucursal)
+            ? SucursalesDisponibles
+            : SucursalesDisponibles.Where(s =>
+                s.Almacen.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase) ||
+                (s.NombreCompleto != null && s.NombreCompleto.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase)));
 
     private IEnumerable<Promocion> promocionesFiltradas
     {
@@ -307,6 +438,11 @@
                 query = query.Where(p => !p.Activo);
             }
 
+            if (!string.IsNullOrEmpty(filtroSucursal))
+            {
+                query = query.Where(p => p.IdSucursal == filtroSucursal);
+            }
+
             query = ordenarPor switch
             {
                 "antiguo" => query.OrderBy(p => p.FechaCreacion),
@@ -328,7 +464,58 @@
 
     protected override async Task OnInitializedAsync()
     {
+        CargarSucursalesDisponibles();
         await CargarPromociones();
+    }
+
+    private void CargarSucursalesDisponibles()
+    {
+        SucursalesDisponibles = SucursalService.GetAllSucursales();
+        SucursalesCache = SucursalesDisponibles.ToDictionary(s => s.Almacen, s => s.NombreCompleto);
+    }
+
+    private string GetSucursalNombre(string? almacen)
+    {
+        if (string.IsNullOrEmpty(almacen))
+            return "Sin sucursal";
+
+        if (SucursalesCache.TryGetValue(almacen, out var nombre))
+            return nombre;
+
+        return almacen;
+    }
+
+    /// <summary>
+    /// Retorna el nombre de la sucursal con un salto de línea HTML
+    /// SOLO si el nombre es largo (más de 35 caracteres) y tiene paréntesis con contenido real
+    /// </summary>
+    private MarkupString GetSucursalNombreHtml(string? almacen)
+    {
+        if (string.IsNullOrEmpty(almacen))
+            return new MarkupString("Sin sucursal");
+
+        if (!SucursalesCache.TryGetValue(almacen, out var nombre))
+            return new MarkupString(almacen);
+
+        if (nombre.Length <= 35)
+            return new MarkupString(nombre);
+
+        var indexParentesis = nombre.IndexOf('(');
+        if (indexParentesis > 0)
+        {
+            var parte1 = nombre.Substring(0, indexParentesis).Trim();
+            var parte2 = nombre.Substring(indexParentesis).Trim();
+
+            var contenidoParentesis = parte2.Trim('(', ')', ' ').Trim();
+            if (string.IsNullOrEmpty(contenidoParentesis) || contenidoParentesis == "." || contenidoParentesis.Length <= 2)
+            {
+                return new MarkupString(nombre);
+            }
+
+            return new MarkupString($"{parte1}<br/>{parte2}");
+        }
+
+        return new MarkupString(nombre);
     }
 
     private async Task CargarPromociones()
@@ -340,41 +527,13 @@
             
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
-            var usuario = await UserManager.GetUserAsync(user);
             
             esSuperAdmin = user.IsInRole("SuperAdministrador");
             esAdmin = user.IsInRole("Administrador");
-            esGerente = user.IsInRole("Gerente");
-            esVendedor = user.IsInRole("Vendedor");
             
-            // Obtener sucursal del usuario actual
-            if (usuario != null)
-            {
-                idSucursalUsuario = usuario.IdSucursal ?? 0;
-            }
-            
-            // 🔥 FILTRO POR ROL Y SUCURSAL
-            if (esSuperAdmin)
-            {
-                // SuperAdmin ve todas las promociones
-            }
-            else if (esAdmin)
-            {
-                // Administrador ve las promociones de su sucursal
-                if (idSucursalUsuario > 0)
-                {
-                    query = query.Where(p => p.IdSucursal == idSucursalUsuario);
-                }
-            }
-            else if (esGerente || esVendedor)
-            {
-                // Gerente y Vendedor ven las promociones activas de su sucursal
-                query = query.Where(p => p.Activo == true);
-                if (idSucursalUsuario > 0)
-                {
-                    query = query.Where(p => p.IdSucursal == idSucursalUsuario);
-                }
-            }
+            // FILTRO POR ROL
+            // SuperAdmin y Administrador ven TODAS las promociones
+            // (el filtro por sucursal se hace en el cliente)
             
             promociones = await query
                 .OrderByDescending(p => p.FechaCreacion)
@@ -388,6 +547,32 @@
         {
             cargando = false;
         }
+    }
+
+    // ============================================
+    // BUSCADOR DE SUCURSAL
+    // ============================================
+
+    private void AbrirDropdownSucursal()
+    {
+        mostrarDropdownSucursal = true;
+    }
+
+    private void SeleccionarSucursal(SucursalCyc? sucursal)
+    {
+        if (sucursal == null)
+        {
+            filtroSucursal = "";
+            busquedaSucursal = "";
+        }
+        else
+        {
+            filtroSucursal = sucursal.Almacen;
+            busquedaSucursal = sucursal.NombreCompleto ?? sucursal.Almacen;
+        }
+        
+        mostrarDropdownSucursal = false;
+        paginaActual = 1;
     }
 
     private async Task CopiarEnlace(string enlace)
@@ -407,7 +592,16 @@
     private void CrearPromocion() => NavigationManager.NavigateTo("/promociones/crear");
     private void EditarPromocion(int id) => NavigationManager.NavigateTo($"/promociones/editar/{id}");
     private void ToggleFilters() => mostrarFiltros = !mostrarFiltros;
-    private void LimpiarFiltros() { filtro = ""; filtroEstado = ""; }
+    
+    private void LimpiarFiltros() 
+    { 
+        filtro = ""; 
+        filtroEstado = ""; 
+        filtroSucursal = "";
+        busquedaSucursal = "";
+        paginaActual = 1;
+    }
+    
     private void CambiarPagina(int pagina) => paginaActual = pagina;
 
     private async Task ToggleEstado(Promocion promo)
@@ -417,558 +611,51 @@
         await CargarPromociones();
     }
 
-    private async Task ConfirmarEliminar(Promocion promo)
+    private void ConfirmarEliminar(Promocion promo)
     {
-        DbContext.Promociones.Remove(promo);
-        await DbContext.SaveChangesAsync();
-        await CargarPromociones();
+        promocionEliminar = promo;
+        mostrarModalEliminar = true;
+    }
+
+    private async Task EliminarPromocion()
+    {
+        if (promocionEliminar == null) return;
+
+        try
+        {
+            DbContext.Promociones.Remove(promocionEliminar);
+            await DbContext.SaveChangesAsync();
+            await CargarPromociones();
+            
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "¡Eliminada!",
+                text = $"La promoción '{promocionEliminar.Titulo}' fue eliminada correctamente.",
+                icon = "success",
+                confirmButtonText = "Aceptar",
+                confirmButtonColor = "#0f172a"
+            });
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Error",
+                text = $"No se pudo eliminar la promoción: {ex.Message}",
+                icon = "error",
+                confirmButtonText = "Aceptar",
+                confirmButtonColor = "#ef4444"
+            });
+        }
+        finally
+        {
+            CerrarModalEliminar();
+        }
+    }
+
+    private void CerrarModalEliminar()
+    {
+        mostrarModalEliminar = false;
+        promocionEliminar = null;
     }
 }
-<style>
-    .promociones-container {
-        padding-bottom: 2rem;
-        min-height: 100vh;
-    }
-
-    /* Header */
-    .dashboard-header {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        border: 1px solid #e5e7eb;
-    }
-
-    .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .header-title {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .title-icon {
-        width: 50px;
-        height: 50px;
-        background: #0f172a;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-    }
-
-    .header-title h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0;
-    }
-
-    .subtitle {
-        color: #6b7280;
-        font-size: 0.9rem;
-        margin: 0;
-    }
-
-    .btn-create {
-        background: #0f172a;
-        border: none;
-        color: white;
-        padding: 0.6rem 1.2rem;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 500;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .btn-create:hover {
-        background: #020617;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    /* Control Panel */
-    .control-panel {
-        background: white;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        border: 1px solid #e5e7eb;
-    }
-
-    .panel-header {
-        padding: 1rem 1.25rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .panel-title {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .panel-title i {
-        color: #0f172a;
-    }
-
-    .panel-actions {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .search-box {
-        position: relative;
-        background: #f9fafb;
-        border-radius: 8px;
-        padding: 0.4rem 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        min-width: 250px;
-        border: 1px solid #e5e7eb;
-    }
-
-    .search-box i {
-        color: #9ca3af;
-        font-size: 0.9rem;
-    }
-
-    .search-box input {
-        border: none;
-        background: none;
-        outline: none;
-        width: 100%;
-        font-size: 0.85rem;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .btn-filter, .btn-refresh {
-        padding: 0.4rem 0.75rem;
-        border: 1px solid #e5e7eb;
-        background: white;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        font-size: 0.85rem;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .btn-refresh {
-        padding: 0.4rem;
-    }
-
-    .btn-filter:hover, .btn-refresh:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
-    }
-
-    /* Filters Panel */
-    .filters-panel {
-        padding: 1rem 1.25rem;
-        border-top: 1px solid #e5e7eb;
-        display: none;
-    }
-
-    .filters-panel.show {
-        display: block;
-        animation: slideDown 0.3s ease;
-    }
-
-    .filter-row {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    .filter-row:last-child {
-        margin-bottom: 0;
-    }
-
-    .filter-group {
-        flex: 1;
-    }
-
-    .filter-group label {
-        display: block;
-        margin-bottom: 0.25rem;
-        font-weight: 500;
-        color: #374151;
-        font-size: 0.75rem;
-    }
-
-    .select-custom {
-        padding: 0.4rem 0.75rem;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        background: white;
-        font-size: 0.85rem;
-        width: 100%;
-    }
-
-    .btn-clear-filters {
-        padding: 0.4rem 0.75rem;
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        color: #374151;
-        font-size: 0.85rem;
-        display: flex;
-        align-items: center;
-        gap: 0.4rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        width: 100%;
-        justify-content: center;
-    }
-
-    .btn-clear-filters:hover {
-        background: #f3f4f6;
-    }
-
-    /* Table */
-    .table-container {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        border: 1px solid #e5e7eb;
-        overflow: hidden;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .crud-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-    }
-
-    .crud-table thead {
-        background: #f9fafb;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .crud-table th {
-        padding: 0.85rem 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: #374151;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    .crud-table td {
-        padding: 0.85rem 1rem;
-        border-bottom: 1px solid #e5e7eb;
-        vertical-align: middle;
-        font-size: 0.85rem;
-    }
-
-    .promo-row:hover {
-        background: #f9fafb;
-    }
-
-    /* Column widths */
-    .col-titulo { min-width: 250px; }
-    .col-precio { min-width: 100px; }
-    .col-descuento { min-width: 100px; }
-    .col-fecha { min-width: 100px; }
-    .col-estado { min-width: 90px; }
-    .col-enlace { min-width: 90px; }
-    .col-acciones { min-width: 120px; }
-
-    /* Titulo info */
-    .titulo-info {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .titulo-info i {
-        font-size: 1rem;
-    }
-
-    .titulo-nombre {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    .text-muted {
-        color: #6b7280;
-        font-size: 0.7rem;
-        display: block;
-    }
-
-    /* Precio */
-    .precio {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    /* Descuento badge */
-    .descuento-badge {
-        display: inline-block;
-        background: #fef3c7;
-        color: #b45309;
-        padding: 0.2rem 0.5rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 500;
-    }
-
-    /* Status badge */
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 500;
-    }
-
-    .status-active {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .status-inactive {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    /* Botón copiar enlace */
-    .btn-copy-link {
-        background: #f3f4f6;
-        border: none;
-        padding: 0.3rem 0.7rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        transition: all 0.2s;
-        color: #374151;
-    }
-
-    .btn-copy-link:hover {
-        background: #e5e7eb;
-        transform: scale(1.02);
-    }
-
-    /* Action buttons */
-    .action-buttons {
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-
-    .btn-action {
-        width: 32px;
-        height: 32px;
-        border: none;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        font-size: 0.9rem;
-        background: #f3f4f6;
-        color: #4b5563;
-    }
-
-    .btn-view:hover {
-        background: #3b82f6;
-        color: white;
-    }
-
-    .btn-edit:hover {
-        background: #f59e0b;
-        color: white;
-    }
-
-    .btn-toggle:hover {
-        background: #10b981;
-        color: white;
-    }
-
-    .btn-delete:hover {
-        background: #ef4444;
-        color: white;
-    }
-
-    /* Table Footer */
-    .table-footer {
-        padding: 1rem 1.25rem;
-        background: #f9fafb;
-        border-top: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .footer-info {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-    }
-
-    .total-count, .pagination-info {
-        font-size: 0.8rem;
-        color: #6b7280;
-    }
-
-    .total-count span, .pagination-info span {
-        font-weight: 600;
-        color: #1f2937;
-    }
-
-    /* Pagination */
-    .pagination-wrapper {
-        display: flex;
-    }
-
-    .pagination {
-        display: flex;
-        gap: 0.25rem;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-
-    .page-item {
-        display: inline-block;
-    }
-
-    .page-item.disabled {
-        opacity: 0.5;
-        pointer-events: none;
-    }
-
-    .page-item.active .page-link {
-        background: #0f172a;
-        color: white;
-        border-color: #0f172a;
-    }
-
-    .page-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 32px;
-        height: 32px;
-        padding: 0 0.5rem;
-        border: 1px solid #e5e7eb;
-        background: white;
-        color: #374151;
-        text-decoration: none;
-        border-radius: 6px;
-        transition: all 0.2s ease;
-        font-size: 0.8rem;
-        cursor: pointer;
-    }
-
-    .page-link:hover {
-        background: #f3f4f6;
-        border-color: #d1d5db;
-    }
-
-    /* Loading */
-    .loading-container {
-        background: white;
-        border-radius: 12px;
-        padding: 3rem;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    .no-data {
-        text-align: center;
-        padding: 2rem;
-        color: #6b7280;
-    }
-
-    .no-data i {
-        color: #9ca3af;
-        margin-bottom: 1rem;
-    }
-
-    /* Animations */
-    @@keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Responsive */
-    @@media (max-width: 768px) {
-        .header-content {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .panel-header {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-
-        .panel-actions {
-            width: 100%;
-            flex-direction: column;
-        }
-
-        .search-box {
-            width: 100%;
-        }
-
-        .filter-row {
-            flex-direction: column;
-        }
-
-        .table-footer {
-            flex-direction: column;
-            gap: 1rem;
-            text-align: center;
-        }
-
-        .footer-info {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-    }
-</style>

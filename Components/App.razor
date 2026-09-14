@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
 
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <!-- DataTables -->
     <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
@@ -18,10 +18,33 @@
     <!-- SweetAlert2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
-    <!-- Estilos -->
+    <!-- Estilos Base -->
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="RamsCottons.styles.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
+
+    <!-- ============================================
+         CSS DE PÁGINAS (cargados en el head para evitar FOUC)
+         ============================================ -->
+    <link rel="stylesheet" href="css/Dashboard/Home.css" />
+    <link rel="stylesheet" href="css/Clientes/ClienteQR.css" />
+    <link rel="stylesheet" href="css/Clientes/CrearCliente.css" />
+    <link rel="stylesheet" href="css/Clientes/EditarClientes.css" />
+    <link rel="stylesheet" href="css/Clientes/GenerarQR.css" />
+    <link rel="stylesheet" href="css/Clientes/VerCliente.css" />
+    <link rel="stylesheet" href="css/Promociones/Promociones.css" />
+    <link rel="stylesheet" href="css/Promociones/CrearPromociones.css" />
+    <link rel="stylesheet" href="css/Promociones/EditarPromociones.css" />
+    <link rel="stylesheet" href="css/Promociones/VerPromociones.css" />
+    <link rel="stylesheet" href="css/Reportes/Reportes.css" />
+    <link rel="stylesheet" href="css/Admin/Usuarios.css" />
+    <link rel="stylesheet" href="css/Admin/CrearUsuarios.css" />
+    <link rel="stylesheet" href="css/Admin/EditarUsuarios.css" />
+    <link rel="stylesheet" href="css/Admin/VerUsuarios.css" />
+    <link rel="stylesheet" href="css/Admin/Roles.css" />
+    <link rel="stylesheet" href="css/Admin/CrearRol.css" />
+    <link rel="stylesheet" href="css/Admin/EditarRol.css" />
+    <link rel="stylesheet" href="css/Admin/RolPermiso.css" />
 
     <HeadOutlet />
 </head>
@@ -34,15 +57,10 @@
 
     <!-- Scripts -->
     <script src="_framework/blazor.web.js"></script>
-
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
-
     <script src="js/fullscreen.js"></script>
-
-    <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>

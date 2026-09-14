@@ -1,16 +1,26 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="page">
-    <div class="sidebar">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
         <NavMenu />
     </div>
+
+    <!-- OVERLAY PARA CELULAR -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <main>
         <div class="top-row px-4 d-flex justify-content-between">
 
-            <!-- BOTÓN PARA ENCOGER MENU SIDEBAR -->
-            <button class="btn-menu" onclick="toggleSidebar()">
-                <i id="menuIcon" class="bi bi-list"></i>
+            <!-- BOTÓN PARA PC - COMPRIMIR (chevron) -->
+            <button class="btn-menu btn-desktop" onclick="toggleSidebar()">
+                <i id="menuIcon" class="bi bi-chevron-left"></i>
+            </button>
+
+            <!-- BOTÓN PARA CELULAR - HAMBURGUESA -->
+            <button class="btn-menu btn-mobile" onclick="toggleMobileMenu()">
+                <i id="mobileIcon" class="bi bi-list"></i>
             </button>
 
             <!-- BOTÓN FULLSCREEN -->
@@ -24,4 +34,62 @@
             @Body
         </article>
     </main>
+
 </div>
+
+<script>
+    // ============================
+    // PC - COMPRIMIR/EXPANDIR
+    // ============================
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var icon = document.getElementById('menuIcon');
+        
+        sidebar.classList.toggle('collapsed');
+        
+        if (sidebar.classList.contains('collapsed')) {
+            icon.className = 'bi bi-chevron-right';
+        } else {
+            icon.className = 'bi bi-chevron-left';
+        }
+    }
+
+    // ============================
+    // MÓVIL - ABRIR/CERRAR
+    // ============================
+    function toggleMobileMenu() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        var icon = document.getElementById('mobileIcon');
+        
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+        
+        // Bloquear scroll del body cuando el menú está abierto
+        if (sidebar.classList.contains('mobile-open')) {
+            document.body.style.overflow = 'hidden';
+            icon.className = 'bi bi-x-lg';
+        } else {
+            document.body.style.overflow = '';
+            icon.className = 'bi bi-list';
+        }
+    }
+
+    function closeSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        var icon = document.getElementById('mobileIcon');
+        
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        icon.className = 'bi bi-list';
+    }
+
+    // Cerrar menú al presionar ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeSidebar();
+        }
+    });
+</script>

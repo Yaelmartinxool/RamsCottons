@@ -24,8 +24,6 @@
                         var user = context.User;
                         var esSuperAdmin = user.IsInRole("SuperAdministrador");
                         var esAdmin = user.IsInRole("Administrador");
-                        var esGerente = user.IsInRole("Gerente");
-                        var esVendedor = user.IsInRole("Vendedor");
                     }
 
                     <!-- INICIO -->
@@ -40,18 +38,15 @@
                         <span class="menu-text">PROMOCIONES</span>
                     </div>
 
-                    <NavLink class="menu-item" href="promociones"Match="NavLinkMatch.All">
+                    <NavLink class="menu-item" href="promociones" Match="NavLinkMatch.All">
                         <i class="bi bi-megaphone-fill"></i>
                         <span class="menu-text">Gestionar Promociones</span>
                     </NavLink>
 
-                    @if (esSuperAdmin || esAdmin)
-                    {
                     <NavLink class="menu-item" href="promociones/crear" Match="NavLinkMatch.All">
                         <i class="bi bi-plus-circle-fill"></i>
                         <span class="menu-text">Nueva Promoción</span>
                     </NavLink>
-                    }
 
                     <!-- CLIENTES -->
                     <div class="menu-section-title">
@@ -64,7 +59,8 @@
                         <span class="menu-text">Todos los Clientes</span>
                     </NavLink>
 
-                    @if (esSuperAdmin || esAdmin || esGerente)
+                    <!-- REPORTES - SOLO SUPERADMIN -->
+                    @if (esSuperAdmin)
                     {
                         <div class="menu-section-title">
                             <i class="bi bi-graph-up me-1"></i>
@@ -77,33 +73,28 @@
                         </NavLink>
                     }
 
-                    <!-- ADMIN -->
-                    @if (esSuperAdmin || esAdmin)
+                    <!-- ADMINISTRACIÓN - SOLO SUPERADMIN -->
+                    @if (esSuperAdmin)
                     {
                         <div class="menu-section-title">
                             <i class="bi bi-gear-fill me-1"></i>
                             <span class="menu-text">ADMINISTRACIÓN</span>
                         </div>
 
-                        <!-- Crear Usuario -->
                         <NavLink class="menu-item" href="admin/usuarios/crear" Match="NavLinkMatch.All">
                             <i class="bi bi-person-plus-fill"></i>
                             <span class="menu-text"> Crear Usuario</span>
                         </NavLink>
 
-                        <!-- Lista de Usuarios -->
                         <NavLink class="menu-item" href="admin/usuarios" Match="NavLinkMatch.All">
                             <i class="bi bi-people-fill"></i>
-                            <span  class="menu-text"> Lista de Usuarios</span>
+                            <span class="menu-text"> Lista de Usuarios</span>
                         </NavLink>
 
-                        @if (esSuperAdmin)
-                        {
-                            <NavLink class="menu-item" href="admin/roles">
-                                <i class="bi bi-shield-lock-fill"></i>
-                                <span class="menu-text">Roles y Permisos</span>
-                            </NavLink>
-                        }
+                        <NavLink class="menu-item" href="admin/roles">
+                            <i class="bi bi-shield-lock-fill"></i>
+                            <span class="menu-text">Roles y Permisos</span>
+                        </NavLink>
                     }
                 </Authorized>
 
@@ -128,8 +119,6 @@
             @{
                 var user = context.User;
                 var esSuperAdmin = user.IsInRole("SuperAdministrador");
-                var esAdmin = user.IsInRole("Administrador");
-                var esGerente = user.IsInRole("Gerente");
             }
 
             <div class="footer-section">
@@ -141,10 +130,7 @@
                             @context.User.Identity?.Name
                         </div>
                         <div style="color: #ffd700; font-size: 0.8rem;">
-                            @(esSuperAdmin ? "Super Administrador" :
-                              esAdmin ? "Administrador" :
-                              esGerente ? "Gerente" :
-                              "Vendedor")
+                            @(esSuperAdmin ? "Super Administrador" : "Administrador")
                         </div>
                     </div>
                 </div>

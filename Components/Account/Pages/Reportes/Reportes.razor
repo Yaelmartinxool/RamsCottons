@@ -5,7 +5,7 @@
 @using Microsoft.EntityFrameworkCore
 @using RamsCottons.Models
 @using RamsCottons.Data
-@attribute [Authorize(Roles = "SuperAdministrador,Administrador,Gerente")]
+@attribute [Authorize(Roles = "SuperAdministrador,Administrador")]
 
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavigationManager
@@ -26,7 +26,7 @@
                 </div>
                 <div>
                     <h1>Reportes</h1>
-                    <p class="subtitle">Estadísticas del sistema</p>
+                    <p class="subtitle">Estadisticas del sistema</p>
                 </div>
             </div>
             <div class="header-actions">
@@ -50,7 +50,7 @@
                 <i class="bi bi-megaphone-fill"></i> Promociones
             </button>
             <button class="tab-btn @(tabActivo == 3 ? "active" : "")" @onclick="() => CambiarTab(3)">
-                <i class="bi bi-whatsapp"></i> Envíos
+                <i class="bi bi-whatsapp"></i> Envios
             </button>
             <button class="tab-btn @(tabActivo == 4 ? "active" : "")" @onclick="() => CambiarTab(4)">
                 <i class="bi bi-pie-chart-fill"></i> Resumen
@@ -75,9 +75,9 @@
                     <h3><i class="bi bi-people-fill"></i> Clientes</h3>
                     <div class="filtros">
                         <select class="select-filter" @bind="filtroDias" @bind:event="onchange">
-                            <option value="7">Últimos 7 días</option>
-                            <option value="15">Últimos 15 días</option>
-                            <option value="30">Últimos 30 días</option>
+                            <option value="7">Ultimos 7 dias</option>
+                            <option value="15">Ultimos 15 dias</option>
+                            <option value="30">Ultimos 30 dias</option>
                             <option value="0">Todos</option>
                         </select>
                         <button class="btn-aplicar" @onclick="CargarClientes">Aplicar</button>
@@ -118,7 +118,7 @@
                     <div class="table-responsive">
                         <table class="report-table">
                             <thead>
-                                <tr><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Fecha Registro</th><th>Estado</th></tr>
+                                <tr><th>Nombre</th><th>Telefono</th><th>Correo</th><th>Fecha Registro</th><th>Estado</th></tr>
                             </thead>
                             <tbody>
                                 @foreach (var cliente in ultimosClientes)
@@ -160,7 +160,7 @@
                             <div class="stat-info"><span class="stat-label">Inactivas</span><span class="stat-number">@promocionesInactivas</span></div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-icon orange"><i class="bi bi-calendar-exclamation-fill"></i></div>
+                            <div class="stat-icon orange"><i class="bi bi-clock-history"></i></div>
                             <div class="stat-info"><span class="stat-label">Por vencer</span><span class="stat-number">@promocionesPorVencer</span></div>
                         </div>
                     </div>
@@ -168,15 +168,23 @@
                     <div class="table-responsive">
                         <table class="report-table">
                             <thead>
-                                <tr><th>Título</th><th>Precio</th><th>Descuento</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr>
+                                <tr><th>Titulo</th><th>Precio</th><th>Descuento</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr>
                             </thead>
                             <tbody>
                                 @foreach (var promo in ultimasPromociones)
                                 {
                                     <tr>
                                         <td>@promo.Titulo</td>
-                                        <td>$@promo.Precio.ToString("N2")</td>
-                                        <td>@(promo.DescuentoPorcentaje.HasValue ? $"{promo.DescuentoPorcentaje}% OFF" : "-")</td>
+                                        <td>
+                                            @(promo.Precio.HasValue
+                                                ? $"${promo.Precio.Value.ToString("N2")}"
+                                                : "Varios precios")
+                                        </td>
+                                        <td>
+                                            @(promo.DescuentoPorcentaje.HasValue
+                                                ? $"{promo.DescuentoPorcentaje}% OFF"
+                                                : "-")
+                                        </td>
                                         <td>@promo.FechaInicio.ToString("dd/MM/yyyy")</td>
                                         <td>@promo.FechaFin.ToString("dd/MM/yyyy")</td>
                                         <td><span class="badge @(promo.Activo ? "active" : "inactive")">@(promo.Activo ? "Activa" : "Inactiva")</span></td>
@@ -189,17 +197,17 @@
             </div>
         }
 
-        <!-- Tab Envíos -->
+        <!-- Tab Envios -->
         @if (tabActivo == 3)
         {
             <div class="report-card">
                 <div class="report-header">
-                    <h3><i class="bi bi-whatsapp"></i> Envíos WhatsApp</h3>
+                    <h3><i class="bi bi-whatsapp"></i> Envios WhatsApp</h3>
                     <div class="filtros">
                         <select class="select-filter" @bind="filtroDiasEnvios" @bind:event="onchange">
-                            <option value="7">Últimos 7 días</option>
-                            <option value="15">Últimos 15 días</option>
-                            <option value="30">Últimos 30 días</option>
+                            <option value="7">Ultimos 7 dias</option>
+                            <option value="15">Ultimos 15 dias</option>
+                            <option value="30">Ultimos 30 dias</option>
                             <option value="0">Todos</option>
                         </select>
                         <button class="btn-aplicar" @onclick="CargarEnvios">Aplicar</button>
@@ -209,18 +217,18 @@
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-icon green"><i class="bi bi-whatsapp"></i></div>
-                            <div class="stat-info"><span class="stat-label">Total Envíos</span><span class="stat-number">@totalEnvios</span></div>
+                            <div class="stat-info"><span class="stat-label">Total Envios</span><span class="stat-number">@totalEnvios</span></div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-icon blue"><i class="bi bi-graph-up"></i></div>
-                            <div class="stat-info"><span class="stat-label">Promedio/día</span><span class="stat-number">@promedioDiario</span></div>
+                            <div class="stat-info"><span class="stat-label">Promedio/dia</span><span class="stat-number">@promedioDiario</span></div>
                         </div>
                     </div>
 
                     <div class="table-responsive">
                         <table class="report-table">
                             <thead>
-                                <tr><th>Cliente</th><th>Teléfono</th><th>Promoción</th><th>Fecha Envío</th></tr>
+                                <tr><th>Cliente</th><th>Telefono</th><th>Promocion</th><th>Fecha Envio</th></tr>
                             </thead>
                             <tbody>
                                 @foreach (var envio in enviosConDatos)
@@ -266,7 +274,7 @@
                         <div class="resumen-item">
                             <div class="resumen-icon green"><i class="bi bi-whatsapp"></i></div>
                             <div class="resumen-info">
-                                <span class="resumen-label">Envíos Realizados</span>
+                                <span class="resumen-label">Envios Realizados</span>
                                 <span class="resumen-number">@totalEnvios</span>
                             </div>
                         </div>
@@ -289,31 +297,30 @@
     private bool cargando = true;
     private int filtroDias = 30;
     private int filtroDiasEnvios = 30;
-    
+
     // Variables de sucursal y rol
-    private int idSucursalUsuario = 0;
+    private string? idSucursalUsuario = null;
     private bool esSuperAdmin = false;
     private bool esAdmin = false;
-    private bool esGerente = false;
-    
+
     // Clientes
     private int totalClientes = 0;
     private int clientesActivos = 0;
     private int clientesInactivos = 0;
     private int clientesNuevosMes = 0;
     private List<Cliente> ultimosClientes = new();
-    
+
     // Promociones
     private int totalPromociones = 0;
     private int promocionesActivas = 0;
     private int promocionesInactivas = 0;
     private int promocionesPorVencer = 0;
     private List<Promocion> ultimasPromociones = new();
-    
+
     // Usuarios
     private int totalUsuarios = 0;
-    
-    // Envíos
+
+    // Envios
     private int totalEnvios = 0;
     private int promedioDiario = 0;
     private List<EnvioConDatos> enviosConDatos = new();
@@ -321,9 +328,9 @@
     private class EnvioConDatos
     {
         public DateTime FechaEnvio { get; set; }
-        public string? ClienteNombre { get; set; }
-        public string? ClienteTelefono { get; set; }
-        public string? PromocionTitulo { get; set; }
+        public string ClienteNombre { get; set; } = default!;
+        public string ClienteTelefono { get; set; } = default!;
+        public string PromocionTitulo { get; set; } = default!;
     }
 
     protected override async Task OnInitializedAsync()
@@ -340,19 +347,18 @@
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-        
+
         esSuperAdmin = user.IsInRole("SuperAdministrador");
         esAdmin = user.IsInRole("Administrador");
-        esGerente = user.IsInRole("Gerente");
-        
+
         var usuario = await UserManager.GetUserAsync(user);
         if (usuario != null)
         {
-            idSucursalUsuario = usuario.IdSucursal ?? 0;
+            idSucursalUsuario = usuario.IdSucursal;
         }
     }
 
-    private async Task CambiarTab(int tab)
+    private void CambiarTab(int tab)
     {
         tabActivo = tab;
         StateHasChanged();
@@ -360,58 +366,76 @@
 
     private async Task CargarResumen()
     {
-        // Clientes con filtro de sucursal
-        var queryClientes = DbContext.Clientes.AsQueryable();
-        if (!esSuperAdmin && idSucursalUsuario > 0)
+        try
         {
-            queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
+            // Clientes con filtro de sucursal
+            var queryClientes = DbContext.Clientes.AsQueryable();
+            if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
+            {
+                queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
+            }
+
+            var clientesList = await queryClientes.ToListAsync();
+            var clientesIds = clientesList.Select(c => c.Id).ToList();
+
+            totalClientes = clientesList.Count;
+            clientesActivos = clientesList.Count(c => c.Estado == 1);
+            clientesInactivos = totalClientes - clientesActivos;
+
+            var inicioMes = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            clientesNuevosMes = clientesList.Count(c => c.FechaRegistro >= inicioMes);
+
+            // Promociones con filtro de sucursal
+            var queryPromos = DbContext.Promociones.AsQueryable();
+            if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
+            {
+                queryPromos = queryPromos.Where(p => p.IdSucursal == idSucursalUsuario);
+            }
+
+            var promosList = await queryPromos.ToListAsync();
+            totalPromociones = promosList.Count;
+            promocionesActivas = promosList.Count(p => p.Activo);
+            promocionesInactivas = totalPromociones - promocionesActivas;
+
+            var fechaLimite = DateTime.Now.AddDays(7);
+            promocionesPorVencer = promosList.Count(p => p.Activo && p.FechaFin <= fechaLimite);
+
+            // ENVIOS - LINQ PURO
+            if (clientesIds.Any())
+            {
+                totalEnvios = await DbContext.HistorialEnvios
+                    .CountAsync(h => clientesIds.Contains(h.ClienteId));
+            }
+            else
+            {
+                totalEnvios = 0;
+            }
+
+            totalUsuarios = await DbContext.Users.CountAsync();
         }
-        
-        totalClientes = await queryClientes.CountAsync();
-        clientesActivos = await queryClientes.CountAsync(c => c.Estado == 1);
-        clientesInactivos = totalClientes - clientesActivos;
-        
-        var inicioMes = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-        clientesNuevosMes = await queryClientes.CountAsync(c => c.FechaRegistro >= inicioMes);
-        
-        // Promociones con filtro de sucursal
-        var queryPromos = DbContext.Promociones.AsQueryable();
-        if (!esSuperAdmin && idSucursalUsuario > 0)
+        catch (Exception ex)
         {
-            queryPromos = queryPromos.Where(p => p.IdSucursal == idSucursalUsuario);
+            Console.WriteLine($"Error en CargarResumen: {ex.Message}");
         }
-        
-        totalPromociones = await queryPromos.CountAsync();
-        promocionesActivas = await queryPromos.CountAsync(p => p.Activo);
-        promocionesInactivas = totalPromociones - promocionesActivas;
-        
-        var fechaLimite = DateTime.Now.AddDays(7);
-        promocionesPorVencer = await queryPromos.CountAsync(p => p.Activo && p.FechaFin <= fechaLimite);
-        
-        // Envíos con filtro de sucursal (a través de clientes)
-        var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
-        totalEnvios = await DbContext.HistorialEnvios.Where(e => clientesIds.Contains(e.ClienteId)).CountAsync();
-        
-        totalUsuarios = await DbContext.Users.CountAsync();
     }
 
     private async Task CargarClientes()
     {
         var query = DbContext.Clientes.AsQueryable();
-        
+
         // Filtro por sucursal
-        if (!esSuperAdmin && idSucursalUsuario > 0)
+        if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
         {
             query = query.Where(c => c.IdSucursal == idSucursalUsuario);
         }
-        
-        // Filtro por días
+
+        // Filtro por dias
         if (filtroDias > 0)
         {
             var fechaLimite = DateTime.Now.AddDays(-filtroDias);
             query = query.Where(c => c.FechaRegistro >= fechaLimite);
         }
-        
+
         totalClientes = await query.CountAsync();
         clientesActivos = await query.CountAsync(c => c.Estado == 1);
         clientesInactivos = totalClientes - clientesActivos;
@@ -421,50 +445,75 @@
     private async Task CargarPromociones()
     {
         var query = DbContext.Promociones.AsQueryable();
-        
+
         // Filtro por sucursal
-        if (!esSuperAdmin && idSucursalUsuario > 0)
+        if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
         {
             query = query.Where(p => p.IdSucursal == idSucursalUsuario);
         }
-        
+
         ultimasPromociones = await query.OrderByDescending(p => p.FechaCreacion).Take(10).ToListAsync();
     }
 
     private async Task CargarEnvios()
     {
-        // Obtener clientes de la sucursal
-        var queryClientes = DbContext.Clientes.AsQueryable();
-        if (!esSuperAdmin && idSucursalUsuario > 0)
+        try
         {
-            queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
+            // Obtener clientes de la sucursal
+            var queryClientes = DbContext.Clientes.AsQueryable();
+            if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
+            {
+                queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
+            }
+            var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
+
+            if (!clientesIds.Any())
+            {
+                totalEnvios = 0;
+                promedioDiario = 0;
+                enviosConDatos = new List<EnvioConDatos>();
+                return;
+            }
+
+            // Base query con filtro de días
+            var queryEnvios = DbContext.HistorialEnvios
+                .Where(h => clientesIds.Contains(h.ClienteId));
+
+            if (filtroDiasEnvios > 0)
+            {
+                var fechaLimite = DateTime.Now.AddDays(-filtroDiasEnvios);
+                queryEnvios = queryEnvios.Where(h => h.FechaEnvio >= fechaLimite);
+            }
+
+            // Total de envíos
+            totalEnvios = await queryEnvios.CountAsync();
+
+            // Promedio diario
+            var dias = filtroDiasEnvios > 0 ? filtroDiasEnvios : 30;
+            promedioDiario = dias > 0 ? totalEnvios / dias : 0;
+
+            // Últimos 10 envíos con datos del cliente y promoción
+            enviosConDatos = await (from h in queryEnvios
+                                    join c in DbContext.Clientes on h.ClienteId equals c.Id
+                                    join p in DbContext.Promociones on h.PromocionId equals p.Id
+                                    orderby h.FechaEnvio descending
+                                    select new EnvioConDatos
+                                    {
+                                        FechaEnvio = h.FechaEnvio,
+                                        ClienteNombre = c.NombreCompleto,
+                                        ClienteTelefono = c.Telefono ?? "Sin teléfono",
+                                        PromocionTitulo = p.Titulo
+                                    })
+                                    .Take(10)
+                                    .ToListAsync();
         }
-        var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
-        
-        var query = from h in DbContext.HistorialEnvios
-                    join c in DbContext.Clientes on h.ClienteId equals c.Id
-                    join p in DbContext.Promociones on h.PromocionId equals p.Id
-                    where clientesIds.Contains(h.ClienteId)
-                    select new { h.FechaEnvio, ClienteNombre = c.NombreCompleto, ClienteTelefono = c.Telefono, PromocionTitulo = p.Titulo };
-        
-        if (filtroDiasEnvios > 0)
+        catch (Exception ex)
         {
-            var fechaLimite = DateTime.Now.AddDays(-filtroDiasEnvios);
-            query = query.Where(x => x.FechaEnvio >= fechaLimite);
+            Console.WriteLine($"Error en CargarEnvios: {ex.Message}");
+            totalEnvios = 0;
+            promedioDiario = 0;
+            enviosConDatos = new List<EnvioConDatos>();
         }
-        
-        totalEnvios = await query.CountAsync();
-        var dias = filtroDiasEnvios > 0 ? filtroDiasEnvios : 30;
-        promedioDiario = dias > 0 ? totalEnvios / dias : 0;
-        
-        var resultados = await query.OrderByDescending(x => x.FechaEnvio).Take(10).ToListAsync();
-        enviosConDatos = resultados.Select(r => new EnvioConDatos
-        {
-            FechaEnvio = r.FechaEnvio,
-            ClienteNombre = r.ClienteNombre,
-            ClienteTelefono = r.ClienteTelefono,
-            PromocionTitulo = r.PromocionTitulo
-        }).ToList();
     }
 
     private async Task ExportarExcel()
@@ -473,17 +522,17 @@
         {
             string csv = "";
             string nombreArchivo = "";
-            
+
             if (tabActivo == 1)
             {
                 var query = DbContext.Clientes.AsQueryable();
-                if (!esSuperAdmin && idSucursalUsuario > 0)
+                if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
                 {
                     query = query.Where(c => c.IdSucursal == idSucursalUsuario);
                 }
                 var clientes = await query.ToListAsync();
-                
-                csv = "Nombre,Teléfono,Correo,Fecha Registro,Estado\n";
+
+                csv = "Nombre,Telefono,Correo,Fecha Registro,Estado\n";
                 foreach (var c in clientes)
                     csv += $"\"{c.NombreCompleto}\",\"{c.Telefono}\",\"{c.Correo ?? ""}\",\"{c.FechaRegistro:dd/MM/yyyy}\",\"{(c.Estado == 1 ? "Activo" : "Inactivo")}\"\n";
                 nombreArchivo = $"clientes_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
@@ -491,13 +540,13 @@
             else if (tabActivo == 2)
             {
                 var query = DbContext.Promociones.AsQueryable();
-                if (!esSuperAdmin && idSucursalUsuario > 0)
+                if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
                 {
                     query = query.Where(p => p.IdSucursal == idSucursalUsuario);
                 }
                 var promos = await query.ToListAsync();
-                
-                csv = "Título,Precio,Descuento,Inicio,Fin,Estado\n";
+
+                csv = "Titulo,Precio,Descuento,Inicio,Fin,Estado\n";
                 foreach (var p in promos)
                     csv += $"\"{p.Titulo}\",{p.Precio},\"{(p.DescuentoPorcentaje.HasValue ? $"{p.DescuentoPorcentaje}%" : "-")}\",\"{p.FechaInicio:dd/MM/yyyy}\",\"{p.FechaFin:dd/MM/yyyy}\",\"{(p.Activo ? "Activa" : "Inactiva")}\"\n";
                 nombreArchivo = $"promociones_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
@@ -505,19 +554,19 @@
             else if (tabActivo == 3)
             {
                 var queryClientes = DbContext.Clientes.AsQueryable();
-                if (!esSuperAdmin && idSucursalUsuario > 0)
+                if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
                 {
                     queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
                 }
                 var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
-                
+
                 var envios = await (from h in DbContext.HistorialEnvios
                                     join c in DbContext.Clientes on h.ClienteId equals c.Id
                                     join p in DbContext.Promociones on h.PromocionId equals p.Id
                                     where clientesIds.Contains(h.ClienteId)
                                     select new { c.NombreCompleto, c.Telefono, p.Titulo, h.FechaEnvio }).ToListAsync();
-                
-                csv = "Cliente,Teléfono,Promoción,Fecha Envío\n";
+
+                csv = "Cliente,Telefono,Promocion,Fecha Envio\n";
                 foreach (var e in envios)
                     csv += $"\"{e.NombreCompleto}\",\"{e.Telefono}\",\"{e.Titulo}\",\"{e.FechaEnvio:dd/MM/yyyy HH:mm}\"\n";
                 nombreArchivo = $"envios_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
@@ -530,11 +579,11 @@
                 csv += $"Clientes Inactivos,{clientesInactivos}\n";
                 csv += $"Total Promociones,{totalPromociones}\n";
                 csv += $"Promociones Activas,{promocionesActivas}\n";
-                csv += $"Total Envíos,{totalEnvios}\n";
+                csv += $"Total Envios,{totalEnvios}\n";
                 csv += $"Total Usuarios,{totalUsuarios}\n";
                 nombreArchivo = $"resumen_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
             }
-            
+
             var base64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(csv));
             await JS.InvokeVoidAsync("downloadFile", nombreArchivo, base64);
             await JS.InvokeVoidAsync("Swal.fire", "Exportado", "Archivo generado correctamente", "success");
@@ -547,7 +596,7 @@
 
     private async Task EliminarTodoConfirmado()
     {
-        var confirmado = await JS.InvokeAsync<bool>("confirm", "¿Estás seguro de que quieres eliminar todos los datos? Esta acción no se puede deshacer.");
+        var confirmado = await JS.InvokeAsync<bool>("confirm", "Esta seguro de que quiere eliminar todos los datos? Esta accion no se puede deshacer.");
         if (confirmado)
             await EliminarTodo();
     }
@@ -559,7 +608,7 @@
             if (tabActivo == 1)
             {
                 var query = DbContext.Clientes.AsQueryable();
-                if (!esSuperAdmin && idSucursalUsuario > 0)
+                if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
                 {
                     query = query.Where(c => c.IdSucursal == idSucursalUsuario);
                 }
@@ -573,7 +622,7 @@
             else if (tabActivo == 2)
             {
                 var query = DbContext.Promociones.AsQueryable();
-                if (!esSuperAdmin && idSucursalUsuario > 0)
+                if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
                 {
                     query = query.Where(p => p.IdSucursal == idSucursalUsuario);
                 }
@@ -587,18 +636,18 @@
             else if (tabActivo == 3)
             {
                 var queryClientes = DbContext.Clientes.AsQueryable();
-                if (!esSuperAdmin && idSucursalUsuario > 0)
+                if (!esSuperAdmin && !string.IsNullOrEmpty(idSucursalUsuario))
                 {
                     queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
                 }
                 var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
-                
+
                 var todos = await DbContext.HistorialEnvios.Where(e => clientesIds.Contains(e.ClienteId)).ToListAsync();
                 DbContext.HistorialEnvios.RemoveRange(todos);
                 await DbContext.SaveChangesAsync();
                 await CargarEnvios();
                 await CargarResumen();
-                await JS.InvokeVoidAsync("Swal.fire", "Eliminados", "Todos los envíos han sido eliminados", "success");
+                await JS.InvokeVoidAsync("Swal.fire", "Eliminados", "Todos los envios han sido eliminados", "success");
             }
             StateHasChanged();
         }
@@ -608,381 +657,3 @@
         }
     }
 }
-<style>
-    .reportes-container {
-        padding-bottom: 2rem;
-        min-height: 100vh;
-    }
-/* Header Actions */
-.header-actions {
-    display: flex;
-    gap: 0.75rem;
-}
-
-.btn-export, .btn-delete-all {
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    font-weight: 500;
-    font-size: 0.85rem;
-}
-
-.btn-export {
-    background: #10b981;
-    color: white;
-}
-
-.btn-export:hover {
-    background: #059669;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
-}
-
-.btn-delete-all {
-    background: #ef4444;
-    color: white;
-}
-
-.btn-delete-all:hover {
-    background: #dc2626;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
-}
-
-.btn-export:active, .btn-delete-all:active {
-    transform: translateY(0);
-}
-    .dashboard-header {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        border: 1px solid #e5e7eb;
-    }
-
-    .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .header-title {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .title-icon {
-        width: 50px;
-        height: 50px;
-        background: #0f172a;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-    }
-
-    .header-title h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0;
-    }
-
-    .subtitle {
-        color: #6b7280;
-        font-size: 0.9rem;
-        margin: 0;
-    }
-
-    .tabs-container {
-        background: white;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        margin-bottom: 1.5rem;
-    }
-
-    .tabs {
-        display: flex;
-        gap: 0.5rem;
-        padding: 1rem;
-        border-bottom: 1px solid #e5e7eb;
-        flex-wrap: wrap;
-    }
-
-    .tab-btn {
-        padding: 0.6rem 1.2rem;
-        border-radius: 8px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        font-weight: 500;
-        color: #6b7280;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-    .tab-btn:hover {
-        background: #f3f4f6;
-        color: #1f2937;
-    }
-
-    .tab-btn.active {
-        background: #0f172a;
-        color: white;
-    }
-
-    .report-card {
-        background: white;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        overflow: hidden;
-    }
-
-    .report-header {
-        padding: 1rem 1.5rem;
-        background: #f9fafb;
-        border-bottom: 1px solid #e5e7eb;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .report-header h3 {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .filtros {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-    }
-
-    .select-filter {
-        padding: 0.4rem 0.8rem;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        font-size: 0.85rem;
-        background: white;
-    }
-
-    .btn-aplicar {
-        padding: 0.4rem 1rem;
-        background: #0f172a;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .btn-aplicar:hover {
-        background: #020617;
-    }
-
-    .report-body {
-        padding: 1.5rem;
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .stat-card {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: #f9fafb;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-    }
-
-    .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-    }
-
-    .stat-icon.blue { background: #dbeafe; color: #1d4ed8; }
-    .stat-icon.green { background: #d1fae5; color: #047857; }
-    .stat-icon.red { background: #fee2e2; color: #dc2626; }
-    .stat-icon.orange { background: #fed7aa; color: #c2410c; }
-    .stat-icon.purple { background: #ede9fe; color: #6d28d9; }
-
-    .stat-info {
-        flex: 1;
-    }
-
-    .stat-label {
-        display: block;
-        font-size: 0.7rem;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .stat-number {
-        display: block;
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1f2937;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .report-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .report-table th {
-        padding: 0.75rem;
-        text-align: left;
-        font-weight: 600;
-        color: #374151;
-        border-bottom: 1px solid #e5e7eb;
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .report-table td {
-        padding: 0.75rem;
-        border-bottom: 1px solid #e5e7eb;
-        font-size: 0.85rem;
-        color: #1f2937;
-    }
-
-    .report-table tr:hover {
-        background: #f9fafb;
-    }
-
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.2rem 0.6rem;
-        border-radius: 20px;
-        font-size: 0.65rem;
-        font-weight: 500;
-    }
-
-    .badge.active {
-        background: #d1fae5;
-        color: #065f46;
-    }
-
-    .badge.inactive {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-
-    .resumen-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-    }
-
-    .resumen-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: #f9fafb;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-    }
-
-    .resumen-icon {
-        width: 55px;
-        height: 55px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.3rem;
-    }
-
-    .resumen-info {
-        flex: 1;
-    }
-
-    .resumen-label {
-        display: block;
-        font-size: 0.75rem;
-        color: #6b7280;
-    }
-
-    .resumen-number {
-        display: block;
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #1f2937;
-    }
-
-    .resumen-change {
-        font-size: 0.65rem;
-        color: #10b981;
-    }
-
-    .loading-container {
-        text-align: center;
-        padding: 3rem;
-        background: white;
-        border-radius: 12px;
-    }
-
-    @@media (max-width: 768px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .resumen-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .header-content {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .report-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .filtros {
-            width: 100%;
-        }
-
-        .select-filter {
-            flex: 1;
-        }
-    }
-</style>

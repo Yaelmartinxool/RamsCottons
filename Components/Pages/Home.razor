@@ -16,7 +16,6 @@
 
 <AuthorizeView Context="authContext">
     <Authorized>
-
         <div class="dashboard-container">
 
             <!-- HEADER -->
@@ -31,7 +30,7 @@
                             Hola, <span class="hero-name">@authContext.User.Identity?.Name</span>
                         </h1>
                         <p class="hero-subtitle">
-                            <i class="bi bi-calendar3"></i> @DateTime.Now.ToString("dddd, dd MMMM yyyy")
+                            <i class="bi bi-calendar3"></i> @FormatearFecha(DateTime.Now)
                             <span class="dot">•</span>
                             <i class="bi bi-clock"></i> <span id="live-clock">@DateTime.Now.ToString("hh:mm:ss tt")</span>
                         </p>
@@ -42,7 +41,7 @@
                                 <i class="bi bi-bar-chart-steps"></i>
                             </div>
                             <div class="stats-badge-info">
-                                <span class="stats-badge-value">@DateTime.Now.ToString("MMMM")</span>
+                                <span class="stats-badge-value">@Capitalizar(DateTime.Now.ToString("MMMM", new System.Globalization.CultureInfo("es-ES")))</span>
                                 <span class="stats-badge-label">En curso</span>
                             </div>
                         </div>
@@ -68,16 +67,13 @@
                     </div>
                 }
 
-                @if (EsSuperAdmin || EsAdmin)
-                {
-                    <div class="kpi-card">
-                        <div class="kpi-icon promotions"><i class="bi bi-megaphone-fill"></i></div>
-                        <div class="kpi-info">
-                            <div class="kpi-value">@PromocionesActivas</div>
-                            <div class="kpi-label">Promociones Activas</div>
-                        </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon promotions"><i class="bi bi-megaphone-fill"></i></div>
+                    <div class="kpi-info">
+                        <div class="kpi-value">@PromocionesActivas</div>
+                        <div class="kpi-label">Promociones Activas</div>
                     </div>
-                }
+                </div>
 
                 <div class="kpi-card">
                     <div class="kpi-icon clients"><i class="bi bi-person-badge"></i></div>
@@ -182,92 +178,38 @@
                     </div>
 
                     <!-- Promociones Activas -->
-                    @if (EsSuperAdmin || EsAdmin)
-                    {
-                        <div class="recent-card">
-                            <div class="recent-card-header">
-                                <div class="recent-icon promo-bg"><i class="bi bi-megaphone"></i></div>
-                                <div>
-                                    <h4>Promociones Activas</h4>
-                                    <span class="recent-count">@PromocionesActivas activas</span>
-                                </div>
+                    <div class="recent-card">
+                        <div class="recent-card-header">
+                            <div class="recent-icon promo-bg"><i class="bi bi-megaphone"></i></div>
+                            <div>
+                                <h4>Promociones Activas</h4>
+                                <span class="recent-count">@PromocionesActivas activas</span>
                             </div>
-                            <div class="recent-list">
-                                @if (UltimasPromociones.Any())
+                        </div>
+                        <div class="recent-list">
+                            @if (UltimasPromociones.Any())
+                            {
+                                @foreach (var promo in UltimasPromociones)
                                 {
-                                    @foreach (var promo in UltimasPromociones)
-                                    {
-                                        <div class="recent-item">
-                                            <div class="recent-avatar promo-avatar"><i class="bi bi-tag"></i></div>
-                                            <div class="recent-info">
-                                                <span class="recent-name">@promo.Titulo</span>
-                                                <span class="recent-time">Vence @promo.FechaFin.ToString("dd MMM")</span>
-                                            </div>
-                                            <div class="recent-badge warning">@((promo.FechaFin - DateTime.Now).Days) días</div>
+                                    <div class="recent-item">
+                                        <div class="recent-avatar promo-avatar"><i class="bi bi-tag"></i></div>
+                                        <div class="recent-info">
+                                            <span class="recent-name">@promo.Titulo</span>
+                                            <span class="recent-time">Vence @promo.FechaFin.ToString("dd MMM")</span>
                                         </div>
-                                    }
-                                }
-                                else
-                                {
-                                    <div class="empty-state">
-                                        <i class="bi bi-megaphone"></i>
-                                        <p>No hay promociones activas</p>
+                                        <div class="recent-badge warning">@((promo.FechaFin - DateTime.Now).Days) días</div>
                                     </div>
                                 }
-                            </div>
+                            }
+                            else
+                            {
+                                <div class="empty-state">
+                                    <i class="bi bi-megaphone"></i>
+                                    <p>No hay promociones activas</p>
+                                </div>
+                            }
                         </div>
-                    }
-                    else if (EsGerente)
-                    {
-                        <div class="recent-card supervision-card">
-                            <div class="recent-card-header">
-                                <div class="recent-icon supervision-bg"><i class="bi bi-graph-up"></i></div>
-                                <div>
-                                    <h4>Panel de Supervisión</h4>
-                                    <span class="recent-count">Gerente</span>
-                                </div>
-                            </div>
-                            <div class="supervision-content">
-                                <div class="supervision-metrics">
-                                    <div class="metric">
-                                        <span class="metric-value">@TotalClientes</span>
-                                        <span class="metric-label">Clientes totales</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-value">@TotalEnvios</span>
-                                        <span class="metric-label">Envíos totales</span>
-                                    </div>
-                                    <div class="metric">
-                                        <span class="metric-value">@PromocionesActivas</span>
-                                        <span class="metric-label">Promociones</span>
-                                    </div>
-                                </div>
-                                <div class="supervision-message">
-                                    <i class="bi bi-graph-up"></i>
-                                    <span>Reportes disponibles en la sección de Reportes</span>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="recent-card welcome-card">
-                            <div class="recent-card-header">
-                                <div class="recent-icon welcome-bg"><i class="bi bi-emoji-smile"></i></div>
-                                <div>
-                                    <h4>Bienvenido, Vendedor</h4>
-                                    <span class="recent-count">@(EsVendedor ? authContext.User.Identity?.Name : "Nuevo usuario")</span>
-                                </div>
-                            </div>
-                            <div class="welcome-content">
-                                <div class="welcome-tips">
-                                    <div class="tip"><i class="bi bi-person-plus"></i><span>Registra nuevos clientes</span></div>
-                                    <div class="tip"><i class="bi bi-whatsapp"></i><span>Envía promociones</span></div>
-                                    <div class="tip"><i class="bi bi-qr-code"></i><span>Genera QR para clientes</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    }
+                    </div>
                 </div>
             </div>
 
@@ -286,9 +228,7 @@
     // Variables para la vista
     private bool EsSuperAdmin { get; set; }
     private bool EsAdmin { get; set; }
-    private bool EsGerente { get; set; }
-    private bool EsVendedor { get; set; }
-    
+
     private int TotalClientes { get; set; }
     private int TotalEnvios { get; set; }
     private int ClientesHoy { get; set; }
@@ -297,7 +237,7 @@
     private int PromocionesActivas { get; set; }
     private int PromedioDiario { get; set; }
     private int TasaEnvio { get; set; }
-    
+
     private List<HistorialEnvio> UltimosEnvios { get; set; } = new();
     private List<Promocion> UltimasPromociones { get; set; } = new();
 
@@ -311,78 +251,126 @@
 
     private async Task CargarDatos()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        
-        EsSuperAdmin = user.IsInRole("SuperAdministrador");
-        EsAdmin = user.IsInRole("Administrador");
-        EsGerente = user.IsInRole("Gerente");
-        EsVendedor = user.IsInRole("Vendedor");
-        
-        var usuarioActual = await UserManager.GetUserAsync(user);
-        var userId = usuarioActual?.Id;
-        var idSucursalUsuario = usuarioActual?.IdSucursal ?? 0;
-        
-        // ==================== CLIENTES ====================
-        var queryClientes = DbContext.Clientes.AsQueryable();
-        
-        if (!EsSuperAdmin && idSucursalUsuario > 0)
+        try
         {
-            queryClientes = queryClientes.Where(c => c.IdSucursal == idSucursalUsuario);
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            EsSuperAdmin = user.IsInRole("SuperAdministrador");
+            EsAdmin = user.IsInRole("Administrador");
+
+            // ==================== CLIENTES ====================
+            var queryClientes = DbContext.Clientes.AsQueryable();
+
+            TotalClientes = await queryClientes.CountAsync();
+            ClientesHoy = await queryClientes.CountAsync(c => c.FechaRegistro.Date == DateTime.Today);
+
+            // ==================== ENVÍOS - LINQ PURO ====================
+            try
+            {
+                var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
+
+                if (clientesIds.Any())
+                {
+                    // TOTAL DE ENVÍOS (LINQ)
+                    TotalEnvios = await DbContext.HistorialEnvios
+                        .CountAsync(h => clientesIds.Contains(h.ClienteId));
+
+                    // ENVÍOS DE HOY (LINQ)
+                    var hoy = DateTime.Today;
+                    EnviosHoy = await DbContext.HistorialEnvios
+                        .CountAsync(h => clientesIds.Contains(h.ClienteId) 
+                                      && h.FechaEnvio.Date == hoy);
+
+                    // ÚLTIMOS 5 ENVÍOS (LINQ)
+                    UltimosEnvios = await DbContext.HistorialEnvios
+                        .Where(h => clientesIds.Contains(h.ClienteId))
+                        .OrderByDescending(h => h.FechaEnvio)
+                        .Take(5)
+                        .ToListAsync();
+                }
+                else
+                {
+                    TotalEnvios = 0;
+                    EnviosHoy = 0;
+                    UltimosEnvios = new List<HistorialEnvio>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al contar envíos: {ex.Message}");
+                TotalEnvios = 0;
+                EnviosHoy = 0;
+                UltimosEnvios = new List<HistorialEnvio>();
+            }
+
+            // ==================== PROMOCIONES ====================
+            var queryPromos = DbContext.Promociones.AsQueryable();
+
+            PromocionesActivas = await queryPromos.CountAsync(p => p.Activo);
+
+            UltimasPromociones = await queryPromos
+                .Where(p => p.Activo)
+                .OrderBy(p => p.FechaFin)
+                .Take(5)
+                .ToListAsync();
+
+            // ==================== ESTADÍSTICAS ====================
+            
+            // ✅ FIX 1: Promedio Diario = promedio de envíos por día
+            // Calcula los días desde el primer envío hasta hoy
+            if (TotalEnvios > 0)
+            {
+                var primerEnvio = await DbContext.HistorialEnvios
+                    .OrderBy(h => h.FechaEnvio)
+                    .FirstOrDefaultAsync();
+
+                if (primerEnvio != null)
+                {
+                    var dias = (DateTime.Today - primerEnvio.FechaEnvio.Date).Days + 1;
+                    PromedioDiario = dias > 0 ? TotalEnvios / dias : TotalEnvios;
+                }
+                else
+                {
+                    PromedioDiario = 0;
+                }
+            }
+            else
+            {
+                // Si no hay envíos, usa el promedio de registros por día
+                if (TotalClientes > 0)
+                {
+                    var primerCliente = await queryClientes
+                        .OrderBy(c => c.FechaRegistro)
+                        .FirstOrDefaultAsync();
+
+                    if (primerCliente != null)
+                    {
+                        var dias = (DateTime.Today - primerCliente.FechaRegistro.Date).Days + 1;
+                        PromedioDiario = dias > 0 ? TotalClientes / dias : TotalClientes;
+                    }
+                    else
+                    {
+                        PromedioDiario = 0;
+                    }
+                }
+                else
+                {
+                    PromedioDiario = 0;
+                }
+            }
+
+            // ✅ FIX 2: Tasa de Envío limitada a 100% (nunca puede pasar de 100%)
+            TasaEnvio = TotalClientes > 0 
+                ? Math.Min((TotalEnvios * 100 / TotalClientes), 100) 
+                : 0;
+
+            StateHasChanged();
         }
-        
-        if (EsVendedor && !string.IsNullOrEmpty(userId))
+        catch (Exception ex)
         {
-            queryClientes = queryClientes.Where(c => c.IdUsuario == userId);
+            Console.WriteLine($"Error general en CargarDatos: {ex.Message}");
         }
-        
-        TotalClientes = await queryClientes.CountAsync();
-        ClientesHoy = await queryClientes.CountAsync(c => c.FechaRegistro.Date == DateTime.Today);
-        
-        // ==================== ENVÍOS ====================
-        var queryEnvios = DbContext.HistorialEnvios.AsQueryable();
-        
-        if (!EsSuperAdmin && idSucursalUsuario > 0)
-        {
-            var clientesIds = await queryClientes.Select(c => c.Id).ToListAsync();
-            queryEnvios = queryEnvios.Where(e => clientesIds.Contains(e.ClienteId));
-        }
-        
-        if (EsVendedor && !string.IsNullOrEmpty(userId))
-        {
-            queryEnvios = queryEnvios.Where(e => e.UsuarioEnvioId == userId);
-        }
-        
-        TotalEnvios = await queryEnvios.CountAsync();
-        EnviosHoy = await queryEnvios.CountAsync(e => e.FechaEnvio.Date == DateTime.Today);
-        
-        // ==================== ÚLTIMOS ENVÍOS ====================
-        UltimosEnvios = await queryEnvios
-            .OrderByDescending(e => e.FechaEnvio)
-            .Take(5)
-            .ToListAsync();
-        
-        // ==================== PROMOCIONES ====================
-        var queryPromos = DbContext.Promociones.AsQueryable();
-        
-        if (!EsSuperAdmin && idSucursalUsuario > 0)
-        {
-            queryPromos = queryPromos.Where(p => p.IdSucursal == idSucursalUsuario);
-        }
-        
-        PromocionesActivas = await queryPromos.CountAsync(p => p.Activo);
-        
-        UltimasPromociones = await queryPromos
-            .Where(p => p.Activo)
-            .OrderBy(p => p.FechaFin)
-            .Take(5)
-            .ToListAsync();
-        
-        // ==================== ESTADÍSTICAS ====================
-        PromedioDiario = TotalClientes / 30;
-        TasaEnvio = TotalClientes > 0 ? (TotalEnvios * 100 / TotalClientes) : 0;
-        
-        StateHasChanged();
     }
 
     protected override void OnInitialized()
@@ -402,439 +390,28 @@
     {
         var hour = DateTime.Now.Hour;
         if (hour < 12) return "Buenos días";
-        if (hour < 18) return "Buenas tardes"; 
+        if (hour < 18) return "Buenas tardes";
         return "Buenas noches";
     }
+
+    private string Capitalizar(string texto)
+    {
+        if (string.IsNullOrEmpty(texto))
+            return texto;
+
+        return char.ToUpper(texto[0]) + texto.Substring(1);
+    }
+
+    private string FormatearFecha(DateTime fecha)
+    {
+        var cultura = new System.Globalization.CultureInfo("es-ES");
+
+        var dia = fecha.ToString("dddd", cultura);
+        var mes = fecha.ToString("MMMM", cultura);
+
+        dia = Capitalizar(dia);
+        mes = Capitalizar(mes);
+
+        return $"{dia}, {fecha.Day} {mes} {fecha.Year}";
+    }
 }
-<style>
-    :root {
-        --primary: #0f172a;
-        --primary-dark: #020617;
-        --success: #10b981;
-        --warning: #f59e0b;
-        --info: #3b82f6;
-        --danger: #ef4444;
-        --purple: #8b5cf6;
-        --dark: #1f2937;
-        --light: #f8fafc;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --sidebar-bg: #1f1f1f;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    .dashboard-container {
-        padding: 2rem;
-        max-width: 1400px;
-        margin: 0 auto;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-
-    .hero-section {
-        background: linear-gradient(135deg, var(--sidebar-bg) 0%, #2d2d2d 100%);
-        border-radius: 28px;
-        margin-bottom: 2rem;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .hero-content {
-        padding: 2rem 2.5rem;
-        position: relative;
-        z-index: 2;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .greeting-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: rgba(255, 255, 255, 0.15);
-        backdrop-filter: blur(10px);
-        padding: 0.35rem 1rem;
-        border-radius: 100px;
-        font-size: 0.85rem;
-        margin-bottom: 1rem;
-        width: fit-content;
-    }
-
-    .hero-title {
-        font-size: 2rem;
-        font-weight: 500;
-        color: white;
-        margin-bottom: 0.5rem;
-    }
-
-    .hero-name {
-        font-weight: 700;
-        background: linear-gradient(135deg, #fff, #e0e0e0);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .hero-subtitle {
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .hero-decoration {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        padding: 0.75rem 1.25rem;
-        backdrop-filter: blur(10px);
-    }
-
-    .stats-badge {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .stats-badge-icon {
-        width: 40px;
-        height: 40px;
-        background: rgba(255, 255, 255, 0.15);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-    }
-
-    .hero-wave {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        line-height: 0;
-    }
-
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .kpi-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.25rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-        border: 1px solid var(--gray-200);
-        transition: all 0.3s ease;
-    }
-
-    .kpi-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-    }
-
-    .kpi-icon {
-        width: 55px;
-        height: 55px;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.6rem;
-        color: white;
-    }
-
-    .kpi-icon.users { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-    .kpi-icon.promotions { background: linear-gradient(135deg, #f97316, #ea580c); }
-    .kpi-icon.clients { background: linear-gradient(135deg, #10b981, #059669); }
-    .kpi-icon.whatsapp { background: linear-gradient(135deg, #25D366, #128C7E); }
-
-    .kpi-info { flex: 1; }
-    .kpi-value { font-size: 1.8rem; font-weight: 700; color: var(--gray-800); line-height: 1.2; }
-    .kpi-label { font-size: 0.75rem; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
-
-    .summary-card {
-        background: white;
-        border-radius: 20px;
-        border: 1px solid var(--gray-200);
-        margin-bottom: 2rem;
-        overflow: hidden;
-    }
-
-    .summary-header {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid var(--gray-100);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .summary-header h3 {
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--gray-800);
-        margin: 0;
-    }
-
-    .summary-subtitle {
-        font-size: 0.7rem;
-        color: var(--gray-500);
-        margin-top: 0.2rem;
-    }
-
-    .refresh-btn {
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--gray-100);
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-        color: var(--gray-600);
-    }
-
-    .refresh-btn:hover {
-        background: var(--gray-200);
-        transform: rotate(180deg);
-    }
-
-    .summary-grid {
-        padding: 1.5rem;
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
-    }
-
-    .summary-item {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: var(--gray-50);
-        border-radius: 12px;
-        transition: all 0.2s;
-    }
-
-    .summary-item:hover {
-        background: var(--gray-100);
-        transform: translateX(3px);
-    }
-
-    .summary-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        color: white;
-    }
-
-    .summary-icon.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-    .summary-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
-    .summary-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .summary-icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-
-    .summary-info { flex: 1; }
-    .summary-label { display: block; font-size: 0.7rem; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.5px; }
-    .summary-number { display: block; font-size: 1.3rem; font-weight: 700; color: var(--gray-800); }
-
-    .recent-section { margin-top: 1rem; }
-    .section-header { margin-bottom: 1.5rem; }
-    .section-header h3 { font-size: 1.2rem; font-weight: 600; color: var(--gray-800); margin: 0; }
-    .section-subtitle { font-size: 0.8rem; color: var(--gray-500); margin-top: 0.2rem; }
-
-    .recent-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .recent-card {
-        background: white;
-        border-radius: 20px;
-        border: 1px solid var(--gray-200);
-        padding: 1.25rem;
-        transition: all 0.3s;
-    }
-
-    .recent-card:hover {
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
-    }
-
-    .recent-card-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 1.25rem;
-    }
-
-    .recent-icon {
-        width: 45px;
-        height: 45px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        color: white;
-    }
-
-    .whatsapp-bg { background: linear-gradient(135deg, #25D366, #128C7E); }
-    .promo-bg { background: linear-gradient(135deg, #f97316, #ea580c); }
-    .supervision-bg { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-    .welcome-bg { background: linear-gradient(135deg, #10b981, #059669); }
-
-    .recent-card-header h4 { font-size: 1rem; font-weight: 600; color: var(--gray-800); margin: 0; }
-    .recent-count { font-size: 0.7rem; color: var(--gray-500); }
-
-    .recent-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .recent-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.5rem;
-        border-radius: 12px;
-        transition: all 0.2s;
-    }
-
-    .recent-item:hover {
-        background: var(--gray-50);
-        transform: translateX(5px);
-    }
-
-    .recent-avatar {
-        width: 40px;
-        height: 40px;
-        background: linear-gradient(135deg, var(--primary), var(--purple));
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 600;
-        font-size: 1rem;
-    }
-
-    .whatsapp-avatar, .promo-avatar {
-        background: linear-gradient(135deg, #25D366, #128C7E);
-    }
-
-    .recent-info { flex: 1; display: flex; flex-direction: column; }
-    .recent-name { font-weight: 600; color: var(--gray-800); font-size: 0.9rem; }
-    .recent-time { font-size: 0.7rem; color: var(--gray-500); }
-
-    .recent-badge {
-        font-size: 0.7rem;
-        padding: 0.2rem 0.6rem;
-        border-radius: 20px;
-        background: var(--gray-100);
-        color: var(--gray-600);
-    }
-
-    .recent-badge.success { background: #d1fae5; color: #065f46; }
-    .recent-badge.warning { background: #fed7aa; color: #9b3412; }
-
-    .empty-state {
-        text-align: center;
-        padding: 1.5rem;
-        color: var(--gray-500);
-    }
-
-    .empty-state i {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-        opacity: 0.5;
-    }
-
-    .supervision-content { padding: 0.5rem 0; }
-
-    .supervision-metrics {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.75rem;
-        margin-bottom: 1rem;
-    }
-
-    .metric {
-        text-align: center;
-        padding: 0.75rem;
-        background: var(--gray-50);
-        border-radius: 12px;
-    }
-
-    .metric-value { display: block; font-size: 1.2rem; font-weight: 700; color: var(--gray-800); }
-    .metric-label { font-size: 0.65rem; color: var(--gray-500); }
-
-    .supervision-message {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem;
-        background: rgba(139, 92, 246, 0.1);
-        border-radius: 12px;
-        font-size: 0.8rem;
-        color: var(--purple);
-    }
-
-    .welcome-content { padding: 0.5rem 0; }
-    .welcome-tips { display: flex; flex-direction: column; gap: 0.75rem; }
-
-    .tip {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.5rem;
-        background: var(--gray-50);
-        border-radius: 10px;
-        font-size: 0.85rem;
-        color: var(--gray-700);
-    }
-
-    .tip i { font-size: 1rem; color: var(--success); }
-
-    .dashboard-footer {
-        margin-top: 3rem;
-        text-align: center;
-        padding: 1.5rem;
-        border-top: 1px solid var(--gray-200);
-    }
-
-    .dashboard-footer p { color: var(--gray-500); font-size: 0.8rem; }
-    .me-2 { margin-right: 0.5rem; }
-
-    @@media (max-width: 968px) {
-        .summary-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    @@media (max-width: 768px) {
-        .dashboard-container { padding: 1rem; }
-        .hero-content { flex-direction: column; align-items: flex-start; gap: 1rem; }
-        .hero-title { font-size: 1.5rem; }
-        .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-        .summary-grid { grid-template-columns: 1fr; }
-        .recent-grid { grid-template-columns: 1fr; }
-    }
-</style>

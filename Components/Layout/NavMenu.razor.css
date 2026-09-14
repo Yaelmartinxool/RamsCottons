@@ -7,10 +7,28 @@
     overflow: hidden;
 }
 
+/* Logo */
 .logo-section {
     text-align: center;
     padding: 1.5rem 1rem;
     border-bottom: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.logo-section img {
+    display: block;
+    margin: 0 auto 0.25rem auto;
+}
+
+.logo-section small {
+    color: #888 !important;
+    font-size: 0.90rem;
+    letter-spacing: 0.3px;
+    opacity: 0.8;
 }
 
 .menu-section {

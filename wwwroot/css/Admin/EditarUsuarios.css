@@ -1,0 +1,1060 @@
+/* ==========================================================
+   RAMS COTTONS - EDITAR USUARIO
+   ========================================================== */
+
+:root {
+    --primary: #0f172a;
+    --primary-dark: #020617;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --danger: #ef4444;
+    --dark: #1f2937;
+    --light: #f8fafc;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+}
+
+.edit-user-container {
+    padding-bottom: 2rem;
+    min-height: 100vh;
+}
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    gap: 1rem;
+    color: var(--gray-600);
+}
+
+.error-container {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 16px;
+    border: 1px solid var(--gray-200);
+    max-width: 500px;
+    margin: 2rem auto;
+}
+
+.error-container i {
+    font-size: 3rem;
+    color: var(--danger);
+    margin-bottom: 1rem;
+}
+
+.error-container h3 {
+    font-size: 1.25rem;
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+}
+
+.error-container p {
+    color: var(--gray-500);
+    margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.dashboard-header {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border: 1px solid var(--gray-200);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    width: 50px;
+    height: 50px;
+    background: var(--primary);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.header-title h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0;
+}
+
+.subtitle {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.btn-back {
+    background: rgb(0, 0, 0);
+    border: 1px solid #e5e7eb;
+    color: #fefefe;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-back:hover {
+    background: #1a1a1a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* ============================================
+   LAYOUT DE COLUMNAS
+   ============================================ */
+.row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin: 0 -0.75rem !important;
+}
+
+.col-lg-8 {
+    width: 66.666% !important;
+    padding: 0 0.75rem !important;
+}
+
+.col-lg-4 {
+    width: 33.333% !important;
+    padding: 0 0.75rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: fit-content !important;
+}
+
+.col-lg-4 .info-card,
+.col-lg-4 .tip-card {
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+.col-lg-4 .tip-card {
+    margin-bottom: 0;
+}
+
+/* ============================================
+   FORM CARD
+   ============================================ */
+.form-card,
+.info-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+}
+
+.form-card {
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    padding: 1.25rem 1.5rem;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-left i {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+.header-left h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0;
+}
+
+.required-badge {
+    font-size: 0.7rem;
+    color: var(--gray-500);
+    background: var(--gray-200);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+}
+
+.card-body {
+    padding: 2rem 1.5rem;
+}
+
+/* ============================================
+   FORM GRID
+   ============================================ */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: var(--gray-700);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* ============================================
+   FIX: ÍCONOS DENTRO DE LOS INPUTS
+   ============================================ */
+.input-wrapper {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+.input-icon {
+    position: absolute !important;
+    left: 1rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: var(--gray-400) !important;
+    font-size: 1rem !important;
+    line-height: 1 !important;
+    z-index: 10 !important;
+    pointer-events: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    background: none !important;
+    border: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.form-control {
+    width: 100% !important;
+    padding: 0.7rem 1rem 0.7rem 2.5rem !important;
+    border: 1px solid var(--gray-300) !important;
+    border-radius: 10px !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+    background: white !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+    background: white;
+}
+
+.form-control.is-invalid {
+    border-color: var(--danger);
+}
+
+.form-control.is-invalid:focus {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.field-hint {
+    font-size: 0.7rem;
+    color: var(--gray-500);
+    margin-top: 0.25rem;
+}
+
+.validation-message {
+    color: var(--danger);
+    font-size: 0.75rem;
+}
+
+.validation-summary {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: var(--danger);
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+    grid-column: 1 / -1;
+}
+
+/* ============================================
+   STATUS TOGGLE
+   ============================================ */
+.status-toggle {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.5rem 0;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--gray-300);
+    transition: .3s;
+    border-radius: 30px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--success);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(30px);
+}
+
+.status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 1rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    width: fit-content;
+}
+
+.status-active {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--success);
+}
+
+.status-inactive {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.status-hint {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+}
+
+/* ============================================
+   EMAIL CONFIRMATION STATUS
+   ============================================ */
+.email-confirmation-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+}
+
+.confirmation-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.confirmation-info i {
+    font-size: 1.25rem;
+}
+
+.btn-confirm-email {
+    background: var(--gray-100);
+    border: 1px solid var(--gray-300);
+    color: var(--gray-700);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-confirm-email:hover:not(:disabled) {
+    background: var(--gray-200);
+    border-color: var(--gray-400);
+}
+
+.btn-confirm-email:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   ROLES GRID - FORZADO CON PREFIJO ÚNICO
+   ============================================ */
+
+.edit-user-container .roles-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1.25rem !important;
+    width: 100% !important;
+    margin-top: 0.65rem !important;
+}
+
+.edit-user-container .role-card {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 92px !important;
+    padding: 18px 62px 18px 20px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 15px !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.edit-user-container .role-card:hover {
+    background: #fafafa !important;
+    border-color: #cbd5e1 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.edit-user-container .role-card.selected {
+    background: #f8f8f9 !important;
+    border: 2px solid #0f172a !important;
+    padding: 17px 61px 17px 19px !important;
+}
+
+.edit-user-container .role-icon {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    flex: 0 0 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    color: #0f172a !important;
+    margin-right: 15px !important;
+    transition: all 0.2s ease !important;
+}
+
+.edit-user-container .role-icon i {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: "bootstrap-icons" !important;
+    font-size: 1.15rem !important;
+    line-height: 1 !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.edit-user-container .role-card.selected .role-icon {
+    background: #0f172a !important;
+    border-color: #0f172a !important;
+    color: #ffffff !important;
+}
+
+.edit-user-container .role-card.selected .role-icon i {
+    color: #ffffff !important;
+}
+
+.edit-user-container .role-card .role-info,
+.edit-user-container .roles-grid .role-info {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    gap: 4px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: left !important;
+}
+
+.edit-user-container .role-card .role-info .role-name,
+.edit-user-container .role-card .role-info span.role-name,
+.edit-user-container .roles-grid .role-name {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #0f172a !important;
+    font-size: 0.80rem !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+.edit-user-container .role-card .role-info .role-desc,
+.edit-user-container .role-card .role-info span.role-desc,
+.edit-user-container .roles-grid .role-desc {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #64748b !important;
+    font-size: 0.7rem !important;
+    font-weight: 400 !important;
+    line-height: 1.35 !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+.edit-user-container .role-card .role-check {
+    position: absolute !important;
+    right: 23px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.edit-user-container .role-card .role-check .check-mark,
+.edit-user-container .check-mark {
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    background: #0f172a !important;
+    color: #ffffff !important;
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* ============================================
+   INFO MESSAGE
+   ============================================ */
+.info-message {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--info);
+    font-size: 0.85rem;
+    border-left: 4px solid var(--info);
+}
+
+.info-message i {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* ============================================
+   FORM ACTIONS
+   ============================================ */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    grid-column: 1 / -1;
+}
+
+.btn-submit {
+    background: var(--primary);
+    border: none;
+    color: white;
+    padding: 0.7rem 2rem;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    flex: 1;
+}
+
+.btn-submit:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-cancel {
+    background: var(--gray-200);
+    border: none;
+    color: var(--gray-700);
+    padding: 0.7rem 2rem;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    flex: 1;
+}
+
+.btn-cancel:hover {
+    background: var(--gray-300);
+    transform: translateY(-1px);
+}
+
+/* ============================================
+   INFO CARD LATERAL
+   ============================================ */
+.info-card {
+    margin-bottom: 1.5rem;
+}
+
+.info-card-header {
+    padding: 1.25rem 1.5rem;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.info-card-header i {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+.info-card-header h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0;
+}
+
+.info-card-body {
+    padding: 1.5rem;
+}
+
+.user-info-item {
+    display: flex;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.user-info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    width: 120px;
+    color: var(--gray-500);
+    flex-shrink: 0;
+}
+
+.info-value {
+    color: var(--gray-800);
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.role-info-item {
+    margin-bottom: 1.25rem;
+}
+
+.role-info-item:last-child {
+    margin-bottom: 0;
+}
+
+.role-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.role-tag-superadmin {
+    background: rgba(124, 58, 237, 0.12);
+    color: #7c3aed;
+}
+
+.role-tag-admin {
+    background: rgba(15, 23, 42, 0.1);
+    color: #1e293b;
+}
+
+.role-description {
+    font-size: 0.8rem;
+    color: var(--gray-600);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ============================================
+   TIP CARD
+   ============================================ */
+.tip-card {
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tip-card > i {
+    font-size: 1.5rem;
+    color: var(--primary);
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+}
+
+.tip-card > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.tip-card h5 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0 0 0.35rem 0;
+    text-align: left;
+}
+
+.tip-card p {
+    font-size: 0.8rem;
+    color: var(--gray-600);
+    margin: 0;
+    line-height: 1.5;
+    text-align: left;
+}
+
+/* ============================================
+   TOASTS
+   ============================================ */
+.toast-notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: slideIn 0.3s ease;
+    z-index: 1000;
+    border-left: 4px solid;
+    max-width: 400px;
+}
+
+.toast-success {
+    border-left-color: var(--success);
+}
+
+.toast-success i {
+    color: var(--success);
+    font-size: 1.25rem;
+}
+
+.toast-error {
+    border-left-color: var(--danger);
+}
+
+.toast-error i {
+    color: var(--danger);
+    font-size: 1.25rem;
+}
+
+.toast-notification span {
+    font-size: 0.9rem;
+    color: var(--gray-700);
+}
+
+/* ============================================
+   UTILIDADES
+   ============================================ */
+.text-danger { color: var(--danger); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-muted { color: var(--gray-500); }
+.me-1 { margin-right: 0.25rem; }
+.me-2 { margin-right: 0.5rem; }
+
+.spinner-border {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 900px) {
+    .edit-user-container .roles-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .roles-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .email-confirmation-status {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .btn-confirm-email {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn-submit, .btn-cancel {
+        width: 100%;
+    }
+
+    .row {
+        flex-direction: column !important;
+    }
+
+    .col-lg-8, .col-lg-4 {
+        width: 100% !important;
+    }
+
+    .toast-notification {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+    }
+
+    .btn-back {
+        width: 100%;
+        justify-content: center;
+        padding: 0.7rem 1.2rem;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .edit-user-container .role-card {
+        min-height: 88px !important;
+        padding: 16px 55px 16px 16px !important;
+    }
+
+    .edit-user-container .role-card.selected {
+        padding: 15px 54px 15px 15px !important;
+    }
+
+    .edit-user-container .role-icon {
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
+        flex-basis: 42px !important;
+        margin-right: 12px !important;
+    }
+
+    .edit-user-container .role-info .role-name {
+        font-size: 0.95rem !important;
+    }
+
+    .edit-user-container .role-info .role-desc {
+        font-size: 0.76rem !important;
+    }
+
+    .edit-user-container .role-check {
+        right: 17px !important;
+    }
+}
+
+/* ==========================================================
+   FIX GLOBAL - FORZAR ÍCONOS DE BOOTSTRAP A QUE SE VEAN
+   ========================================================== */
+.edit-user-container i.bi,
+.edit-user-container i[class^="bi-"],
+.edit-user-container .input-icon,
+.edit-user-container .role-icon i,
+.edit-user-container .info-card-header i,
+.edit-user-container .tip-card > i,
+.edit-user-container .title-icon i,
+.edit-user-container .header-left i,
+.edit-user-container .info-message i,
+.edit-user-container .btn-back i,
+.edit-user-container .error-container i,
+.edit-user-container .loading-container i,
+.edit-user-container .confirmation-info i,
+.edit-user-container .btn-submit i,
+.edit-user-container .btn-cancel i {
+    font-family: "bootstrap-icons" !important;
+    font-style: normal !important;
+    font-weight: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    line-height: 1 !important;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.edit-user-container .input-wrapper i.input-icon {
+    position: absolute !important;
+    left: 1rem !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 10 !important;
+    color: #9ca3af !important;
+    font-size: 1rem !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 1rem !important;
+    height: 1rem !important;
+    pointer-events: none !important;
+    background: none !important;
+    border: none !important;
+}
+
+.edit-user-container .input-wrapper .form-control {
+    padding-left: 2.5rem !important;
+}

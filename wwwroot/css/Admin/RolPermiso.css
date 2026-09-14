@@ -1,0 +1,703 @@
+/* ===== ESTILOS CORREGIDOS CON SCROLL ===== */
+:root {
+    --primary: #0f172a;
+    --primary-dark: #020617;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --danger: #ef4444;
+    --dark: #1f2937;
+    --light: #f8fafc;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+}
+
+/* IMPORTANTE: Esto permite que toda la página haga scroll */
+.page-wrapper {
+    padding-bottom: 2rem;
+    min-height: 100vh;
+}
+
+.dashboard-header {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border: 1px solid var(--gray-200);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.title-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    position: relative;
+}
+
+.title-icon i {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -48%);
+}
+
+h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0;
+}
+
+.subtitle {
+    color: var(--gray-500);
+    font-size: 0.8rem;
+    margin: 0.25rem 0 0 0;
+}
+
+.btn-back {
+    background: #0f172a;
+    border: none;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-back:hover {
+    background: #020617;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-back i {
+    font-size: 1rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.filters-container {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.search-box {
+    flex: 1;
+    position: relative;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    font-size: 0.9rem;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.6rem 1rem 0.6rem 2.5rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: var(--gray-50);
+    transition: all 0.2s ease;
+}
+
+.search-box input:focus {
+    outline: none !important;
+    background: white;
+}
+
+.filter-results {
+    color: var(--gray-500);
+    font-size: 0.8rem;
+}
+
+.results-badge {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    padding: 0.35rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: none;
+}
+
+.crud-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    min-width: 700px;
+}
+
+.crud-table thead {
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.crud-table th {
+    padding: 0.85rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-700);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.crud-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--gray-200);
+    vertical-align: middle;
+    font-size: 0.85rem;
+}
+
+.crud-table tr:last-child td {
+    border-bottom: none;
+}
+
+.crud-table tr.asignado {
+    background: rgba(16, 185, 129, 0.02);
+}
+
+.crud-table tr.asignado:hover {
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.permiso-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.permiso-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.permiso-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.permiso-nombre {
+    font-weight: 600;
+    color: var(--gray-800);
+    font-size: 0.9rem;
+}
+
+.permiso-descripcion {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 0.1rem;
+}
+
+.modulo-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: white;
+    display: inline-block;
+}
+
+.estado-badge {
+    padding: 0.35rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+.estado-badge.asignado {
+    background: rgba(16, 185, 129, 0.1);
+    color: #047857;
+}
+
+.estado-badge.no-asignado {
+    background: var(--gray-100);
+    color: var(--gray-600);
+}
+
+/* Checkbox Switch */
+.checkbox-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.checkbox-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.3s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--success);
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.admin-info {
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    color: var(--info);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    border-left: 4px solid var(--info);
+}
+
+.admin-info i {
+    font-size: 1.1rem;
+    color: var(--info);
+}
+
+.loading-container {
+    background: white;
+    border-radius: 12px;
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    border: 1px solid var(--gray-200);
+}
+
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gray-500);
+}
+
+.no-data i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--gray-300);
+}
+
+/* ============================================
+   RESPONSIVE - TABLA CON SCROLL HORIZONTAL
+   ============================================ */
+
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .btn-back {
+        width: auto;
+        justify-content: center;
+        padding: 0.7rem 1.2rem;
+        font-size: 1rem;
+    }
+
+    .filters-container {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.75rem 1rem;
+        gap: 0.75rem;
+    }
+
+    .filter-results {
+        text-align: center;
+    }
+
+    .results-badge {
+        text-align: center;
+        display: inline-block;
+        width: auto;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .stat-card {
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .stat-label {
+        font-size: 0.6rem;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -0.5rem;
+        padding: 0 0.5rem;
+    }
+
+    .crud-table {
+        min-width: 600px;
+        font-size: 0.85rem;
+    }
+
+    .crud-table th,
+    .crud-table td {
+        padding: 0.7rem 0.75rem;
+        white-space: nowrap;
+    }
+
+    .crud-table th {
+        font-size: 0.65rem;
+    }
+
+    .crud-table td {
+        font-size: 0.8rem;
+    }
+
+    .permiso-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 0.8rem;
+        border-radius: 6px;
+    }
+
+    .permiso-nombre {
+        font-size: 0.8rem;
+    }
+
+    .permiso-descripcion {
+        font-size: 0.65rem;
+    }
+
+    .modulo-badge {
+        font-size: 0.6rem;
+        padding: 0.15rem 0.5rem;
+    }
+
+    .estado-badge {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.6rem;
+    }
+
+    .checkbox-switch {
+        width: 40px;
+        height: 22px;
+    }
+
+    .slider:before {
+        height: 16px;
+        width: 16px;
+        left: 3px;
+        bottom: 3px;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(18px);
+    }
+
+    .admin-info {
+        font-size: 0.8rem;
+        padding: 0.75rem;
+    }
+
+    .admin-info i {
+        font-size: 1rem;
+    }
+}
+
+/* Móviles muy pequeños */
+@media (max-width: 480px) {
+    .dashboard-header {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .header-title {
+        gap: 0.75rem;
+    }
+
+    .title-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+        border-radius: 8px;
+    }
+
+    .header-title h1 {
+        font-size: 1.1rem;
+    }
+
+    .subtitle {
+        font-size: 0.75rem;
+    }
+
+    .btn-back {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .stat-card {
+        padding: 0.75rem;
+        gap: 0.5rem;
+        border-radius: 8px;
+    }
+
+    .stat-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+        border-radius: 6px;
+    }
+
+    .stat-value {
+        font-size: 1rem;
+    }
+
+    .stat-label {
+        font-size: 0.55rem;
+    }
+
+    .filters-container {
+        padding: 0.5rem 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .search-box input {
+        padding: 0.5rem 0.75rem 0.5rem 2.2rem;
+        font-size: 0.8rem;
+    }
+
+    .search-box i {
+        left: 0.75rem;
+        font-size: 0.8rem;
+    }
+
+    .crud-table {
+        min-width: 500px;
+        font-size: 0.75rem;
+    }
+
+    .crud-table th,
+    .crud-table td {
+        padding: 0.5rem 0.6rem;
+    }
+
+    .crud-table th {
+        font-size: 0.55rem;
+    }
+
+    .crud-table td {
+        font-size: 0.7rem;
+    }
+
+    .permiso-icon {
+        width: 26px;
+        height: 26px;
+        font-size: 0.7rem;
+        border-radius: 4px;
+    }
+
+    .permiso-nombre {
+        font-size: 0.7rem;
+    }
+
+    .permiso-descripcion {
+        font-size: 0.55rem;
+    }
+
+    .modulo-badge {
+        font-size: 0.5rem;
+        padding: 0.1rem 0.4rem;
+        border-radius: 12px;
+    }
+
+    .estado-badge {
+        font-size: 0.55rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 12px;
+    }
+
+    .checkbox-switch {
+        width: 36px;
+        height: 20px;
+    }
+
+    .slider:before {
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        bottom: 3px;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(16px);
+    }
+
+    .admin-info {
+        font-size: 0.7rem;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .admin-info i {
+        font-size: 0.9rem;
+    }
+
+    .no-data i {
+        font-size: 2rem;
+    }
+    
+    .btn-back {
+        width: 100%;
+        justify-content: center;
+        padding: 0.7rem 1.2rem;
+        font-size: 1rem;
+    }
+}

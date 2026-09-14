@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Http.Features;
 using RamsCottons.Components;
 using RamsCottons.Components.Account;
 using RamsCottons.Data;
@@ -8,7 +10,7 @@ using RamsCottons.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- SERVICIOS BASE ---
+// --- SERVICIOS BASE --- //
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddCircuitOptions(options =>
@@ -16,21 +18,51 @@ builder.Services.AddRazorComponents()
         options.DetailedErrors = true;
     });
 
+// ==========================================================
+// ✅ CONFIGURACIÓN PARA ARCHIVOS GRANDES (hasta 100MB)
+// ==========================================================
+builder.Services.Configure<HubOptions>(options =>
+{
+    options.MaximumReceiveMessageSize = 100 * 1024 * 1024; // 100 MB
+});
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 100 * 1024 * 1024; // 100 MB
+    options.ValueLengthLimit = int.MaxValue;
+    options.MultipartHeadersLengthLimit = int.MaxValue;
+});
+
+builder.Services.AddControllers();
+
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-// --- BASE DE DATOS ---
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+// --- BASE DE DATOS --- //
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.MigrationsHistoryTable("__EFMigrationsHistory");
+    }));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// --- IDENTITY ---
+// --- CONTEXTO PARA CYDATA (SOLO LECTURA) --- //
+var cycDataConnectionString = builder.Configuration.GetConnectionString("CycDataConnection")
+    ?? throw new InvalidOperationException("Connection string 'CycDataConnection' not found.");
+
+builder.Services.AddDbContext<CycDataContext>(options =>
+    options.UseSqlServer(cycDataConnectionString, sqlOptions =>
+    {
+        sqlOptions.MigrationsHistoryTable("__EFMigrationsHistory_CycData");
+    }));
+
+// --- IDENTITY --- //
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
@@ -43,36 +75,36 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
-// --- SERVICIO DE EMAIL ---
+// --- SERVICIOS DE APLICACION --- //
 builder.Services.AddTransient<IEmailSender<ApplicationUser>, EmailSender>();
-
-// --- SERVICIO DE QR ---
 builder.Services.AddScoped<QrGeneratorService>();
-
-// --- SERVICIO DE PERMISOS ---
 builder.Services.AddScoped<PermisoService>();
-
-// --- SERVICIO DE ESTADÍSTICAS (CACHÉ) ---
 builder.Services.AddScoped<StatsService>();
+builder.Services.AddScoped<SucursalService>();
+builder.Services.AddScoped<UserSucursalService>();
 
-// --- AUTORIZACIÓN ---
+// --- SERVICIO DE WHATSAPP --- //
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<WhatsAppService>();
+
+// --- AUTORIZACION --- //
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// --- CREAR ROLES Y SUPERADMIN ---
+// --- CREAR ROLES Y SUPERADMIN --- //
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
-    
+
     try
     {
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-        
-        // 1. Crear los 4 roles
-        string[] roles = { "SuperAdministrador", "Administrador", "Gerente", "Vendedor" };
-        
+
+        // SOLO los roles del sistema actual
+        string[] roles = { "SuperAdministrador", "Administrador" };
+
         foreach (var role in roles)
         {
             if (!await roleManager.RoleExistsAsync(role))
@@ -81,11 +113,10 @@ using (var scope = app.Services.CreateScope())
                 Console.WriteLine($"Rol '{role}' creado.");
             }
         }
-        
-        // 2. Crear SuperAdministrador por defecto
+
         string adminEmail = "superadmin@ramscottons.com";
         string adminPassword = "Admin123!";
-        
+
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
         if (adminUser == null)
         {
@@ -98,7 +129,7 @@ using (var scope = app.Services.CreateScope())
                 Telefono = "9999999999",
                 Activo = true
             };
-            
+
             var createResult = await userManager.CreateAsync(adminUser, adminPassword);
             if (createResult.Succeeded)
             {
@@ -120,7 +151,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// --- PIPELINE ---
+// --- PIPELINE --- //
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -136,6 +167,34 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
+
+app.MapControllers();
+
+// --- WEBHOOK WHATSAPP --- //
+app.MapGet("/api/whatsapp/webhook", (HttpContext context) =>
+{
+    var hubMode = context.Request.Query["hub.mode"];
+    var hubVerifyToken = context.Request.Query["hub.verify_token"];
+    var hubChallenge = context.Request.Query["hub.challenge"];
+    var verifyToken = "RamsCottons2026Wh";
+
+    if (hubMode == "subscribe" && hubVerifyToken == verifyToken)
+    {
+        return Results.Content(hubChallenge, "text/plain");
+    }
+
+    return Results.BadRequest("Verificacion fallida");
+});
+
+app.MapPost("/api/whatsapp/webhook", async (HttpContext context) =>
+{
+    using var reader = new StreamReader(context.Request.Body);
+    var body = await reader.ReadToEndAsync();
+
+    Console.WriteLine($"Mensaje recibido: {body}");
+
+    return Results.Ok();
+});
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

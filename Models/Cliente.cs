@@ -13,12 +13,11 @@ namespace RamsCottons.Models
         
         [Required]
         [Column("id_usuario")]
-        [StringLength(450)]  // <--- AGREGAR ESTO
+        [StringLength(450)]
         public string IdUsuario { get; set; } = string.Empty;
         
-        [Required]
         [Column("id_sucursal")]
-        public int IdSucursal { get; set; }
+        public string? IdSucursal { get; set; } 
         
         [Required]
         [Column("nombre_completo")]
@@ -45,12 +44,16 @@ namespace RamsCottons.Models
         [Column("id_generador_qr")]
         public int? IdGeneradorQR { get; set; }
         
-        // ✅ PROPIEDADES DE NAVEGACIÓN (BIEN CONFIGURADAS)
+        [Column("acepta_whatsapp")]
+        public bool AceptaWhatsApp { get; set; }
+
+        [Column("tipo_cliente")]
+        [StringLength(20)]
+        public string? TipoCliente { get; set; } // "Redes", "Pagina web", "Mayoreo"
+        
+        // PROPIEDADES DE NAVEGACION
         [ForeignKey("IdUsuario")]
         public virtual ApplicationUser? Usuario { get; set; }
-        
-        [ForeignKey("IdSucursal")]
-        public virtual Sucursal? Sucursal { get; set; }
         
         [ForeignKey("IdCategoriaProducto")]
         public virtual CategoriaProducto? Categoria { get; set; }

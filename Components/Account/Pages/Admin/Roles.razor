@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using RamsCottons.Data
+@using RamsCottons.Models
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 @attribute [Authorize(Roles = "SuperAdministrador")]
@@ -90,14 +91,6 @@ else
                                             {
                                                 <i class="bi bi-person-fill-gear"></i>
                                             }
-                                            else if (item.Rol.Name == "Gerente")
-                                            {
-                                                <i class="bi bi-graph-up"></i>
-                                            }
-                                            else if (item.Rol.Name == "Vendedor")
-                                            {
-                                                <i class="bi bi-shop"></i>
-                                            }
                                             else
                                             {
                                                 <i class="bi bi-person-badge"></i>
@@ -142,8 +135,7 @@ else
                                         <button class="btn-action btn-permissions" @onclick="() => AsignarPermisos(item.Rol.Name!)" title="Asignar permisos">
                                             <i class="bi bi-shield-check"></i>
                                         </button>
-                                        @if (item.Rol.Name != "SuperAdministrador" && item.Rol.Name != "Administrador" && 
-                                             item.Rol.Name != "Gerente" && item.Rol.Name != "Vendedor")
+                                        @if (item.Rol.Name != "SuperAdministrador" && item.Rol.Name != "Administrador")
                                         {
                                             <button class="btn-action btn-delete" @onclick="() => ConfirmarEliminar(item.Rol)" title="Eliminar rol">
                                                 <i class="bi bi-trash3"></i>
@@ -219,49 +211,49 @@ else
     }
 
     private async Task CargarRoles()
+{
+    cargando = true;
+
+    try
     {
-        cargando = true;
+        rolesConDatos.Clear();
 
-        try
+        // Cargar TODOS los roles que existan en la BD
+        var roles = await RoleManager.Roles.ToListAsync();
+
+        var rolesPermisos = await DbContext.RolesPermisos.ToListAsync();
+        var permisos = await DbContext.Permisos.ToListAsync();
+
+        foreach (var rol in roles)
         {
-            rolesConDatos.Clear();
+            var userCount = await UserManager.GetUsersInRoleAsync(rol.Name!);
 
-            var roles = await RoleManager.Roles.ToListAsync();
+            var permisosDelRol = rolesPermisos
+                .Where(rp => rp.RoleId == rol.Id)
+                .Join(permisos,
+                    rp => rp.PermisoId,
+                    p => p.Id,
+                    (rp, p) => p)
+                .ToList();
 
-            var users = await DbContext.Users.ToListAsync();
-            var rolesPermisos = await DbContext.RolesPermisos.ToListAsync();
-            var permisos = await DbContext.Permisos.ToListAsync();
-
-            foreach (var rol in roles)
+            rolesConDatos.Add(new RoleWithData
             {
-                var userCount = await UserManager.GetUsersInRoleAsync(rol.Name!);
-
-                var permisosDelRol = rolesPermisos
-                    .Where(rp => rp.RoleId == rol.Id)
-                    .Join(permisos,
-                        rp => rp.PermisoId,
-                        p => p.Id,
-                        (rp, p) => p)
-                    .ToList();
-
-                rolesConDatos.Add(new RoleWithData
-                {
-                    Rol = rol,
-                    UserCount = userCount.Count,
-                    PermissionCount = permisosDelRol.Count,
-                    Permisos = permisosDelRol
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error cargando roles: {ex.Message}");
-        }
-        finally
-        {
-            cargando = false;
+                Rol = rol,
+                UserCount = userCount.Count,
+                PermissionCount = permisosDelRol.Count,
+                Permisos = permisosDelRol
+            });
         }
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error cargando roles: {ex.Message}");
+    }
+    finally
+    {
+        cargando = false;
+    }
+}
 
     private string GetRoleColor(string? roleName)
     {
@@ -272,8 +264,6 @@ else
         {
             "SuperAdministrador" => "linear-gradient(135deg, #7c3aed, #5b21b6)",
             "Administrador" => "linear-gradient(135deg, #1e293b, #0f172a)",
-            "Gerente" => "linear-gradient(135deg, #0891b2, #0e7490)",
-            "Vendedor" => "linear-gradient(135deg, #059669, #047857)",
             _ => "linear-gradient(135deg, #64748b, #475569)"
         };
     }
@@ -286,9 +276,7 @@ else
         return roleName switch
         {
             "SuperAdministrador" => "Control total del sistema, todos los permisos",
-            "Administrador" => "Administración por sucursal, puede crear usuarios",
-            "Gerente" => "Supervisión, reportes, ver todo",
-            "Vendedor" => "Registrar clientes y ver promociones",
+            "Administrador" => "Administración del sistema y gestión de contenido",
             _ => "Rol personalizado"
         };
     }
@@ -352,284 +340,3 @@ else
         }
     }
 }
-
-<style>
-    /* Variables globales */
-    :root {
-        --primary: #0f172a;
-        --primary-dark: #020617;
-        --success: #10b981;
-        --warning: #f59e0b;
-        --info: #3b82f6;
-        --danger: #ef4444;
-        --dark: #1f2937;
-        --light: #f8fafc;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-    }
-
-    .dashboard-header {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        border: 1px solid var(--gray-200);
-    }
-
-    .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .header-title {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .title-icon {
-        width: 50px;
-        height: 50px;
-        background: var(--primary);
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-        position: relative;
-    }
-
-    .title-icon i,
-    .title-icon .bi {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -48%);
-    }
-
-    .btn-create {
-        background: var(--primary);
-        border: none;
-        color: white;
-        padding: 0.6rem 1.2rem;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 500;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-    .btn-create:hover {
-        background: var(--primary-dark);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    .table-container {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        border: 1px solid var(--gray-200);
-        overflow: hidden;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .crud-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-    }
-
-    .crud-table thead {
-        background: var(--gray-50);
-        border-bottom: 1px solid var(--gray-200);
-    }
-
-    .crud-table th {
-        padding: 0.85rem 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: var(--gray-700);
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-
-    .crud-table td {
-        padding: 0.85rem 1rem;
-        border-bottom: 1px solid var(--gray-200);
-        vertical-align: middle;
-        font-size: 0.85rem;
-    }
-
-    .role-row:hover {
-        background: var(--gray-50);
-    }
-
-    .col-role { min-width: 250px; }
-    .col-usuarios { min-width: 100px; }
-    .col-permisos { min-width: 300px; }
-    .col-acciones { min-width: 150px; }
-
-    .role-info {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .role-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.2rem;
-    }
-
-    .role-details {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .role-name {
-        font-weight: 600;
-        color: var(--gray-800);
-        font-size: 0.95rem;
-    }
-
-    .role-desc {
-        font-size: 0.7rem;
-        color: var(--gray-500);
-    }
-
-    .user-count {
-        font-weight: 600;
-        color: var(--primary);
-        font-size: 1rem;
-    }
-
-    .permissions-preview {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
-
-    .permission-badge {
-        background: var(--gray-100);
-        color: var(--gray-700);
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.7rem;
-        font-weight: 500;
-        white-space: nowrap;
-    }
-
-    .permission-preview-text {
-        font-size: 0.75rem;
-        color: var(--gray-600);
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        cursor: help;
-    }
-
-    .action-buttons {
-        display: flex;
-        align-items: center;
-        gap: 0.35rem;
-    }
-
-    .btn-action {
-        width: 32px;
-        height: 32px;
-        border: none;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        font-size: 0.9rem;
-        background: var(--gray-100);
-        color: var(--gray-700);
-    }
-
-    .btn-view:hover {
-        background: var(--info);
-        color: white;
-    }
-
-    .btn-edit:hover {
-        background: var(--warning);
-        color: white;
-    }
-
-    .btn-permissions:hover {
-        background: var(--primary);
-        color: white;
-    }
-
-    .btn-delete:hover {
-        background: var(--danger);
-        color: white;
-    }
-
-    .loading-container {
-        background: white;
-        border-radius: 12px;
-        padding: 3rem;
-        text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    .modal.fade.show {
-        animation: fadeIn 0.3s ease;
-    }
-
-    .modal-content {
-        border-radius: 12px;
-    }
-
-    .btn-close-custom {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        color: white;
-        opacity: 0.8;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-    }
-
-    .btn-close-custom:hover {
-        opacity: 1;
-    }
-
-    @@keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-</style>
