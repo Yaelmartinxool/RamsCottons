@@ -31,7 +31,6 @@
                 <div class="title-icon">
                     <i class="bi bi-megaphone-fill"></i>
                 </div>
-
                 <div>
                     <h1>Nueva Promoción</h1>
                     <p class="subtitle">Crea una nueva promoción y compártela al instante</p>
@@ -269,61 +268,92 @@
                                 </div>
                             </div>
 
+                            <!-- ============================================ -->
+                            <!-- SUCURSALES - MULTI-SELECCIÓN TIPO TARJETAS -->
+                            <!-- ============================================ -->
                             <div class="form-group full-width">
                                 <label class="form-label">
-                                    Sucursal
+                                    Sucursales
                                     <span class="text-danger">*</span>
+                                    <span class="sucursales-counter">
+                                        (@selectedSucursales.Count seleccionada@(selectedSucursales.Count != 1 ? "s" : ""))
+                                    </span>
                                 </label>
 
-                                <div class="sucursal-search-wrapper @(errorSucursal ? "has-error" : "")">
-                                    <i class="bi bi-shop"></i>
+                                <!-- Toolbar: Buscador + Botones -->
+                                <div class="sucursales-toolbar">
+                                    <div class="sucursales-search">
+                                        <i class="bi bi-search"></i>
+                                        <input type="text"
+                                               placeholder="Buscar sucursal por nombre o código..."
+                                               @bind="busquedaSucursal"
+                                               @bind:event="oninput" />
+                                        @if (!string.IsNullOrEmpty(busquedaSucursal))
+                                        {
+                                            <button type="button"
+                                                    class="clear-search"
+                                                    @onclick="LimpiarBusqueda">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        }
+                                    </div>
 
-                                    <input type="text"
-                                           class="sucursal-search-input"
-                                           placeholder="Busca y selecciona una sucursal..."
-                                           @bind="busquedaSucursal"
-                                           @bind:event="oninput"
-                                           @onfocus="AbrirDropdownSucursal" />
+                                    <button type="button"
+                                            class="btn-select-all-suc"
+                                            @onclick="SeleccionarTodasFiltradas">
+                                        <i class="bi bi-check2-square"></i>
+                                        Todas (@sucursalesFiltradas.Count())
+                                    </button>
 
-                                    <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"></i>
-
-                                    @if (mostrarDropdownSucursal)
+                                    @if (selectedSucursales.Any())
                                     {
-                                        <div class="sucursal-dropdown">
-                                            @if (sucursalesFiltradas.Any())
-                                            {
-                                                @foreach (var sucursal in sucursalesFiltradas)
-                                                {
-                                                    <div class="sucursal-dropdown-item @(selectedSucursal == sucursal.Almacen ? "selected" : "")"
-                                                         @onmousedown:preventDefault
-                                                         @onclick="() => SeleccionarSucursal(sucursal)">
+                                        <button type="button"
+                                                class="btn-clear-suc"
+                                                @onclick="LimpiarSeleccionSucursales">
+                                            <i class="bi bi-x-circle"></i>
+                                            Limpiar
+                                        </button>
+                                    }
+                                </div>
 
-                                                        <span class="sucursal-almacen">
-                                                            @sucursal.Almacen
-                                                        </span>
+                                <!-- Grid de tarjetas -->
+                                <div class="sucursales-grid @(errorSucursal ? "has-error" : "")">
+                                    @if (sucursalesFiltradas.Any())
+                                    {
+                                        @foreach (var sucursal in sucursalesFiltradas)
+                                        {
+                                            var isSelected = selectedSucursales.Contains(sucursal.Almacen);
+                                            <div class="sucursal-card @(isSelected ? "selected" : "")"
+                                                 @onclick="() => ToggleSucursal(sucursal)">
 
-                                                        <span class="sucursal-nombre">
-                                                            @sucursal.NombreCompleto
-                                                        </span>
-                                                    </div>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <div class="sucursal-dropdown-empty">
-                                                    <i class="bi bi-search"></i>
-                                                    No se encontraron sucursales
+                                                <div class="sucursal-card-check">
+                                                    @if (isSelected)
+                                                    {
+                                                        <i class="bi bi-check-lg"></i>
+                                                    }
                                                 </div>
-                                            }
+
+                                                <div class="sucursal-card-info">
+                                                    <span class="sucursal-card-text">
+                                                        <strong class="sucursal-card-code">@sucursal.Almacen</strong>
+                                                        @ObtenerNombreLimpio(sucursal)
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="sucursales-empty">
+                                            <i class="bi bi-search"></i>
+                                            <span>No se encontraron sucursales con "@busquedaSucursal"</span>
                                         </div>
                                     }
                                 </div>
 
                                 @if (errorSucursal)
                                 {
-                                    <div class="validation-message"
-                                         style="margin-top:0.25rem;">
-
+                                    <div class="validation-message" style="margin-top:0.5rem;">
                                         <i class="bi bi-exclamation-circle-fill me-1"></i>
                                         @mensajeErrorSucursal
                                     </div>
@@ -432,14 +462,14 @@
                     <div class="process-step">
                         <div class="step-number">3</div>
                         <div class="step-text">
-                            Sube tu archivo PDF o imagen
+                            Selecciona una o varias sucursales
                         </div>
                     </div>
 
                     <div class="process-step">
                         <div class="step-number">4</div>
                         <div class="step-text">
-                            Se genera un enlace único automáticamente
+                            Sube tu archivo PDF o imagen
                         </div>
                     </div>
 
@@ -518,7 +548,6 @@
     private bool errorSucursal = false;
     private bool esSuperAdmin = false;
     private bool esAdmin = false;
-    private bool mostrarDropdownSucursal = false;
 
     private string? error;
     private string? mensajeExito;
@@ -526,7 +555,6 @@
     private string? nombreArchivo;
     private string? archivoBase64;
     private string? archivoContentType;
-    private string? selectedSucursal;
     private string? sucursalUsuarioActual;
     private string usuarioId = "";
     private string busquedaSucursal = "";
@@ -534,23 +562,17 @@
 
     private List<SucursalCyc> SucursalesDisponibles = new();
 
+    // ✅ Lista de sucursales seleccionadas
+    private HashSet<string> selectedSucursales = new();
+
     private const long MaxFileSize = 100 * 1024 * 1024;
 
     private IEnumerable<SucursalCyc> sucursalesFiltradas =>
         string.IsNullOrWhiteSpace(busquedaSucursal)
             ? SucursalesDisponibles
             : SucursalesDisponibles.Where(s =>
-                s.Almacen.Contains(
-                    busquedaSucursal,
-                    StringComparison.OrdinalIgnoreCase
-                ) ||
-                (
-                    s.NombreCompleto != null &&
-                    s.NombreCompleto.Contains(
-                        busquedaSucursal,
-                        StringComparison.OrdinalIgnoreCase
-                    )
-                )
+                s.Almacen.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase) ||
+                (s.NombreCompleto != null && s.NombreCompleto.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase))
             );
 
     protected override async Task OnInitializedAsync()
@@ -561,20 +583,13 @@
 
     private async Task CargarUsuarioActual()
     {
-        var authState =
-            await AuthenticationStateProvider
-                .GetAuthenticationStateAsync();
-
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        esSuperAdmin =
-            user.IsInRole("SuperAdministrador");
+        esSuperAdmin = user.IsInRole("SuperAdministrador");
+        esAdmin = user.IsInRole("Administrador");
 
-        esAdmin =
-            user.IsInRole("Administrador");
-
-        var usuario =
-            await UserManager.GetUserAsync(user);
+        var usuario = await UserManager.GetUserAsync(user);
 
         if (usuario != null)
         {
@@ -585,13 +600,85 @@
 
     private void CargarSucursales()
     {
-        SucursalesDisponibles =
-            SucursalService.GetAllSucursales();
+        SucursalesDisponibles = SucursalService.GetAllSucursales();
     }
 
-    private void AbrirDropdownSucursal()
+    private void LimpiarBusqueda()
     {
-        mostrarDropdownSucursal = true;
+        busquedaSucursal = "";
+    }
+
+    // ✅ Toggle de sucursal (agregar/quitar)
+    private void ToggleSucursal(SucursalCyc sucursal)
+    {
+        if (selectedSucursales.Contains(sucursal.Almacen))
+        {
+            selectedSucursales.Remove(sucursal.Almacen);
+        }
+        else
+        {
+            selectedSucursales.Add(sucursal.Almacen);
+        }
+
+        errorSucursal = false;
+        mensajeErrorSucursal = "";
+    }
+
+    // ✅ Seleccionar todas las filtradas
+    private void SeleccionarTodasFiltradas()
+    {
+        foreach (var suc in sucursalesFiltradas)
+        {
+            selectedSucursales.Add(suc.Almacen);
+        }
+        errorSucursal = false;
+        mensajeErrorSucursal = "";
+    }
+
+    // ✅ Limpiar selección
+    private void LimpiarSeleccionSucursales()
+    {
+        selectedSucursales.Clear();
+    }
+
+    // ✅ Limpiar el nombre quitando el prefijo del código (ej: "01 - Almacén Central (.)" → "Almacén Central (.)")
+    private string ObtenerNombreLimpio(SucursalCyc sucursal)
+    {
+        if (string.IsNullOrEmpty(sucursal.NombreCompleto))
+            return sucursal.Almacen;
+
+        var nombre = sucursal.NombreCompleto.Trim();
+        var almacen = sucursal.Almacen?.Trim() ?? "";
+
+        // ✅ Si empieza con el código del almacén seguido de " - " o "- "
+        if (!string.IsNullOrEmpty(almacen))
+        {
+            // Caso 1: "01 - Almacén Central (.)"
+            var prefijoConEspacio = $"{almacen} - ";
+            var prefijoSinEspacio = $"{almacen}-";
+
+            if (nombre.StartsWith(prefijoConEspacio, StringComparison.OrdinalIgnoreCase))
+            {
+                return nombre.Substring(prefijoConEspacio.Length).Trim();
+            }
+
+            if (nombre.StartsWith(prefijoSinEspacio, StringComparison.OrdinalIgnoreCase))
+            {
+                return nombre.Substring(prefijoSinEspacio.Length).Trim();
+            }
+        }
+
+        // ✅ Fallback: si tiene "NN - " al inicio, quitarlo
+        if (nombre.Length > 4 && char.IsDigit(nombre[0]) && char.IsDigit(nombre[1]))
+        {
+            var guionIndex = nombre.IndexOf('-', 2);
+            if (guionIndex > 0)
+            {
+                return nombre.Substring(guionIndex + 1).Trim();
+            }
+        }
+
+        return nombre;
     }
 
     private void SeleccionarTipoPromocion(string tipo)
@@ -608,80 +695,42 @@
         StateHasChanged();
     }
 
-    private void SeleccionarSucursal(SucursalCyc sucursal)
-    {
-        selectedSucursal =
-            sucursal.Almacen;
-
-        busquedaSucursal =
-            sucursal.NombreCompleto ??
-            sucursal.Almacen;
-
-        mostrarDropdownSucursal = false;
-        errorSucursal = false;
-        mensajeErrorSucursal = "";
-    }
-
     private async Task OnFileSelected(InputFileChangeEventArgs e)
     {
         var file = e.File;
 
-        if (file == null)
-        {
-            return;
-        }
+        if (file == null) return;
 
         try
         {
             if (file.Size > MaxFileSize)
             {
-                var tamañoMB =
-                    file.Size / (1024.0 * 1024.0);
-
-                error =
-                    $"El archivo no puede superar los 100MB. Tu archivo pesa {tamañoMB:F1}MB.";
-
+                var tamañoMB = file.Size / (1024.0 * 1024.0);
+                error = $"El archivo no puede superar los 100MB. Tu archivo pesa {tamañoMB:F1}MB.";
                 errorArchivo = true;
                 nombreArchivo = null;
                 archivoBase64 = null;
                 archivoContentType = null;
-
                 StateHasChanged();
-
                 return;
             }
 
-            nombreArchivo =
-                file.Name;
+            nombreArchivo = file.Name;
+            archivoContentType = file.ContentType;
 
-            archivoContentType =
-                file.ContentType;
-
-            using var stream =
-                file.OpenReadStream(MaxFileSize);
-
-            using var ms =
-                new MemoryStream();
-
+            using var stream = file.OpenReadStream(MaxFileSize);
+            using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
-
-            archivoBase64 =
-                Convert.ToBase64String(
-                    ms.ToArray()
-                );
+            archivoBase64 = Convert.ToBase64String(ms.ToArray());
 
             error = null;
             errorArchivo = false;
-
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            error =
-                $"Error al cargar el archivo: {ex.Message}";
-
+            error = $"Error al cargar el archivo: {ex.Message}";
             errorArchivo = true;
-
             StateHasChanged();
         }
     }
@@ -712,20 +761,15 @@
         {
             if (string.IsNullOrWhiteSpace(modelo.TipoPromocion))
             {
-                error =
-                    "Debes seleccionar el tipo de promoción.";
-
+                error = "Debes seleccionar el tipo de promoción.";
                 return;
             }
 
             if (modelo.TipoPromocion == "PrecioUnico")
             {
-                if (!modelo.Precio.HasValue ||
-                    modelo.Precio.Value <= 0)
+                if (!modelo.Precio.HasValue || modelo.Precio.Value <= 0)
                 {
-                    error =
-                        "Debes ingresar un precio válido para la promoción.";
-
+                    error = "Debes ingresar un precio válido para la promoción.";
                     return;
                 }
             }
@@ -738,290 +782,171 @@
 
             if (string.IsNullOrEmpty(archivoBase64))
             {
-                error =
-                    "Debes seleccionar un archivo para la promoción.";
-
+                error = "Debes seleccionar un archivo para la promoción.";
                 errorArchivo = true;
-
                 return;
             }
 
             if (modelo.FechaInicio > modelo.FechaFin)
             {
-                error =
-                    "La fecha de inicio no puede ser mayor a la fecha de fin.";
-
+                error = "La fecha de inicio no puede ser mayor a la fecha de fin.";
                 errorFechaInicio = true;
                 errorFechaFin = true;
-
                 return;
             }
 
-            string idSucursal;
+            // ✅ VALIDAR SUCURSALES SELECCIONADAS
+            List<string> sucursalesFinales = new();
 
             if (esSuperAdmin || esAdmin)
             {
-                if (string.IsNullOrEmpty(selectedSucursal))
+                if (!selectedSucursales.Any())
                 {
-                    error =
-                        "Debes seleccionar una sucursal para esta promoción.";
-
+                    error = "Debes seleccionar al menos una sucursal.";
                     errorSucursal = true;
-
-                    mensajeErrorSucursal =
-                        "Debes seleccionar una sucursal";
-
+                    mensajeErrorSucursal = "Debes seleccionar al menos una sucursal";
                     return;
                 }
-
-                idSucursal =
-                    selectedSucursal;
+                sucursalesFinales = selectedSucursales.ToList();
             }
             else
             {
                 if (string.IsNullOrEmpty(sucursalUsuarioActual))
                 {
-                    error =
-                        "Tu usuario no tiene una sucursal asignada.";
-
+                    error = "Tu usuario no tiene una sucursal asignada.";
                     return;
                 }
-
-                idSucursal =
-                    sucursalUsuarioActual;
+                sucursalesFinales.Add(sucursalUsuarioActual);
             }
 
-            var tokenUnico =
-                Guid.NewGuid()
-                    .ToString("N")
-                    .Substring(0, 12)
-                    .ToUpper();
+            // ✅ GUARDAR EL ARCHIVO UNA SOLA VEZ
+            var tokenUnico = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
+            var baseUrl = "https://rams.no-ip.info:8082";
+            var enlace = $"{baseUrl}/promociones/{tokenUnico}";
 
-            var baseUrl =
-                "https://rams.no-ip.info:8082";
+            var uploadsFolder = Path.Combine(WebHostEnvironment.WebRootPath, "uploads", "promociones");
+            Directory.CreateDirectory(uploadsFolder);
 
-            var enlace =
-                $"{baseUrl}/promociones/{tokenUnico}";
+            var extension = Path.GetExtension(nombreArchivo);
+            var fileName = $"{tokenUnico}_{DateTime.Now.Ticks}{extension}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
 
-            var uploadsFolder =
-                Path.Combine(
-                    WebHostEnvironment.WebRootPath,
-                    "uploads",
-                    "promociones"
-                );
+            var bytes = Convert.FromBase64String(archivoBase64);
+            await File.WriteAllBytesAsync(filePath, bytes);
 
-            Directory.CreateDirectory(
-                uploadsFolder
-            );
+            var archivoUrl = $"/uploads/promociones/{fileName}";
 
-            var extension =
-                Path.GetExtension(nombreArchivo);
-
-            var fileName =
-                $"{tokenUnico}_{DateTime.Now.Ticks}{extension}";
-
-            var filePath =
-                Path.Combine(
-                    uploadsFolder,
-                    fileName
-                );
-
-            var bytes =
-                Convert.FromBase64String(
-                    archivoBase64
-                );
-
-            await File.WriteAllBytesAsync(
-                filePath,
-                bytes
-            );
-
-            var archivoUrl =
-                $"/uploads/promociones/{fileName}";
-
-            var promocion = new Promocion
+            // ✅ CREAR UNA PROMOCIÓN POR CADA SUCURSAL
+            foreach (var sucursal in sucursalesFinales)
             {
-                Titulo = modelo.Titulo,
-                Descripcion = modelo.Descripcion ?? "",
-                TipoPromocion = modelo.TipoPromocion,
+                var promocion = new Promocion
+                {
+                    Titulo = modelo.Titulo,
+                    Descripcion = modelo.Descripcion ?? "",
+                    TipoPromocion = modelo.TipoPromocion,
+                    Precio = modelo.TipoPromocion == "PrecioUnico" ? modelo.Precio : null,
+                    DescuentoPorcentaje = modelo.TipoPromocion == "PrecioUnico" ? modelo.DescuentoPorcentaje : null,
+                    DescuentoMonto = modelo.TipoPromocion == "PrecioUnico" ? modelo.DescuentoMonto : null,
+                    FechaInicio = modelo.FechaInicio,
+                    FechaFin = modelo.FechaFin,
+                    TokenUnico = tokenUnico,
+                    pdf_nombre = nombreArchivo,
+                    pdf_ruta = filePath,
+                    pdf_url = archivoUrl,
+                    Activo = modelo.Activo,
+                    FechaCreacion = DateTime.Now,
+                    ApplicationUserId = usuarioId,
+                    IdSucursal = sucursal
+                };
 
-                Precio =
-                    modelo.TipoPromocion == "PrecioUnico"
-                        ? modelo.Precio
-                        : null,
-
-                DescuentoPorcentaje =
-                    modelo.TipoPromocion == "PrecioUnico"
-                        ? modelo.DescuentoPorcentaje
-                        : null,
-
-                DescuentoMonto =
-                    modelo.TipoPromocion == "PrecioUnico"
-                        ? modelo.DescuentoMonto
-                        : null,
-
-                FechaInicio = modelo.FechaInicio,
-                FechaFin = modelo.FechaFin,
-                TokenUnico = tokenUnico,
-                pdf_nombre = nombreArchivo,
-                pdf_ruta = filePath,
-                pdf_url = archivoUrl,
-                Activo = modelo.Activo,
-                FechaCreacion = DateTime.Now,
-                ApplicationUserId = usuarioId,
-                IdSucursal = idSucursal
-            };
-
-            DbContext.Promociones.Add(
-                promocion
-            );
+                DbContext.Promociones.Add(promocion);
+            }
 
             await DbContext.SaveChangesAsync();
 
             enlaceGenerado = enlace;
+            mensajeExito = $"Promoción '{modelo.Titulo}' creada para {sucursalesFinales.Count} sucursal(es)!";
 
-            mensajeExito =
-                $"Promoción '{modelo.Titulo}' creada correctamente!";
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "¡Éxito!",
+                html = $@"
+                    <p>Promoción <strong>{modelo.Titulo}</strong> creada correctamente.</p>
+                    <p style='color:#10b981; font-weight:600; margin-top:0.5rem;'>
+                        ✓ {sucursalesFinales.Count} sucursal(es) asignada(s)
+                    </p>
+                ",
+                icon = "success",
+                confirmButtonText = "Aceptar",
+                confirmButtonColor = "#0f172a",
+                timer = 2500,
+                showConfirmButton = false
+            });
 
-            await JS.InvokeVoidAsync(
-                "Swal.fire",
-                new
-                {
-                    title = "¡Éxito!",
-                    text = mensajeExito,
-                    icon = "success",
-                    confirmButtonText = "Aceptar",
-                    confirmButtonColor = "#0f172a",
-                    timer = 1500,
-                    showConfirmButton = false
-                }
-            );
-
-            NavigationManager.NavigateTo(
-                "/promociones",
-                forceLoad: true
-            );
+            NavigationManager.NavigateTo("/promociones", forceLoad: true);
         }
         catch (Exception ex)
         {
-            error =
-                $"Error inesperado: {ex.Message}";
+            error = $"Error inesperado: {ex.Message}";
 
-            await JS.InvokeVoidAsync(
-                "Swal.fire",
-                new
-                {
-                    title = "Error",
-                    text = error,
-                    icon = "error",
-                    confirmButtonText = "Aceptar",
-                    confirmButtonColor = "#ef4444"
-                }
-            );
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "Error",
+                text = error,
+                icon = "error",
+                confirmButtonText = "Aceptar",
+                confirmButtonColor = "#ef4444"
+            });
         }
         finally
         {
             guardando = false;
-
             StateHasChanged();
         }
     }
 
     private async Task CopiarEnlace()
     {
-        if (string.IsNullOrEmpty(enlaceGenerado))
-        {
-            return;
-        }
+        if (string.IsNullOrEmpty(enlaceGenerado)) return;
 
-        await JS.InvokeVoidAsync(
-            "navigator.clipboard.writeText",
-            enlaceGenerado
-        );
-
-        mensajeExito =
-            "Enlace copiado al portapapeles";
-
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", enlaceGenerado);
+        mensajeExito = "Enlace copiado al portapapeles";
         await Task.Delay(2000);
-
         mensajeExito = null;
     }
 
     private void Volver()
     {
-        NavigationManager.NavigateTo(
-            "/promociones"
-        );
+        NavigationManager.NavigateTo("/promociones");
     }
 
     private class PromocionModel
     {
-        [Required(
-            ErrorMessage =
-                "El título es obligatorio"
-        )]
-        [StringLength(
-            100,
-            MinimumLength = 3,
-            ErrorMessage =
-                "El título debe tener entre 3 y 100 caracteres"
-        )]
+        [Required(ErrorMessage = "El título es obligatorio")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "El título debe tener entre 3 y 100 caracteres")]
         public string Titulo { get; set; } = "";
 
-        [Required(
-            ErrorMessage =
-                "La descripción es obligatoria"
-        )]
-        [StringLength(
-            500,
-            ErrorMessage =
-                "La descripción no puede exceder los 500 caracteres"
-        )]
+        [Required(ErrorMessage = "La descripción es obligatoria")]
+        [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres")]
         public string Descripcion { get; set; } = "";
 
-        [Required(
-            ErrorMessage =
-                "El tipo de promoción es obligatorio"
-        )]
+        [Required(ErrorMessage = "El tipo de promoción es obligatorio")]
         public string TipoPromocion { get; set; } = "Catalogo";
 
-        [Range(
-            0.01,
-            999999.99,
-            ErrorMessage =
-                "El precio debe ser mayor a 0"
-        )]
+        [Range(0.01, 999999.99, ErrorMessage = "El precio debe ser mayor a 0")]
         public decimal? Precio { get; set; }
 
-        [Range(
-            0,
-            100,
-            ErrorMessage =
-                "El descuento debe estar entre 0 y 100%"
-        )]
+        [Range(0, 100, ErrorMessage = "El descuento debe estar entre 0 y 100%")]
         public decimal? DescuentoPorcentaje { get; set; }
 
-        [Range(
-            0,
-            999999,
-            ErrorMessage =
-                "El monto debe ser mayor o igual a 0"
-        )]
+        [Range(0, 999999, ErrorMessage = "El monto debe ser mayor o igual a 0")]
         public decimal? DescuentoMonto { get; set; }
 
-        [Required(
-            ErrorMessage =
-                "La fecha de inicio es obligatoria"
-        )]
-        public DateTime FechaInicio { get; set; } =
-            DateTime.Today;
+        [Required(ErrorMessage = "La fecha de inicio es obligatoria")]
+        public DateTime FechaInicio { get; set; } = DateTime.Today;
 
-        [Required(
-            ErrorMessage =
-                "La fecha de fin es obligatoria"
-        )]
-        public DateTime FechaFin { get; set; } =
-            DateTime.Today.AddDays(30);
+        [Required(ErrorMessage = "La fecha de fin es obligatoria")]
+        public DateTime FechaFin { get; set; } = DateTime.Today.AddDays(30);
 
         public bool Activo { get; set; } = true;
     }

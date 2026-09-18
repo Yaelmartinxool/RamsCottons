@@ -72,13 +72,15 @@
 }
 
 /* ===== FIX: Ocultar ícono nativo del input date ===== */
-
 input[type="date"]::-webkit-calendar-picker-indicator {
-    cursor: pointer !important;
-    opacity: 0.6 !important;
-    filter: invert(40%) !important;   /* Lo hace gris */
+    display: none !important;
+    -webkit-appearance: none !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
-
 
 input[type="date"]::-webkit-inner-spin-button,
 input[type="date"]::-webkit-outer-spin-button {
@@ -97,7 +99,6 @@ input[type="date"] {
 }
 
 /* ===== FORM CARD ===== */
-
 .form-card {
     background: white;
     border-radius: 16px;
@@ -154,7 +155,6 @@ input[type="date"] {
 }
 
 /* ===== FORM GRID ===== */
-
 .form-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -192,7 +192,6 @@ input[type="date"] {
 }
 
 /* ===== FORM CONTROLS ===== */
-
 .form-control {
     width: 100%;
     padding: 0.7rem 1rem 0.7rem 2.5rem;
@@ -217,464 +216,326 @@ textarea.form-control {
 
 .form-control.is-invalid {
     border-color: #dc3545;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right calc(0.375em + 0.1875rem) center;
-    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
 
-.form-control.is-invalid:focus {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+/* ===== SUCURSALES - DISEÑO TIPO TARJETAS ===== */
+.sucursales-counter {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin-left: 0.35rem;
 }
 
-/* ===== BUSCADOR DE SUCURSAL CON DROPDOWN ===== */
+.sucursales-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
 
-.sucursal-search-wrapper {
+.sucursales-search {
     position: relative;
+    flex: 1;
+    min-width: 200px;
     display: flex;
     align-items: center;
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
-    padding: 0.7rem 1rem 0.7rem 2.5rem;
+    padding: 0.55rem 0.75rem 0.55rem 2.3rem;
     transition: all 0.2s ease;
 }
 
-.sucursal-search-wrapper:focus-within {
+.sucursales-search:focus-within {
     border-color: #0f172a;
-    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
 }
 
-.sucursal-search-wrapper.has-error {
-    border-color: #dc3545;
-}
-
-.sucursal-search-wrapper > i:first-child {
+.sucursales-search > i.bi-search {
     position: absolute;
-    left: 1rem;
+    left: 0.85rem;
     color: #9ca3af;
-    font-size: 1rem;
-    z-index: 1;
-}
-
-.sucursal-search-input {
-    border: none;
-    background: none;
-    outline: none;
-    width: 100%;
-    font-size: 0.9rem;
-    color: #374151;
-    padding: 0;
-}
-
-.sucursal-search-input::placeholder {
-    color: #9ca3af;
-}
-
-.sucursal-search-arrow {
-    position: absolute;
-    right: 1rem;
-    color: #9ca3af;
-    font-size: 0.8rem;
-    transition: transform 0.2s ease;
+    font-size: 0.95rem;
     pointer-events: none;
 }
 
-.sucursal-search-arrow.rotated {
-    transform: rotate(180deg);
-}
-
-.sucursal-dropdown {
-    position: absolute;
-    top: calc(100% + 0.25rem);
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    max-height: 300px;
-    overflow-y: auto;
-    z-index: 1000;
-    animation: dropdownFadeIn 0.15s ease;
-}
-
-/* ==========================================================
-   TIPO DE PROMOCIÓN
-   ========================================================== */
-
-.tipo-promocion-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
+.sucursales-search input {
+    border: none;
+    outline: none;
+    background: transparent;
     width: 100%;
-}
-
-
-/* TARJETA */
-.tipo-promocion-card {
-    position: relative;
-
-    display: flex;
-    align-items: center;
-
-    gap: 0.9rem;
-
-    width: 100%;
-    min-height: 95px;
-
-    padding: 1rem;
-
-    background: #ffffff;
-
-    border: 1.5px solid #e5e7eb;
-    border-radius: 12px;
-
-    cursor: pointer;
-
-    box-sizing: border-box;
-
-    transition:
-        border-color 0.2s ease,
-        background-color 0.2s ease,
-        box-shadow 0.2s ease,
-        transform 0.2s ease;
-}
-
-
-/* HOVER */
-.tipo-promocion-card:hover {
-    border-color: #94a3b8;
-    background: #f8fafc;
-    transform: translateY(-1px);
-}
-
-
-/* SELECCIONADA */
-.tipo-promocion-card.selected {
-    border-color: #0f172a;
-
-    background: #f8fafc;
-
-    box-shadow:
-        0 0 0 2px rgba(15, 23, 42, 0.08);
-}
-
-
-/* RADIO */
-.tipo-promocion-card input[type="radio"] {
-    width: 17px !important;
-    height: 17px !important;
-
-    min-width: 17px !important;
-
-    flex-shrink: 0;
-
-    margin: 0 !important;
-
-    padding: 0 !important;
-
-    accent-color: #0f172a;
-
-    cursor: pointer;
-}
-
-
-/* ÍCONO */
-.tipo-promocion-icon {
-    width: 42px;
-    height: 42px;
-
-    min-width: 42px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 10px;
-
-    background: #f1f5f9;
-
-    color: #0f172a;
-
-    font-size: 1.1rem;
-
-    flex-shrink: 0;
-
-    transition:
-        background-color 0.2s ease,
-        color 0.2s ease;
-}
-
-
-/* ÍCONO CUANDO ESTÁ SELECCIONADO */
-.tipo-promocion-card.selected
-.tipo-promocion-icon {
-    background: #0f172a;
-    color: #ffffff;
-}
-
-
-/* INFORMACIÓN */
-.tipo-promocion-info {
-    display: flex;
-    flex-direction: column;
-
-    gap: 0.25rem;
-
-    flex: 1;
-
-    min-width: 0;
-}
-
-
-/* TÍTULO */
-.tipo-promocion-info strong {
-    display: block;
-
-    margin: 0;
-
+    font-size: 0.85rem;
     color: #1f2937;
-
-    font-size: 0.85rem;
-
-    font-weight: 600;
-
-    line-height: 1.3;
+    padding: 0;
 }
 
-
-/* DESCRIPCIÓN */
-.tipo-promocion-info span {
-    display: block;
-
-    margin: 0;
-
-    color: #6b7280;
-
-    font-size: 0.72rem;
-
-    font-weight: 400;
-
-    line-height: 1.4;
-
-    white-space: normal;
-
-    overflow: visible;
-
-    text-overflow: clip;
+.sucursales-search input::placeholder {
+    color: #9ca3af;
 }
 
-
-/* ==========================================================
-   TABLET
-   ========================================================== */
-
-@media (max-width: 768px) {
-
-    .tipo-promocion-grid {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-    }
-
-    .tipo-promocion-card {
-        min-height: 85px;
-        padding: 0.85rem;
-    }
-
-    .tipo-promocion-icon {
-        width: 38px;
-        height: 38px;
-
-        min-width: 38px;
-
-        font-size: 1rem;
-    }
-
-    .tipo-promocion-info strong {
-        font-size: 0.82rem;
-    }
-
-    .tipo-promocion-info span {
-        font-size: 0.7rem;
-    }
-
-}
-
-
-/* ==========================================================
-   MÓVIL
-   ========================================================== */
-
-@media (max-width: 480px) {
-
-    .tipo-promocion-card {
-        min-height: 80px;
-
-        padding: 0.75rem;
-
-        gap: 0.7rem;
-    }
-
-    .tipo-promocion-card input[type="radio"] {
-        width: 15px !important;
-        height: 15px !important;
-
-        min-width: 15px !important;
-    }
-
-    .tipo-promocion-icon {
-        width: 34px;
-        height: 34px;
-
-        min-width: 34px;
-
-        font-size: 0.9rem;
-    }
-
-    .tipo-promocion-info strong {
-        font-size: 0.78rem;
-    }
-
-    .tipo-promocion-info span {
-        font-size: 0.67rem;
-    }
-
-}
-
-/* ============================================
-   RADIO PERSONALIZADO - TIPO PROMOCIÓN
-   ============================================ */
-
-.radio-custom {
-    width: 20px;
-    height: 20px;
-
-    min-width: 20px;
-
-    border: 1.5px solid #9ca3af;
+.sucursales-search .clear-search {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0.15rem;
     border-radius: 50%;
-
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.15s;
+}
 
-    background: #ffffff;
+.sucursales-search .clear-search:hover {
+    color: #ef4444;
+    background: #fee2e2;
+}
 
+.btn-select-all-suc,
+.btn-clear-suc {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
     transition: all 0.2s ease;
-
-    flex-shrink: 0;
+    white-space: nowrap;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #374151;
 }
 
-.radio-custom.checked {
-    border: 2px solid #0f172a;
+.btn-select-all-suc:hover {
+    background: #f0fdf4;
+    border-color: #10b981;
+    color: #065f46;
 }
 
-.radio-dot {
-    width: 10px;
-    height: 10px;
-
-    border-radius: 50%;
-
-    background: #0f172a;
-}
-/* ===== ANIMACIONES ===== */
-
-@keyframes dropdownFadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to   { opacity: 1; transform: translateY(0); }
+.btn-clear-suc {
+    color: #ef4444;
+    border-color: #fecaca;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.btn-clear-suc:hover {
+    background: #fef2f2;
+    border-color: #ef4444;
 }
 
-@keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to   { transform: translateX(0); opacity: 1; }
+.sucursales-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.6rem;
+    max-height: 340px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fafafa;
 }
 
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
+.sucursales-grid.has-error {
+    border-color: #ef4444;
+    background: #fef2f2;
 }
 
-.sucursal-dropdown-item {
+.sucursal-card {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 0.9rem;
-    font-size: 0.85rem;
-    color: #374151;
+    gap: 0.6rem;
+    padding: 0.7rem 0.85rem;
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.15s ease;
-    border-bottom: 1px solid #f3f4f6;
+    user-select: none;
 }
 
-.sucursal-dropdown-item:last-child {
-    border-bottom: none;
-}
-
-.sucursal-dropdown-item:hover {
+.sucursal-card:hover {
+    border-color: #cbd5e1;
     background: #f9fafb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
 }
 
-.sucursal-dropdown-item.selected {
-    background: rgba(15, 23, 42, 0.05);
-    color: #0f172a;
-    font-weight: 500;
+.sucursal-card.selected {
+    border-color: #0f172a;
+    background: #f1f5f9;
 }
 
-.sucursal-almacen {
-    background: #f3f4f6;
-    color: #4b5563;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    min-width: 28px;
-    text-align: center;
+.sucursal-card.selected:hover {
+    background: #e2e8f0;
 }
 
-.sucursal-dropdown-item.selected .sucursal-almacen {
+.sucursal-card-check {
+    width: 22px;
+    height: 22px;
+    border: 2px solid #cbd5e1;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    background: white;
+}
+
+.sucursal-card.selected .sucursal-card-check {
     background: #0f172a;
+    border-color: #0f172a;
     color: white;
 }
 
-.sucursal-nombre {
+.sucursal-card-check i {
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+/* ✅ Info de la tarjeta - UNA SOLA LÍNEA */
+.sucursal-card-info {
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.sucursal-card-text {
+    display: block;
+    font-size: 0.82rem;
+    color: #374151;
+    font-weight: 500;
+    line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.sucursal-dropdown-empty {
-    padding: 1rem;
-    text-align: center;
-    color: #9ca3af;
-    font-size: 0.85rem;
+.sucursal-card-code {
+    color: #0f172a;
+    font-weight: 700;
+    margin-right: 0.35rem;
+    font-size: 0.82rem;
+}
+
+.sucursal-card.selected .sucursal-card-text {
+    color: #0f172a;
+}
+
+.sucursales-empty {
+    grid-column: 1 / -1;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+    padding: 2rem 1rem;
+    color: #9ca3af;
+    font-size: 0.85rem;
 }
 
-.sucursal-dropdown-empty i {
+.sucursales-empty i {
     font-size: 1.5rem;
     opacity: 0.5;
 }
 
-/* ===== FILE UPLOAD ===== */
+/* ===== TIPO PROMOCION CARDS ===== */
+.tipo-promocion-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
 
+.tipo-promocion-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem;
+    background: white;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tipo-promocion-card:hover {
+    border-color: #cbd5e1;
+    background: #f9fafb;
+}
+
+.tipo-promocion-card.selected {
+    border-color: #0f172a;
+    background: #f1f5f9;
+}
+
+.tipo-promocion-icon {
+    width: 42px;
+    height: 42px;
+    background: #f3f4f6;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f172a;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.tipo-promocion-card.selected .tipo-promocion-icon {
+    background: #0f172a;
+    color: white;
+}
+
+.tipo-promocion-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.tipo-promocion-info strong {
+    font-size: 0.85rem;
+    color: #1f2937;
+}
+
+.tipo-promocion-info span {
+    font-size: 0.72rem;
+    color: #6b7280;
+    line-height: 1.3;
+}
+
+.radio-custom {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #cbd5e1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.radio-custom.checked {
+    border-color: #0f172a;
+}
+
+.radio-dot {
+    width: 10px;
+    height: 10px;
+    background: #0f172a;
+    border-radius: 50%;
+}
+
+/* ===== FILE UPLOAD ===== */
 .file-upload-container {
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
-    justify-content: flex-start !important;
     gap: 0.75rem;
     width: 100% !important;
-    text-align: left !important;
 }
 
 .file-upload-btn {
@@ -689,14 +550,10 @@ textarea.form-control {
     cursor: pointer;
     font-weight: 500;
     font-size: 0.9rem;
-    transition: all 0.2s;
     white-space: nowrap;
     border: none;
     width: auto !important;
     max-width: fit-content !important;
-    align-self: flex-start !important;   
-    margin-left: 0 !important;           
-    margin-right: auto !important;       
 }
 
 .file-upload-btn:hover {
@@ -704,17 +561,9 @@ textarea.form-control {
     transform: translateY(-1px);
 }
 
-.file-upload-btn i {
-    font-size: 1.1rem;
-}
-
 .file-upload-btn.btn-file-error {
     border: 2px solid #dc3545 !important;
     background: #dc3545 !important;
-}
-
-.file-upload-btn.btn-file-error:hover {
-    background: #b02a37 !important;
 }
 
 .file-name {
@@ -722,7 +571,6 @@ textarea.form-control {
     color: #6b7280;
     display: block !important;
     text-align: left !important;
-    align-self: flex-start !important; 
     width: 100%;
     word-break: break-word;
 }
@@ -771,7 +619,6 @@ textarea.form-control {
 }
 
 /* ===== VALIDACIONES ===== */
-
 .validation-message {
     color: #ef4444;
     font-size: 0.75rem;
@@ -789,7 +636,6 @@ textarea.form-control {
 }
 
 /* ===== STATUS TOGGLE ===== */
-
 .status-toggle {
     display: flex;
     align-items: center;
@@ -856,7 +702,6 @@ input:checked + .toggle-slider:before {
 .status-inactive-text { color: #ef4444; }
 
 /* ===== INFO CARD LATERAL ===== */
-
 .info-card {
     background: white;
     border-radius: 16px;
@@ -921,7 +766,6 @@ input:checked + .toggle-slider:before {
 }
 
 /* ===== LINK CARD ===== */
-
 .link-card {
     background: white;
     border-radius: 16px;
@@ -1010,7 +854,6 @@ input:checked + .toggle-slider:before {
 }
 
 /* ===== FORM ACTIONS ===== */
-
 .form-actions {
     display: flex;
     gap: 1rem;
@@ -1059,7 +902,6 @@ input:checked + .toggle-slider:before {
 }
 
 /* ===== TOASTS ===== */
-
 .toast-notification {
     position: fixed;
     bottom: 2rem;
@@ -1089,7 +931,6 @@ input:checked + .toggle-slider:before {
 }
 
 /* ===== ROW Y COLUMNAS ===== */
-
 .row {
     display: flex;
     flex-wrap: wrap;
@@ -1107,26 +948,9 @@ input:checked + .toggle-slider:before {
 }
 
 /* ===== UTILIDADES ===== */
-
 .text-danger { color: #ef4444; }
 .me-1 { margin-right: 0.25rem; }
 .me-2 { margin-right: 0.5rem; }
-
-.is-invalid-wrapper {
-    border: 2px solid #dc3545;
-    border-radius: 10px;
-    background: #fff;
-    transition: all 0.2s;
-}
-
-.is-invalid-wrapper .form-control {
-    border: none;
-    border-radius: 10px;
-}
-
-.is-invalid-wrapper .form-control:focus {
-    box-shadow: none;
-}
 
 .spinner-border {
     width: 1rem;
@@ -1138,25 +962,49 @@ input:checked + .toggle-slider:before {
     display: inline-block;
 }
 
-/* ===== RESPONSIVE - TABLET (≤992px) ===== */
+/* ===== ANIMACIONES ===== */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
 
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== RESPONSIVE - TABLET (≤992px) ===== */
 @media (max-width: 992px) {
     .col-lg-7 { width: 100%; }
-    
-    .col-lg-5 { 
-        width: 100%; 
+
+    .col-lg-5 {
+        width: 100%;
         margin-top: 0 !important;
     }
 
-    .info-card { 
+    .info-card {
         margin-top: 0 !important;
     }
 }
 
 /* ===== RESPONSIVE - TABLET (≤768px) ===== */
-
 @media (max-width: 768px) {
-    .dashboard-container { padding: 1rem; }
+
+    .crear-promo-container {
+        padding: 0 0.9rem 2rem;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .dashboard-header {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+    }
 
     .header-content {
         flex-direction: column;
@@ -1165,31 +1013,81 @@ input:checked + .toggle-slider:before {
         width: 100%;
     }
 
-    .header-title { width: 100%; }
-    .header-title h1 { font-size: 1.2rem; }
-    .subtitle { font-size: 0.8rem; }
+    .header-title {
+        width: 100%;
+        gap: 0.8rem;
+        align-items: center;
+    }
+
+    .title-icon {
+        width: 42px;
+        height: 42px;
+        font-size: 1.2rem;
+        border-radius: 9px;
+    }
+
+    .header-title h1 {
+        font-size: 1.15rem;
+        line-height: 1.2;
+    }
+
+    .subtitle {
+        font-size: 0.78rem;
+        line-height: 1.4;
+        margin-top: 0.2rem;
+    }
 
     .btn-back {
         width: 100%;
         justify-content: center;
-        padding: 0.7rem;
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 9px;
+    }
+
+    .row {
+        flex-direction: column;
+        margin: 0;
+    }
+
+    .col-lg-7,
+    .col-lg-5 {
+        width: 100%;
+        padding: 0;
+    }
+
+    .form-card,
+    .info-card,
+    .link-card {
+        width: 100%;
+        border-radius: 14px;
+    }
+
+    .form-card {
+        overflow: hidden;
     }
 
     .card-header {
         flex-direction: row !important;
         align-items: center !important;
         justify-content: space-between !important;
-        gap: 0.75rem;
-        padding: 1rem !important;
         flex-wrap: nowrap !important;
+        gap: 0.7rem;
+        padding: 0.9rem 1rem !important;
     }
 
     .header-left {
+        display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
         gap: 0.5rem !important;
-        flex: 1;
         min-width: 0;
+        flex: 1;
+    }
+
+    .header-left i {
+        font-size: 1rem !important;
+        flex-shrink: 0;
     }
 
     .header-left h3 {
@@ -1200,58 +1098,259 @@ input:checked + .toggle-slider:before {
     }
 
     .required-badge {
-        font-size: 0.65rem !important;
-        padding: 0.2rem 0.5rem !important;
+        font-size: 0.62rem !important;
+        padding: 0.22rem 0.5rem !important;
         margin-left: 0 !important;
         flex-shrink: 0;
     }
 
-    .card-body { padding: 1rem; }
+    .card-body {
+        padding: 1.25rem 1rem;
+    }
 
     .form-grid {
         grid-template-columns: 1fr !important;
-        gap: 1rem;
+        gap: 1.3rem;
     }
 
     .form-grid .full-width {
         grid-column: 1 / -1;
     }
 
-    .form-group { gap: 0.35rem; }
-    .form-label { font-size: 0.8rem; }
+    .form-group {
+        gap: 0.5rem;
+        min-width: 0;
+    }
+
+    .form-label {
+        font-size: 0.83rem;
+        line-height: 1.3;
+    }
+
+    .input-wrapper {
+        width: 100%;
+        min-width: 0;
+    }
 
     .form-control {
+        width: 100%;
+        min-width: 0;
+        height: 44px;
         font-size: 0.85rem;
-        padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+        padding: 0.7rem 0.85rem 0.7rem 2.4rem;
+        border-radius: 10px;
+    }
+
+    textarea.form-control {
+        min-height: 90px;
+        height: auto;
+        padding: 0.8rem 0.85rem 0.8rem 2.4rem;
+        line-height: 1.4;
     }
 
     .input-icon {
-        left: 0.75rem;
+        left: 0.85rem;
         font-size: 0.9rem;
     }
 
-    .sucursal-search-wrapper {
-        padding: 0.6rem 0.8rem 0.6rem 2.2rem;
+    /* ===== TIPO DE PROMOCIÓN ===== */
+
+    .tipo-promocion-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem;
+        width: 100%;
     }
 
-    .sucursal-search-input { font-size: 0.85rem; }
+    .tipo-promocion-card {
+        width: 100%;
+        min-width: 0;
+        display: grid;
+        grid-template-columns: 20px 38px minmax(0, 1fr);
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.85rem;
+        border-radius: 11px;
+        overflow: hidden;
+    }
+
+    .radio-custom {
+        width: 18px;
+        height: 18px;
+    }
+
+    .radio-dot {
+        width: 8px;
+        height: 8px;
+    }
+
+    .tipo-promocion-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 1rem;
+        border-radius: 9px;
+    }
+
+    .tipo-promocion-info {
+        min-width: 0;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .tipo-promocion-info strong {
+        display: block;
+        font-size: 0.82rem;
+        line-height: 1.3;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .tipo-promocion-info span {
+        display: block;
+        font-size: 0.7rem;
+        line-height: 1.35;
+        margin-top: 0.15rem;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    /* ===== SUCURSALES ===== */
+
+    .sucursales-toolbar {
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .sucursales-search {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .sucursales-grid {
+        grid-template-columns: 1fr;
+        max-height: 300px;
+        padding: 0.45rem;
+    }
+
+    .sucursal-card {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .btn-select-all-suc,
+    .btn-clear-suc {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* ===== ARCHIVO ===== */
+
+    .file-upload-container {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.65rem;
+        width: 100% !important;
+    }
+
+    .file-upload-btn {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    .file-name {
+        width: 100%;
+        font-size: 0.78rem;
+        line-height: 1.4;
+        text-align: left !important;
+        word-break: break-word;
+    }
+
+    .selected-file-info {
+        width: 100%;
+        padding: 0.65rem 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .selected-file-info span {
+        min-width: 0;
+        font-size: 0.78rem;
+        word-break: break-word;
+    }
+
+    /* ===== ESTADO ===== */
+
+    .status-toggle {
+        gap: 0.65rem;
+    }
+
+    .toggle-switch {
+        width: 50px;
+        height: 26px;
+    }
+
+    .toggle-slider:before {
+        width: 18px;
+        height: 18px;
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+
+    .status-text {
+        font-size: 0.8rem;
+    }
+
+    /* ===== BOTONES ===== */
 
     .form-actions {
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.7rem;
+        margin-top: 1.4rem;
     }
 
-    .btn-submit { width: 100%; padding: 0.8rem; }
-    .btn-cancel { width: 100%; padding: 0.8rem; }
-
-    .row {
-        flex-direction: column;
-        margin: 0;
-    }
-
-    .col-lg-7, .col-lg-5 {
+    .btn-submit,
+    .btn-cancel {
         width: 100%;
-        padding: 0;
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    /* ===== TARJETA LATERAL ===== */
+
+    .info-card {
+        margin-top: 1rem !important;
+    }
+
+    .info-card-header {
+        padding: 1rem;
+    }
+
+    .info-card-body {
+        padding: 1rem;
+    }
+
+    .process-step {
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .step-text {
+        font-size: 0.8rem;
+    }
+
+    .link-card-body {
+        padding: 1rem;
+    }
+
+    .link-container {
+        flex-direction: column;
+    }
+
+    .btn-copy {
+        width: 100%;
+        padding: 0.65rem;
     }
 
     .toast-notification {
@@ -1260,165 +1359,160 @@ input:checked + .toggle-slider:before {
         bottom: 1rem;
         max-width: calc(100% - 2rem);
     }
-
-    .link-container { flex-direction: column; }
-
-    .btn-copy {
-        padding: 0.6rem;
-        justify-content: center;
-    }
-
-    .file-upload-container {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.5rem;
-        width: 100%;
-    }
-
-    .file-upload-btn {
-        width: auto !important;
-        max-width: fit-content !important;
-        padding: 0.7rem 1.5rem !important;
-        font-size: 0.85rem !important;
-    }
-
-    .file-name {
-        text-align: left !important;
-        font-size: 0.8rem;
-    }
-
-    .selected-file-info {
-        flex-wrap: wrap;
-        width: 100%;
-        padding: 0.5rem 0.75rem;
-    }
-
-    .selected-file-info span {
-        width: 100%;
-        font-size: 0.8rem;
-    }
-
-    .status-toggle { gap: 0.5rem; }
-
-    .toggle-switch {
-        width: 50px;
-        height: 26px;
-    }
-
-    .toggle-slider:before {
-        height: 18px;
-        width: 18px;
-    }
-
-    input:checked + .toggle-slider:before {
-        transform: translateX(24px);
-    }
-
-    .status-text { font-size: 0.8rem; }
-
-    .info-card-body { padding: 1rem; }
-    .process-step { gap: 0.75rem; }
-    .step-text { font-size: 0.8rem; }
-    .link-card-body { padding: 1rem; }
 }
 
-/* ===== RESPONSIVE - MÓVIL (≤480px) ===== */
 
+/* ===== RESPONSIVE - MÓVIL (≤480px) ===== */
 @media (max-width: 480px) {
-    .dashboard-container { padding: 0.75rem; }
-    .dashboard-header { padding: 1rem; }
+
+    .crear-promo-container {
+        padding: 0 0.75rem 1.5rem;
+    }
+
+    .dashboard-header {
+        padding: 0.9rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .header-title {
+        gap: 0.65rem;
+    }
 
     .title-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
+        width: 38px;
+        height: 38px;
+        font-size: 1.05rem;
     }
 
-    .header-title h1 { font-size: 1rem; }
-
-    .card-header {
-        padding: 0.75rem !important;
-        gap: 0.5rem !important;
+    .header-title h1 {
+        font-size: 1rem;
     }
 
-    .header-left { gap: 0.4rem !important; }
-    .header-left i { font-size: 1rem !important; }
-    .header-left h3 { font-size: 0.8rem !important; }
-
-    .required-badge {
-        font-size: 0.55rem !important;
-        padding: 0.15rem 0.4rem !important;
+    .subtitle {
+        font-size: 0.72rem;
+        line-height: 1.35;
     }
 
-    .card-body { padding: 0.75rem; }
-
-    .form-grid {
-        grid-template-columns: 1fr !important;
-        gap: 0.75rem;
-    }
-
-    .form-group { gap: 0.25rem; }
-    .form-label { font-size: 0.75rem; }
-
-    .form-control {
-        font-size: 0.8rem;
-        padding: 0.55rem 0.7rem 0.55rem 2rem;
-    }
-
-    textarea.form-control {
-        padding: 0.55rem 0.7rem 0.55rem 2rem;
-        min-height: 60px;
-    }
-
-    .input-icon {
-        left: 0.7rem;
+    .btn-back {
+        padding: 0.75rem;
         font-size: 0.85rem;
     }
 
-    .sucursal-search-wrapper {
-        padding: 0.55rem 0.7rem 0.55rem 2rem;
+    .card-header {
+        padding: 0.8rem 0.85rem !important;
+        gap: 0.5rem !important;
     }
 
-    .sucursal-search-input { font-size: 0.8rem; }
+    .header-left h3 {
+        font-size: 0.82rem !important;
+    }
+
+    .required-badge {
+        font-size: 0.56rem !important;
+        padding: 0.18rem 0.42rem !important;
+    }
+
+    .card-body {
+        padding: 1rem 0.85rem;
+    }
+
+    .form-grid {
+        gap: 1.15rem;
+    }
+
+    .form-label {
+        font-size: 0.8rem;
+    }
+
+    .form-control {
+        height: 43px;
+        font-size: 0.82rem;
+        padding: 0.65rem 0.75rem 0.65rem 2.25rem;
+    }
+
+    textarea.form-control {
+        min-height: 88px;
+        padding: 0.75rem 0.75rem 0.75rem 2.25rem;
+    }
+
+    .input-icon {
+        left: 0.78rem;
+        font-size: 0.85rem;
+    }
+
+    .tipo-promocion-card {
+        grid-template-columns: 18px 36px minmax(0, 1fr);
+        gap: 0.6rem;
+        padding: 0.8rem 0.75rem;
+    }
+
+    .tipo-promocion-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 0.95rem;
+    }
+
+    .tipo-promocion-info strong {
+        font-size: 0.78rem;
+    }
+
+    .tipo-promocion-info span {
+        font-size: 0.66rem;
+        line-height: 1.35;
+    }
+
+    .radio-custom {
+        width: 17px;
+        height: 17px;
+    }
+
+    .radio-dot {
+        width: 7px;
+        height: 7px;
+    }
+
+    .sucursales-counter {
+        display: block;
+        margin-left: 0;
+        margin-top: 0.2rem;
+        font-size: 0.72rem;
+    }
+
+    .sucursales-search {
+        padding: 0.6rem 0.7rem 0.6rem 2.2rem;
+    }
+
+    .sucursales-search input {
+        font-size: 0.78rem;
+    }
+
+    .sucursal-card {
+        padding: 0.65rem 0.7rem;
+    }
+
+    .sucursal-card-text,
+    .sucursal-card-code {
+        font-size: 0.75rem;
+    }
 
     .file-upload-btn {
-        padding: 0.6rem 1.2rem !important;
+        padding: 0.7rem 0.85rem !important;
         font-size: 0.8rem !important;
-        width: auto !important;
-        max-width: fit-content !important;
     }
 
-    .file-name { font-size: 0.75rem; }
-
-    .btn-submit {
-        font-size: 0.9rem;
-        padding: 0.7rem;
+    .file-name {
+        font-size: 0.73rem;
     }
 
+    .btn-submit,
     .btn-cancel {
-        font-size: 0.9rem;
-        padding: 0.7rem;
+        padding: 0.75rem;
+        font-size: 0.85rem;
     }
 
-    .toggle-switch {
-        width: 44px;
-        height: 24px;
+    .info-card-header h4 {
+        font-size: 0.88rem;
     }
-
-    .toggle-slider:before {
-        height: 16px;
-        width: 16px;
-    }
-
-    input:checked + .toggle-slider:before {
-        transform: translateX(20px);
-    }
-
-    .status-text { font-size: 0.75rem; }
-
-    .info-card-header { padding: 0.75rem 1rem; }
-    .info-card-header h4 { font-size: 0.9rem; }
-    .info-card-body { padding: 0.75rem; }
 
     .step-number {
         width: 24px;
@@ -1426,5 +1520,7 @@ input:checked + .toggle-slider:before {
         font-size: 0.65rem;
     }
 
-    .step-text { font-size: 0.75rem; }
+    .step-text {
+        font-size: 0.75rem;
+    }
 }

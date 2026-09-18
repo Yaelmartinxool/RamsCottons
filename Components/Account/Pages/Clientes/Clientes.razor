@@ -2173,7 +2173,7 @@ private string GetOrigenClass(string? tipoCliente)
 
     var enviados = 0;
     var fallidos = 0;
-    string? ultimoError = null;   // ✅ NUEVO: Guardar el error
+    string? ultimoError = null; 
 
     foreach (var cliente in clientesParaEnviar)
     {
@@ -2182,24 +2182,23 @@ private string GetOrigenClass(string? tipoCliente)
             var telefonoLimpio = cliente!.Telefono!.Replace(" ", "").Replace("-", "").Replace("+", "");
             if (!telefonoLimpio.StartsWith("52")) telefonoLimpio = "52" + telefonoLimpio;
 
-            var resultado = await _whatsApp.EnviarPlantillaAsync(
-                numeroDestino: telefonoLimpio,
-                nombrePlantilla: "promocion_rams_v3",
-                idioma: "es_MX",
-                parametros: new Dictionary<string, string>
-                {
-                    { "1", cliente.NombreCompleto.Split(' ')[0] },
-                    { "2", $"{promo.Titulo} - {promo.Descripcion}" },
-                    { "3", $"https://rams.no-ip.info:8082/promociones/{promo.TokenUnico}" },
-                    { "4", promo.FechaFin.ToString("dd/MM/yyyy") }
-                }
-            );
-
-            // ✅ LOG en el navegador (F12 → Console)
+                var resultado = await _whatsApp.EnviarPlantillaConBotonAsync(
+                    numeroDestino: telefonoLimpio,
+                    nombrePlantilla: "promocion_rams_v6",
+                    idioma: "es_MX",
+                    parametros: new Dictionary<string, string>
+                    {
+                        { "1", cliente.NombreCompleto.Split(' ')[0] },
+                        { "2", $"{promo.Titulo} - {promo.Descripcion}" },
+                        { "3", promo.FechaFin.ToString("dd/MM/yyyy") }
+                    },
+                    urlBoton: promo.TokenUnico ?? ""
+                );
+            //  LOG en el navegador (F12 → Console)
             await JS.InvokeVoidAsync("console.log", $"[WhatsApp] Envío a {telefonoLimpio} - Resultado: {resultado}");
             await JS.InvokeVoidAsync("console.log", $"[WhatsApp] Error: {_whatsApp.UltimoError ?? "Ninguno"}");
 
-            // ✅ Guardar el error para mostrarlo después
+            // Guardar el error para mostrarlo después
             if (!resultado && !string.IsNullOrEmpty(_whatsApp.UltimoError))
             {
                 ultimoError = _whatsApp.UltimoError;
@@ -2262,7 +2261,7 @@ private string GetOrigenClass(string? tipoCliente)
                 ? $"{enviados} enviados, 1 fallo" 
                 : $"{enviados} enviados, {fallidos} fallaron");
 
-    // ✅ HTML del Swal: muestra el error de Meta si hay fallos
+    // HTML del Swal: muestra el error de Meta si hay fallos
     var htmlError = "";
     if (fallidos > 0 && !string.IsNullOrEmpty(ultimoError))
     {

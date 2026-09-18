@@ -571,48 +571,46 @@
 
             await DbContext.SaveChangesAsync();
 
-            if (
-                cliente.AceptaWhatsApp &&
-                !string.IsNullOrEmpty(cliente.Telefono)
-            )
-            {
-                try
-                {
-                    var telefonoLimpio =
-                        cliente.Telefono
-                            .Replace(" ", "")
-                            .Replace("-", "")
-                            .Replace("+", "");
+           if (
+    cliente.AceptaWhatsApp &&
+    !string.IsNullOrEmpty(cliente.Telefono)
+)
+{
+    try
+    {
+        var telefonoLimpio =
+            cliente.Telefono
+                .Replace(" ", "")
+                .Replace("-", "")
+                .Replace("+", "");
 
-                    if (!telefonoLimpio.StartsWith("52"))
-                    {
-                        telefonoLimpio =
-                            "52" + telefonoLimpio;
-                    }
+        if (!telefonoLimpio.StartsWith("52"))
+        {
+            telefonoLimpio = "52" + telefonoLimpio;
+        }
 
-                    var primerNombre =
-                        cliente.NombreCompleto
-                            .Split(' ')[0];
+        var primerNombre =
+            cliente.NombreCompleto
+                .Split(' ')[0];
 
-                    var mensajeBienvenida =
-                        $"Hola {primerNombre},\n\n" +
-                        $"Gracias por aceptar recibir promociones de Rams Cottons! 🎉\n\n" +
-                        $"A partir de ahora, recibiras nuestras mejores ofertas y novedades directamente por WhatsApp.\n\n" +
-                        $"Tambien podras consultar tu saldo de puntos en cualquier momento escribiendo Saldo a este chat.\n\n" +
-                        $"Te damos la bienvenida a Rams Cottons. 👕👗";
-
-                    await _whatsApp.EnviarMensajeAsync(
-                        telefonoLimpio,
-                        mensajeBienvenida
-                    );
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(
-                        $"Error al enviar mensaje de bienvenida: {ex.Message}"
-                    );
-                }
-            }
+        await _whatsApp.EnviarPlantillaConImagenAsync(
+    numeroDestino: telefonoLimpio,
+    nombrePlantilla: "bienvenida_rams_cliente",
+    idioma: "es_MX",
+    parametros: new Dictionary<string, string>
+    {
+        { "1", primerNombre }
+    },
+    imagenUrl: "https://rams.no-ip.info:8082/images/LogoRamsCottons.jpg"
+);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine(
+            $"Error al enviar mensaje de bienvenida: {ex.Message}"
+        );
+    }
+}
 
             mensajeExito =
                 $"Cliente {modelo.NombreCompleto} registrado correctamente.";

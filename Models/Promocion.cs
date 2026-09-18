@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 using RamsCottons.Data;
 
 namespace RamsCottons.Models
 {
     [Table("Promociones")]
+    [Index(nameof(TokenUnico), IsUnique = false)]
     public class Promocion
     {
         [Key]

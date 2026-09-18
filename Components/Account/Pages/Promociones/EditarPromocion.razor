@@ -1,5 +1,6 @@
 @page "/promociones/editar/{Id:int}"
 @rendermode InteractiveServer
+
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
@@ -8,6 +9,7 @@
 @using RamsCottons.Models.CycData
 @using RamsCottons.Services
 @using System.ComponentModel.DataAnnotations
+
 @attribute [Authorize(Roles = "SuperAdministrador,Administrador")]
 
 @inject ApplicationDbContext DbContext
@@ -232,9 +234,12 @@
                                     </label>
 
                                     <div class="input-wrapper">
-                                        <i class="bi bi-calendar-plus input-icon"></i>
+                                        <i class="bi bi-calendar-plus input-icon"
+                                           style="cursor:pointer; pointer-events:auto;"
+                                           onclick="const el = document.getElementById('fechaInicio'); if(el.showPicker){el.showPicker();} else {el.focus(); el.click();}"></i>
 
                                         <InputDate @bind-Value="modelo.FechaInicio"
+                                                   id="fechaInicio"
                                                    class="form-control" />
                                     </div>
 
@@ -249,9 +254,12 @@
                                     </label>
 
                                     <div class="input-wrapper">
-                                        <i class="bi bi-calendar-x input-icon"></i>
+                                        <i class="bi bi-calendar-x input-icon"
+                                           style="cursor:pointer; pointer-events:auto;"
+                                           onclick="const el = document.getElementById('fechaFin'); if(el.showPicker){el.showPicker();} else {el.focus(); el.click();}"></i>
 
                                         <InputDate @bind-Value="modelo.FechaFin"
+                                                   id="fechaFin"
                                                    class="form-control" />
                                     </div>
 
@@ -280,62 +288,92 @@
                                     </div>
                                 </div>
 
+                                <!-- ============================================ -->
+                                <!-- SUCURSALES - MULTI-SELECCIÓN TIPO TARJETAS -->
+                                <!-- ============================================ -->
                                 <div class="form-group full-width">
                                     <label class="form-label">
-                                        Sucursal
+                                        Sucursales
                                         <span class="text-danger">*</span>
+                                        <span class="sucursales-counter">
+                                            (@selectedSucursales.Count seleccionada@(selectedSucursales.Count != 1 ? "s" : ""))
+                                        </span>
                                     </label>
 
-                                    <div class="sucursal-search-wrapper @(errorSucursal ? "has-error" : "")">
-                                        <i class="bi bi-shop"></i>
+                                    <!-- Toolbar: Buscador + Botones -->
+                                    <div class="sucursales-toolbar">
+                                        <div class="sucursales-search">
+                                            <i class="bi bi-search"></i>
+                                            <input type="text"
+                                                   placeholder="Buscar sucursal por nombre o código..."
+                                                   @bind="busquedaSucursal"
+                                                   @bind:event="oninput" />
+                                            @if (!string.IsNullOrEmpty(busquedaSucursal))
+                                            {
+                                                <button type="button"
+                                                        class="clear-search"
+                                                        @onclick="LimpiarBusqueda">
+                                                    <i class="bi bi-x"></i>
+                                                </button>
+                                            }
+                                        </div>
 
-                                        <input type="text"
-                                               class="sucursal-search-input"
-                                               placeholder="Busca y selecciona una sucursal..."
-                                               @bind="busquedaSucursal"
-                                               @bind:event="oninput"
-                                               @onfocus="AbrirDropdownSucursal" />
+                                        <button type="button"
+                                                class="btn-select-all-suc"
+                                                @onclick="SeleccionarTodasFiltradas">
+                                            <i class="bi bi-check2-square"></i>
+                                            Todas (@sucursalesFiltradas.Count())
+                                        </button>
 
-                                        <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"></i>
-
-                                        @if (mostrarDropdownSucursal)
+                                        @if (selectedSucursales.Any())
                                         {
-                                            <div class="sucursal-dropdown">
-                                                @if (sucursalesFiltradas.Any())
-                                                {
-                                                    @foreach (var sucursal in sucursalesFiltradas)
-                                                    {
-                                                        <div class="sucursal-dropdown-item @(selectedSucursal == sucursal.Almacen ? "selected" : "")"
-                                                             @onmousedown:preventDefault
-                                                             @onclick="() => SeleccionarSucursal(sucursal)">
+                                            <button type="button"
+                                                    class="btn-clear-suc"
+                                                    @onclick="LimpiarSeleccionSucursales">
+                                                <i class="bi bi-x-circle"></i>
+                                                Limpiar
+                                            </button>
+                                        }
+                                    </div>
 
-                                                            <span class="sucursal-almacen">
-                                                                @sucursal.Almacen
-                                                            </span>
+                                    <!-- Grid de tarjetas -->
+                                    <div class="sucursales-grid @(errorSucursal ? "has-error" : "")">
+                                        @if (sucursalesFiltradas.Any())
+                                        {
+                                            @foreach (var sucursal in sucursalesFiltradas)
+                                            {
+                                                var isSelected = selectedSucursales.Contains(sucursal.Almacen);
+                                                <div class="sucursal-card @(isSelected ? "selected" : "")"
+                                                     @onclick="() => ToggleSucursal(sucursal)">
 
-                                                            <span class="sucursal-nombre">
-                                                                @sucursal.NombreCompleto
-                                                            </span>
-
-                                                        </div>
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    <div class="sucursal-dropdown-empty">
-                                                        <i class="bi bi-search"></i>
-                                                        No se encontraron sucursales
+                                                    <div class="sucursal-card-check">
+                                                        @if (isSelected)
+                                                        {
+                                                            <i class="bi bi-check-lg"></i>
+                                                        }
                                                     </div>
-                                                }
+
+                                                    <div class="sucursal-card-info">
+                                                        <span class="sucursal-card-text">
+                                                            <strong class="sucursal-card-code">@sucursal.Almacen</strong>
+                                                            @ObtenerNombreLimpio(sucursal)
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div class="sucursales-empty">
+                                                <i class="bi bi-search"></i>
+                                                <span>No se encontraron sucursales con "@busquedaSucursal"</span>
                                             </div>
                                         }
                                     </div>
 
                                     @if (errorSucursal)
                                     {
-                                        <div class="validation-message"
-                                             style="margin-top:0.25rem;">
-
+                                        <div class="validation-message" style="margin-top:0.5rem;">
                                             <i class="bi bi-exclamation-circle-fill me-1"></i>
                                             @mensajeErrorSucursal
                                         </div>
@@ -539,7 +577,6 @@
     private bool cargando = true;
     private bool guardando = false;
     private bool errorSucursal = false;
-    private bool mostrarDropdownSucursal = false;
 
     private string? error;
     private string? mensajeExito;
@@ -547,11 +584,13 @@
     private string? archivoBase64;
     private string? archivoContentType;
     private string? nombreCreador;
-    private string? selectedSucursal;
     private string busquedaSucursal = "";
     private string mensajeErrorSucursal = "";
 
     private List<SucursalCyc> SucursalesDisponibles = new();
+
+    // ✅ Lista de sucursales seleccionadas
+    private HashSet<string> selectedSucursales = new();
 
     private const long MaxFileSize = 100 * 1024 * 1024;
 
@@ -559,13 +598,8 @@
         string.IsNullOrWhiteSpace(busquedaSucursal)
             ? SucursalesDisponibles
             : SucursalesDisponibles.Where(s =>
-                s.Almacen.Contains(
-                    busquedaSucursal,
-                    StringComparison.OrdinalIgnoreCase) ||
-                (s.NombreCompleto != null &&
-                 s.NombreCompleto.Contains(
-                     busquedaSucursal,
-                     StringComparison.OrdinalIgnoreCase)));
+                s.Almacen.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase) ||
+                (s.NombreCompleto != null && s.NombreCompleto.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase)));
 
     protected override async Task OnInitializedAsync()
     {
@@ -603,14 +637,23 @@
                 Activo = promocion.Activo
             };
 
-            if (!string.IsNullOrEmpty(promocion.IdSucursal))
+            // ✅ Cargar sucursales seleccionadas (todas las que tengan el mismo TokenUnico)
+            if (!string.IsNullOrEmpty(promocion.TokenUnico))
             {
-                selectedSucursal = promocion.IdSucursal;
+                var sucursalesMismoToken = await DbContext.Promociones
+                    .Where(p => p.TokenUnico == promocion.TokenUnico && !string.IsNullOrEmpty(p.IdSucursal))
+                    .Select(p => p.IdSucursal!)
+                    .ToListAsync();
 
-                busquedaSucursal = SucursalesDisponibles
-                    .FirstOrDefault(s => s.Almacen == promocion.IdSucursal)?
-                    .NombreCompleto
-                    ?? promocion.IdSucursal;
+                foreach (var suc in sucursalesMismoToken)
+                {
+                    selectedSucursales.Add(suc);
+                }
+            }
+            else if (!string.IsNullOrEmpty(promocion.IdSucursal))
+            {
+                // Fallback: si no tiene TokenUnico, usar solo su sucursal
+                selectedSucursales.Add(promocion.IdSucursal);
             }
 
             if (!string.IsNullOrEmpty(promocion.ApplicationUserId))
@@ -647,21 +690,79 @@
         StateHasChanged();
     }
 
-    private void AbrirDropdownSucursal()
+    private void LimpiarBusqueda()
     {
-        mostrarDropdownSucursal = true;
+        busquedaSucursal = "";
     }
 
-    private void SeleccionarSucursal(SucursalCyc sucursal)
+    // ✅ Toggle de sucursal
+    private void ToggleSucursal(SucursalCyc sucursal)
     {
-        selectedSucursal = sucursal.Almacen;
+        if (selectedSucursales.Contains(sucursal.Almacen))
+        {
+            selectedSucursales.Remove(sucursal.Almacen);
+        }
+        else
+        {
+            selectedSucursales.Add(sucursal.Almacen);
+        }
 
-        busquedaSucursal = sucursal.NombreCompleto
-            ?? sucursal.Almacen;
-
-        mostrarDropdownSucursal = false;
         errorSucursal = false;
         mensajeErrorSucursal = "";
+    }
+
+    // ✅ Seleccionar todas las filtradas
+    private void SeleccionarTodasFiltradas()
+    {
+        foreach (var suc in sucursalesFiltradas)
+        {
+            selectedSucursales.Add(suc.Almacen);
+        }
+        errorSucursal = false;
+        mensajeErrorSucursal = "";
+    }
+
+    // ✅ Limpiar selección
+    private void LimpiarSeleccionSucursales()
+    {
+        selectedSucursales.Clear();
+    }
+
+    // ✅ Limpiar el nombre quitando el prefijo del código
+    private string ObtenerNombreLimpio(SucursalCyc sucursal)
+    {
+        if (string.IsNullOrEmpty(sucursal.NombreCompleto))
+            return sucursal.Almacen;
+
+        var nombre = sucursal.NombreCompleto.Trim();
+        var almacen = sucursal.Almacen?.Trim() ?? "";
+
+        if (!string.IsNullOrEmpty(almacen))
+        {
+            var prefijoConEspacio = $"{almacen} - ";
+            var prefijoSinEspacio = $"{almacen}-";
+
+            if (nombre.StartsWith(prefijoConEspacio, StringComparison.OrdinalIgnoreCase))
+            {
+                return nombre.Substring(prefijoConEspacio.Length).Trim();
+            }
+
+            if (nombre.StartsWith(prefijoSinEspacio, StringComparison.OrdinalIgnoreCase))
+            {
+                return nombre.Substring(prefijoSinEspacio.Length).Trim();
+            }
+        }
+
+        if (nombre.Length > 4 && char.IsDigit(nombre[0]) && char.IsDigit(nombre[1]))
+        {
+            var guionIndex = nombre.IndexOf('-', 2);
+            if (guionIndex > 0)
+            {
+                return nombre.Substring(guionIndex + 1).Trim();
+            }
+        }
+
+        return nombre;
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs e)
@@ -739,8 +840,7 @@
 
             if (modelo.TipoPromocion == "PrecioUnico")
             {
-                if (!modelo.Precio.HasValue ||
-                    modelo.Precio.Value <= 0)
+                if (!modelo.Precio.HasValue || modelo.Precio.Value <= 0)
                 {
                     error = "Debes ingresar un precio válido.";
                     return;
@@ -759,41 +859,23 @@
                 return;
             }
 
-            if (string.IsNullOrEmpty(selectedSucursal))
+            // ✅ VALIDAR SUCURSALES
+            if (!selectedSucursales.Any())
             {
-                error = "Debes seleccionar una sucursal.";
+                error = "Debes seleccionar al menos una sucursal.";
                 errorSucursal = true;
-                mensajeErrorSucursal = "Debes seleccionar una sucursal";
+                mensajeErrorSucursal = "Debes seleccionar al menos una sucursal";
                 return;
             }
 
-            promocion.Titulo = modelo.Titulo;
-            promocion.Descripcion = modelo.Descripcion ?? "";
-            promocion.TipoPromocion = modelo.TipoPromocion;
+            var sucursalesFinales = selectedSucursales.ToList();
 
-            promocion.Precio =
-                modelo.TipoPromocion == "PrecioUnico"
-                    ? modelo.Precio
-                    : null;
+            // ✅ GUARDAR ARCHIVO SI SE REEMPLAZÓ (una sola vez)
+            string? nuevaRutaArchivo = null;
+            string? nuevoNombreArchivo = null;
+            string? nuevaUrlArchivo = null;
 
-            promocion.DescuentoPorcentaje =
-                modelo.TipoPromocion == "PrecioUnico"
-                    ? modelo.DescuentoPorcentaje
-                    : null;
-
-            promocion.DescuentoMonto =
-                modelo.TipoPromocion == "PrecioUnico"
-                    ? modelo.DescuentoMonto
-                    : null;
-
-            promocion.FechaInicio = modelo.FechaInicio;
-            promocion.FechaFin = modelo.FechaFin;
-            promocion.Activo = modelo.Activo;
-            promocion.FechaActualizacion = DateTime.Now;
-            promocion.IdSucursal = selectedSucursal;
-
-            if (!string.IsNullOrEmpty(archivoBase64) &&
-                !string.IsNullOrEmpty(nombreArchivoNuevo))
+            if (!string.IsNullOrEmpty(archivoBase64) && !string.IsNullOrEmpty(nombreArchivoNuevo))
             {
                 var uploadsFolder = Path.Combine(
                     WebHostEnvironment.WebRootPath,
@@ -803,65 +885,123 @@
                 Directory.CreateDirectory(uploadsFolder);
 
                 var extension = Path.GetExtension(nombreArchivoNuevo);
+                var fileName = $"{promocion.TokenUnico}_{DateTime.Now.Ticks}{extension}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
 
-                var fileName =
-                    $"{promocion.TokenUnico}_{DateTime.Now.Ticks}{extension}";
+                var bytes = Convert.FromBase64String(archivoBase64);
+                await File.WriteAllBytesAsync(filePath, bytes);
 
-                var filePath = Path.Combine(
-                    uploadsFolder,
-                    fileName);
+                nuevaUrlArchivo = $"/uploads/promociones/{fileName}";
+                nuevoNombreArchivo = nombreArchivoNuevo;
+                nuevaRutaArchivo = filePath;
+            }
 
-                var bytes = Convert.FromBase64String(
-                    archivoBase64);
+            // ✅ OBTENER TODAS LAS PROMOCIONES CON EL MISMO TOKEN
+            var promocionesMismoToken = await DbContext.Promociones
+                .Where(p => p.TokenUnico == promocion.TokenUnico)
+                .ToListAsync();
 
-                await File.WriteAllBytesAsync(
-                    filePath,
-                    bytes);
+            // ✅ ACTUALIZAR LAS EXISTENTES QUE SIGAN SELECCIONADAS
+            var promocionesActualizadas = new HashSet<int>();
 
-                promocion.pdf_url =
-                    $"/uploads/promociones/{fileName}";
+            foreach (var prom in promocionesMismoToken)
+            {
+                if (selectedSucursales.Contains(prom.IdSucursal ?? ""))
+                {
+                    // Actualizar
+                    prom.Titulo = modelo.Titulo;
+                    prom.Descripcion = modelo.Descripcion ?? "";
+                    prom.TipoPromocion = modelo.TipoPromocion;
+                    prom.Precio = modelo.TipoPromocion == "PrecioUnico" ? modelo.Precio : null;
+                    prom.DescuentoPorcentaje = modelo.TipoPromocion == "PrecioUnico" ? modelo.DescuentoPorcentaje : null;
+                    prom.DescuentoMonto = modelo.TipoPromocion == "PrecioUnico" ? modelo.DescuentoMonto : null;
+                    prom.FechaInicio = modelo.FechaInicio;
+                    prom.FechaFin = modelo.FechaFin;
+                    prom.Activo = modelo.Activo;
+                    prom.FechaActualizacion = DateTime.Now;
 
-                promocion.pdf_nombre =
-                    nombreArchivoNuevo;
+                    if (nuevaUrlArchivo != null)
+                    {
+                        prom.pdf_url = nuevaUrlArchivo;
+                        prom.pdf_nombre = nuevoNombreArchivo;
+                        prom.pdf_ruta = nuevaRutaArchivo;
+                    }
 
-                promocion.pdf_ruta =
-                    filePath;
+                    promocionesActualizadas.Add(prom.Id);
+                }
+                else
+                {
+                    // Eliminar la que ya no está seleccionada
+                    DbContext.Promociones.Remove(prom);
+                }
+            }
+
+            // ✅ CREAR LAS NUEVAS SUCURSALES QUE NO EXISTÍAN
+            foreach (var sucursal in sucursalesFinales)
+            {
+                var yaExiste = promocionesMismoToken
+                    .Any(p => p.IdSucursal == sucursal && promocionesActualizadas.Contains(p.Id));
+
+                if (!yaExiste)
+                {
+                    var nuevaPromo = new Promocion
+                    {
+                        Titulo = modelo.Titulo,
+                        Descripcion = modelo.Descripcion ?? "",
+                        TipoPromocion = modelo.TipoPromocion,
+                        Precio = modelo.TipoPromocion == "PrecioUnico" ? modelo.Precio : null,
+                        DescuentoPorcentaje = modelo.TipoPromocion == "PrecioUnico" ? modelo.DescuentoPorcentaje : null,
+                        DescuentoMonto = modelo.TipoPromocion == "PrecioUnico" ? modelo.DescuentoMonto : null,
+                        FechaInicio = modelo.FechaInicio,
+                        FechaFin = modelo.FechaFin,
+                        TokenUnico = promocion.TokenUnico,
+                        pdf_nombre = nuevoNombreArchivo ?? promocion.pdf_nombre,
+                        pdf_ruta = nuevaRutaArchivo ?? promocion.pdf_ruta,
+                        pdf_url = nuevaUrlArchivo ?? promocion.pdf_url,
+                        Activo = modelo.Activo,
+                        FechaCreacion = promocion.FechaCreacion,
+                        FechaActualizacion = DateTime.Now,
+                        ApplicationUserId = promocion.ApplicationUserId,
+                        IdSucursal = sucursal
+                    };
+
+                    DbContext.Promociones.Add(nuevaPromo);
+                }
             }
 
             await DbContext.SaveChangesAsync();
 
-            mensajeExito =
-                $"Promoción '{modelo.Titulo}' actualizada correctamente!";
+            mensajeExito = $"Promoción '{modelo.Titulo}' actualizada en {sucursalesFinales.Count} sucursal(es)!";
 
-            await JS.InvokeVoidAsync(
-                "Swal.fire",
-                new
-                {
-                    title = "¡Éxito!",
-                    text = mensajeExito,
-                    icon = "success",
-                    confirmButtonText = "Aceptar",
-                    confirmButtonColor = "#0f172a",
-                    timer = 2000,
-                    showConfirmButton = false
-                });
+            await JS.InvokeVoidAsync("Swal.fire", new
+            {
+                title = "¡Éxito!",
+                html = $@"
+                    <p>Promoción <strong>{modelo.Titulo}</strong> actualizada.</p>
+                    <p style='color:#10b981; font-weight:600; margin-top:0.5rem;'>
+                        ✓ {sucursalesFinales.Count} sucursal(es) asignada(s)
+                    </p>
+                ",
+                icon = "success",
+                confirmButtonText = "Aceptar",
+                confirmButtonColor = "#0f172a",
+                timer = 2000,
+                showConfirmButton = false
+            });
 
             await Task.Delay(1500);
 
-            NavigationManager.NavigateTo(
-                "/promociones");
+            NavigationManager.NavigateTo("/promociones", forceLoad: true);
         }
         catch (Exception ex)
         {
             if (ex is DbUpdateException dbEx)
             {
-                error =
-                    $"Error de base de datos: {dbEx.InnerException?.Message ?? dbEx.Message}";
+                error = $"Error de base de datos: {dbEx.InnerException?.Message ?? dbEx.Message}";
             }
             else
             {
-                error =
-                    $"Error al guardar: {ex.Message}";
+                error = $"Error al guardar: {ex.Message}";
             }
 
             StateHasChanged();
@@ -875,53 +1015,36 @@
 
     private void Volver()
     {
-        NavigationManager.NavigateTo(
-            "/promociones");
+        NavigationManager.NavigateTo("/promociones");
     }
 
     private class PromocionModel
     {
         [Required(ErrorMessage = "El título es obligatorio")]
-        [StringLength(
-            100,
-            MinimumLength = 3,
-            ErrorMessage = "El título debe tener entre 3 y 100 caracteres")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "El título debe tener entre 3 y 100 caracteres")]
         public string Titulo { get; set; } = "";
 
         [Required(ErrorMessage = "La descripción es obligatoria")]
-        [StringLength(
-            500,
-            ErrorMessage = "La descripción no puede exceder los 500 caracteres")]
+        [StringLength(500, ErrorMessage = "La descripción no puede exceder los 500 caracteres")]
         public string Descripcion { get; set; } = "";
 
         [Required(ErrorMessage = "El tipo de promoción es obligatorio")]
         public string TipoPromocion { get; set; } = "Catalogo";
 
-        [Range(
-            0.01,
-            999999.99,
-            ErrorMessage = "El precio debe ser mayor a 0")]
+        [Range(0.01, 999999.99, ErrorMessage = "El precio debe ser mayor a 0")]
         public decimal? Precio { get; set; }
 
-        [Range(
-            0,
-            100,
-            ErrorMessage = "El descuento debe estar entre 0 y 100%")]
+        [Range(0, 100, ErrorMessage = "El descuento debe estar entre 0 y 100%")]
         public decimal? DescuentoPorcentaje { get; set; }
 
-        [Range(
-            0,
-            999999,
-            ErrorMessage = "El monto debe ser mayor o igual a 0")]
+        [Range(0, 999999, ErrorMessage = "El monto debe ser mayor o igual a 0")]
         public decimal? DescuentoMonto { get; set; }
 
         [Required(ErrorMessage = "La fecha de inicio es obligatoria")]
-        public DateTime FechaInicio { get; set; } =
-            DateTime.Today;
+        public DateTime FechaInicio { get; set; } = DateTime.Today;
 
         [Required(ErrorMessage = "La fecha de fin es obligatoria")]
-        public DateTime FechaFin { get; set; } =
-            DateTime.Today.AddDays(30);
+        public DateTime FechaFin { get; set; } = DateTime.Today.AddDays(30);
 
         public bool Activo { get; set; } = true;
     }
