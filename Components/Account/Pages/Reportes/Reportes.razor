@@ -1,10 +1,13 @@
 @page "/reportes"
 @rendermode InteractiveServer
+
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using RamsCottons.Models
 @using RamsCottons.Data
+@using RamsCottons.Services
+
 @attribute [Authorize(Roles = "SuperAdministrador,Administrador")]
 
 @inject ApplicationDbContext DbContext
@@ -12,9 +15,12 @@
 @inject IJSRuntime JS
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject PermisoService PermisoService
 
 <PageTitle>Reportes | RAMS Cottons</PageTitle>
 
+@if (autorizadoReportes)
+{
 <div class="reportes-container">
     <br>
     <!-- Header -->
@@ -30,12 +36,19 @@
                 </div>
             </div>
             <div class="header-actions">
-                <button class="btn-export" @onclick="ExportarExcel">
-                    <i class="bi bi-file-earmark-excel-fill"></i> Exportar
-                </button>
-                <button class="btn-delete-all" @onclick="EliminarTodoConfirmado">
-                    <i class="bi bi-trash3-fill"></i> Eliminar todo
-                </button>
+                @if (puedeExportarReportes)
+                {
+                    <button class="btn-export" @onclick="ExportarExcel">
+                        <i class="bi bi-file-earmark-excel-fill"></i> Exportar
+                    </button>
+                }
+
+                @if (esSuperAdmin)
+                {
+                    <button class="btn-delete-all" @onclick="EliminarTodoConfirmado">
+                        <i class="bi bi-trash3-fill"></i> Eliminar todo
+                    </button>
+                }
             </div>
         </div>
     </div>
@@ -43,18 +56,33 @@
     <!-- Tabs -->
     <div class="tabs-container">
         <div class="tabs">
-            <button class="tab-btn @(tabActivo == 1 ? "active" : "")" @onclick="() => CambiarTab(1)">
-                <i class="bi bi-people-fill"></i> Clientes
-            </button>
-            <button class="tab-btn @(tabActivo == 2 ? "active" : "")" @onclick="() => CambiarTab(2)">
-                <i class="bi bi-megaphone-fill"></i> Promociones
-            </button>
-            <button class="tab-btn @(tabActivo == 3 ? "active" : "")" @onclick="() => CambiarTab(3)">
-                <i class="bi bi-whatsapp"></i> Envios
-            </button>
-            <button class="tab-btn @(tabActivo == 4 ? "active" : "")" @onclick="() => CambiarTab(4)">
-                <i class="bi bi-pie-chart-fill"></i> Resumen
-            </button>
+            @if (puedeVerReporteClientes)
+            {
+                <button class="tab-btn @(tabActivo == 1 ? "active" : "")" @onclick="() => CambiarTab(1)">
+                    <i class="bi bi-people-fill"></i> Clientes
+                </button>
+            }
+
+            @if (puedeVerReportePromociones)
+            {
+                <button class="tab-btn @(tabActivo == 2 ? "active" : "")" @onclick="() => CambiarTab(2)">
+                    <i class="bi bi-megaphone-fill"></i> Promociones
+                </button>
+            }
+
+            @if (puedeVerReporteEnvios)
+            {
+                <button class="tab-btn @(tabActivo == 3 ? "active" : "")" @onclick="() => CambiarTab(3)">
+                    <i class="bi bi-whatsapp"></i> Envios
+                </button>
+            }
+
+            @if (puedeVerReportePorSucursal)
+            {
+                <button class="tab-btn @(tabActivo == 4 ? "active" : "")" @onclick="() => CambiarTab(4)">
+                    <i class="bi bi-pie-chart-fill"></i> Resumen
+                </button>
+            }
         </div>
     </div>
 
@@ -68,7 +96,7 @@
     else
     {
         <!-- Tab Clientes -->
-        @if (tabActivo == 1)
+        @if (tabActivo == 1 && puedeVerReporteClientes)
         {
             <div class="report-card">
                 <div class="report-header">
@@ -139,7 +167,7 @@
         }
 
         <!-- Tab Promociones -->
-        @if (tabActivo == 2)
+        @if (tabActivo == 2 && puedeVerReportePromociones)
         {
             <div class="report-card">
                 <div class="report-header">
@@ -198,7 +226,7 @@
         }
 
         <!-- Tab Envios -->
-        @if (tabActivo == 3)
+        @if (tabActivo == 3 && puedeVerReporteEnvios)
         {
             <div class="report-card">
                 <div class="report-header">
@@ -248,7 +276,7 @@
         }
 
         <!-- Tab Resumen -->
-        @if (tabActivo == 4)
+        @if (tabActivo == 4 && puedeVerReportePorSucursal)
         {
             <div class="report-card">
                 <div class="report-header">
@@ -292,9 +320,18 @@
     }
 </div>
 
+}
+
 @code {
     private int tabActivo = 1;
     private bool cargando = true;
+    private bool autorizadoReportes = false;
+
+    private bool puedeVerReporteClientes = false;
+    private bool puedeVerReportePromociones = false;
+    private bool puedeVerReporteEnvios = false;
+    private bool puedeVerReportePorSucursal = false;
+    private bool puedeExportarReportes = false;
     private int filtroDias = 30;
     private int filtroDiasEnvios = 30;
 
@@ -336,11 +373,72 @@
     protected override async Task OnInitializedAsync()
     {
         await CargarUsuarioActual();
-        await CargarResumen();
-        await CargarClientes();
-        await CargarPromociones();
-        await CargarEnvios();
+        await CargarPermisosReportes();
+
+        if (!autorizadoReportes)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        // Selecciona automáticamente la primera pestaña permitida.
+        if (puedeVerReporteClientes)
+            tabActivo = 1;
+        else if (puedeVerReportePromociones)
+            tabActivo = 2;
+        else if (puedeVerReporteEnvios)
+            tabActivo = 3;
+        else
+            tabActivo = 4;
+
+        // Solo cargamos datos de los reportes que realmente puede consultar.
+        if (puedeVerReporteClientes)
+            await CargarClientes();
+
+        if (puedeVerReportePromociones)
+            await CargarPromociones();
+
+        if (puedeVerReporteEnvios)
+            await CargarEnvios();
+
+        if (puedeVerReportePorSucursal)
+            await CargarResumen();
+
         cargando = false;
+    }
+
+    private async Task CargarPermisosReportes()
+    {
+        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermiso = authStatePermiso.User;
+
+        var permisos = await PermisoService.ObtenerPermisosAsync(userPermiso);
+
+        puedeVerReporteClientes =
+            userPermiso.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Reportes_VerClientes);
+
+        puedeVerReportePromociones =
+            userPermiso.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Reportes_VerPromociones);
+
+        puedeVerReporteEnvios =
+            userPermiso.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Reportes_VerEnvios);
+
+        puedeVerReportePorSucursal =
+            userPermiso.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Reportes_VerPorSucursal);
+
+        puedeExportarReportes =
+            userPermiso.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Reportes_Exportar);
+
+        autorizadoReportes =
+            puedeVerReporteClientes ||
+            puedeVerReportePromociones ||
+            puedeVerReporteEnvios ||
+            puedeVerReportePorSucursal;
     }
 
     private async Task CargarUsuarioActual()
@@ -360,6 +458,18 @@
 
     private void CambiarTab(int tab)
     {
+        var permitido = tab switch
+        {
+            1 => puedeVerReporteClientes,
+            2 => puedeVerReportePromociones,
+            3 => puedeVerReporteEnvios,
+            4 => puedeVerReportePorSucursal,
+            _ => false
+        };
+
+        if (!permitido)
+            return;
+
         tabActivo = tab;
         StateHasChanged();
     }
@@ -516,8 +626,26 @@
         }
     }
 
+    private bool PuedeVerTabActual()
+    {
+        return tabActivo switch
+        {
+            1 => puedeVerReporteClientes,
+            2 => puedeVerReportePromociones,
+            3 => puedeVerReporteEnvios,
+            4 => puedeVerReportePorSucursal,
+            _ => false
+        };
+    }
+
     private async Task ExportarExcel()
     {
+        if (!puedeExportarReportes || !PuedeVerTabActual())
+        {
+            await JS.InvokeVoidAsync("Swal.fire", "Acceso denegado", "No tienes permiso para exportar este reporte.", "warning");
+            return;
+        }
+
         try
         {
             string csv = "";
@@ -596,6 +724,12 @@
 
     private async Task EliminarTodoConfirmado()
     {
+        if (!esSuperAdmin)
+        {
+            await JS.InvokeVoidAsync("Swal.fire", "Acceso denegado", "Solo el SuperAdministrador puede eliminar datos desde reportes.", "warning");
+            return;
+        }
+
         var confirmado = await JS.InvokeAsync<bool>("confirm", "Esta seguro de que quiere eliminar todos los datos? Esta accion no se puede deshacer.");
         if (confirmado)
             await EliminarTodo();
@@ -603,6 +737,9 @@
 
     private async Task EliminarTodo()
     {
+        if (!esSuperAdmin)
+            return;
+
         try
         {
             if (tabActivo == 1)

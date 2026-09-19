@@ -19,9 +19,12 @@
 @inject RoleManager<IdentityRole> RoleManager
 @inject WhatsAppService _whatsApp
 @inject SucursalService SucursalService
+@inject PermisoService PermisoService
 
 <PageTitle>Nuevo Cliente | RAMS Cottons</PageTitle>
 
+@if (autorizado)
+{
 <div class="crear-cliente-container">
     <div class="dashboard-header">
         <div class="header-content">
@@ -127,21 +130,35 @@
                                     <i class="bi bi-tags input-icon"></i>
 
                                     <select @bind="modelo.IdCategoriaProducto"
-                                            class="form-control">
+                                            class="form-control"
+                                            disabled="@(!puedeAsignarCategoria)">
 
                                         <option value="">
-                                            Seleccione una categoría
+                                            @(puedeAsignarCategoria
+                                                ? "Seleccione una categoría"
+                                                : "Sin permiso para asignar categoría")
                                         </option>
 
-                                        @foreach (var cat in categorias)
+                                        @if (puedeAsignarCategoria)
                                         {
-                                            <option value="@cat.IdCategoria">
-                                                @cat.NombreCat
-                                            </option>
+                                            @foreach (var cat in categorias)
+                                            {
+                                                <option value="@cat.IdCategoria">
+                                                    @cat.NombreCat
+                                                </option>
+                                            }
                                         }
 
                                     </select>
                                 </div>
+
+                                @if (!puedeAsignarCategoria)
+                                {
+                                    <small class="form-text text-muted d-block mt-1">
+                                        <i class="bi bi-lock-fill me-1"></i>
+                                        No tienes permiso para asignar una categoría al cliente.
+                                    </small>
+                                }
                             </div>
 
                             <div class="form-group full-width">
@@ -378,11 +395,15 @@
 
 </div>
 
+}
+
 @code {
     private List<CategoriaProducto> categorias = new();
     private List<TipoCliente> tiposCliente = new();
     private List<SucursalCyc> SucursalesDisponibles = new();
 
+    private bool autorizado = false;
+    private bool puedeAsignarCategoria = false;
     private bool guardando = false;
     private string? error;
     private string? mensajeExito;
@@ -413,12 +434,41 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var tienePermiso = await PermisoService.TienePermisoAsync(
+            user,
+            Permissions.Clientes_Crear
+        );
+
+        if (!tienePermiso)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        puedeAsignarCategoria = await PermisoService.TienePermisoAsync(
+            user,
+            Permissions.Clientes_AsignarCategoria
+        );
+
+        autorizado = true;
         await CargarDatos();
     }
 
     private async Task CargarDatos()
     {
-        await CargarCategorias();
+        if (puedeAsignarCategoria)
+        {
+            await CargarCategorias();
+        }
+        else
+        {
+            categorias.Clear();
+            modelo.IdCategoriaProducto = null;
+        }
+
         await CargarTiposCliente();
 
         SucursalesDisponibles =
@@ -479,6 +529,31 @@
 
     private async Task GuardarCliente()
     {
+        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermiso = authStatePermiso.User;
+
+        var tienePermiso = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Clientes_Crear
+        );
+
+        if (!tienePermiso)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        var puedeAsignarCategoriaGuardar =
+            await PermisoService.TienePermisoAsync(
+                userPermiso,
+                Permissions.Clientes_AsignarCategoria
+            );
+
+        if (!puedeAsignarCategoriaGuardar)
+        {
+            modelo.IdCategoriaProducto = null;
+        }
+
         guardando = true;
 
         error = null;
@@ -557,6 +632,7 @@
                 IdSucursal = selectedSucursal,
 
                 IdCategoriaProducto =
+                    puedeAsignarCategoriaGuardar &&
                     modelo.IdCategoriaProducto > 0
                         ? modelo.IdCategoriaProducto
                         : null,

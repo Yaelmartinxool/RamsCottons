@@ -7,7 +7,7 @@
 @using RamsCottons.Models
 @using RamsCottons.Models.CycData
 @using RamsCottons.Services
-@attribute [Authorize(Roles = "SuperAdministrador")]
+@attribute [Authorize]
 
 @inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager NavigationManager
@@ -15,10 +15,13 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject SucursalService SucursalService
 @inject UserSucursalService UserSucursalService
+@inject PermisoService PermisoService
 
 <PageTitle>Gestion de Usuarios | RAMS Cottons</PageTitle>
 
 <!-- Wrapper con clase única para evitar conflictos con otros CSS -->
+@if (autorizadoUsuarios)
+{
 <div class="admin-usuarios-page">
 
 <!-- Header -->
@@ -33,10 +36,13 @@
                 <p class="subtitle">Sistema completo de administracion y control de accesos</p>
             </div>
         </div>
-        <button class="btn-create" @onclick="CrearUsuario">
-            <i class="bi bi-plus-lg"></i>
-            <span>Nuevo Usuario</span>
-        </button>
+        @if (puedeCrearUsuarios)
+        {
+            <button class="btn-create" @onclick="CrearUsuario">
+                <i class="bi bi-plus-lg"></i>
+                <span>Nuevo Usuario</span>
+            </button>
+        }
     </div>
 </div>
 
@@ -48,20 +54,36 @@
             <h3>Tabla de Usuarios</h3>
         </div>
         <div class="panel-actions">
-            @if (selectedIds.Any())
+            @if (selectedIds.Any() &&
+                 (puedeActivarDesactivarUsuarios || puedeCambiarRolUsuarios || puedeEliminarUsuarios))
             {
                 <div class="batch-actions-container">
                     <div class="batch-selection-info">
                         <span>@selectedIds.Count</span> seleccionados
                     </div>
-                    <select class="select-custom batch-action-select" @onchange="(e) => ExecuteBatchAction(e.Value?.ToString())">
+
+                    <select class="select-custom batch-action-select"
+                            @onchange="(e) => ExecuteBatchAction(e.Value?.ToString())">
                         <option value="" selected disabled>Acciones en lote</option>
-                        <option value="activate">Activar seleccionados</option>
-                        <option value="deactivate">Desactivar seleccionados</option>
-                        <option value="role-superadmin">Asignar rol SuperAdministrador</option>
-                        <option value="role-admin">Asignar rol Administrador</option>
-                        <option value="delete" class="text-danger">Eliminar seleccionados</option>
+
+                        @if (puedeActivarDesactivarUsuarios)
+                        {
+                            <option value="activate">Activar seleccionados</option>
+                            <option value="deactivate">Desactivar seleccionados</option>
+                        }
+
+                        @if (puedeCambiarRolUsuarios)
+                        {
+                            <option value="role-superadmin">Asignar rol SuperAdministrador</option>
+                            <option value="role-admin">Asignar rol Administrador</option>
+                        }
+
+                        @if (puedeEliminarUsuarios)
+                        {
+                            <option value="delete" class="text-danger">Eliminar seleccionados</option>
+                        }
                     </select>
+
                     <button class="btn-clear-selection" @onclick="ClearSelection">
                         <i class="bi bi-x"></i>
                     </button>
@@ -73,9 +95,14 @@
                 <input type="text" @bind="filtro" @bind:event="oninput" placeholder="Buscar usuarios, emails...">
             </div>
             <div class="action-buttons">
-                <button class="btn-select-all @(selectAllActive ? "active" : "")" @onclick="ToggleSelectAll" title="Seleccionar todos">
-                    <i class="bi @(selectAllActive ? "bi-check-square" : "bi-square")"></i>
-                </button>
+                @if (puedeActivarDesactivarUsuarios || puedeCambiarRolUsuarios || puedeEliminarUsuarios)
+                {
+                    <button class="btn-select-all @(selectAllActive ? "active" : "")"
+                            @onclick="ToggleSelectAll"
+                            title="Seleccionar todos">
+                        <i class="bi @(selectAllActive ? "bi-check-square" : "bi-square")"></i>
+                    </button>
+                }
                 <button class="btn-filter" @onclick="ToggleFilters">
                     <i class="bi bi-funnel"></i>
                     Filtros
@@ -165,11 +192,14 @@ else
                 <thead>
                     <tr>
                         <th class="col-checkbox">
-                            <div class="th-content">
-                                <input type="checkbox" 
-                                       checked="@selectAllHeader" 
-                                       @onchange="ToggleSelectAllFromHeader" />
-                            </div>
+                            @if (puedeActivarDesactivarUsuarios || puedeCambiarRolUsuarios || puedeEliminarUsuarios)
+                            {
+                                <div class="th-content">
+                                    <input type="checkbox"
+                                           checked="@selectAllHeader"
+                                           @onchange="ToggleSelectAllFromHeader" />
+                                </div>
+                            }
                         </th>
                         <th class="col-usuario">
                             <div class="th-content">
@@ -213,10 +243,13 @@ else
                                 <div class="no-data">
                                     <i class="bi bi-people-fill display-4 text-muted"></i>
                                     <p class="mb-0">No hay usuarios registrados</p>
-    <button class="btn-create-first" @onclick="CrearUsuario">
-    <i class="bi bi-plus-lg"></i>
-    <span>Crear primer usuario</span>
-</button>
+    @if (puedeCrearUsuarios)
+    {
+        <button class="btn-create-first" @onclick="CrearUsuario">
+            <i class="bi bi-plus-lg"></i>
+            <span>Crear primer usuario</span>
+        </button>
+    }
                                 </div>
                             </td>
                         </tr>
@@ -228,10 +261,13 @@ else
                             var isSelected = selectedIds.Contains(item.Usuario.Id);
                             <tr class="usuario-row @(isSelected ? "selected" : "")">
                                 <td class="col-checkbox">
-                                    <input type="checkbox" 
-                                           class="row-checkbox" 
-                                           @onclick="() => ToggleSelection(item.Usuario.Id)" 
-                                           checked="@isSelected" />
+                                    @if (puedeActivarDesactivarUsuarios || puedeCambiarRolUsuarios || puedeEliminarUsuarios)
+                                    {
+                                        <input type="checkbox"
+                                               class="row-checkbox"
+                                               @onclick="() => ToggleSelection(item.Usuario.Id)"
+                                               checked="@isSelected" />
+                                    }
                                 </td>
                                 <td class="col-usuario">
                                     <div class="user-info">
@@ -281,18 +317,38 @@ else
                                 </td>
                                 <td class="col-acciones">
                                     <div class="action-buttons">
-                                        <button class="btn-action btn-view" @onclick="() => VerUsuario(item.Usuario.Id)">
+                                        <button class="btn-action btn-view"
+                                                @onclick="() => VerUsuario(item.Usuario.Id)"
+                                                title="Ver usuario">
                                             <i class="bi bi-eye"></i>
                                         </button>
-                                        <button class="btn-action btn-edit" @onclick="() => EditarUsuario(item.Usuario.Id)">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn-action btn-toggle" @onclick="() => ToggleEstado(item.Usuario)">
-                                            <i class="bi @(item.Usuario.Activo ? "bi-pause-circle" : "bi-play-circle")"></i>
-                                        </button>
-                                        <button class="btn-action btn-delete" @onclick="() => ConfirmarEliminar(item.Usuario)">
-                                            <i class="bi bi-trash3"></i>
-                                        </button>
+
+                                        @if (puedeEditarUsuarios)
+                                        {
+                                            <button class="btn-action btn-edit"
+                                                    @onclick="() => EditarUsuario(item.Usuario.Id)"
+                                                    title="Editar usuario">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        }
+
+                                        @if (puedeActivarDesactivarUsuarios)
+                                        {
+                                            <button class="btn-action btn-toggle"
+                                                    @onclick="() => ToggleEstado(item.Usuario)"
+                                                    title="Activar/Desactivar usuario">
+                                                <i class="bi @(item.Usuario.Activo ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                            </button>
+                                        }
+
+                                        @if (puedeEliminarUsuarios)
+                                        {
+                                            <button class="btn-action btn-delete"
+                                                    @onclick="() => ConfirmarEliminar(item.Usuario)"
+                                                    title="Eliminar usuario">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -410,6 +466,8 @@ else
 
 </div>  <!-- ← CIERRA admin-usuarios-page -->
 
+}
+
 @code {
     // Variables de filtrado y paginacion
     private string filtro = "";
@@ -426,6 +484,13 @@ else
     private string SucursalActualNombre = "Sin sucursal";
     private bool esSuperAdmin = false;
     private bool esAdmin = false;
+
+    private bool autorizadoUsuarios = false;
+    private bool puedeCrearUsuarios = false;
+    private bool puedeEditarUsuarios = false;
+    private bool puedeEliminarUsuarios = false;
+    private bool puedeActivarDesactivarUsuarios = false;
+    private bool puedeCambiarRolUsuarios = false;
     
     private List<SucursalCyc> SucursalesDisponibles = new();
     private Dictionary<string, string> SucursalesCache = new();
@@ -489,6 +554,45 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermiso = authStatePermiso.User;
+
+        autorizadoUsuarios = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_Ver
+        );
+
+        if (!autorizadoUsuarios)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        puedeCrearUsuarios = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_Crear
+        );
+
+        puedeEditarUsuarios = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_Editar
+        );
+
+        puedeEliminarUsuarios = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_Eliminar
+        );
+
+        puedeActivarDesactivarUsuarios = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_ActivarDesactivar
+        );
+
+        puedeCambiarRolUsuarios = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_CambiarRol
+        );
+
         CargarSucursalesDisponibles();
         await CargarUsuarios();
     }
@@ -590,8 +694,20 @@ else
         }
     }
 
-    private void CrearUsuario() => NavigationManager.NavigateTo("/admin/usuarios/crear");
-    private void EditarUsuario(string userId) => NavigationManager.NavigateTo($"/admin/usuarios/edit/{userId}");
+    private void CrearUsuario()
+    {
+        if (!puedeCrearUsuarios)
+            return;
+
+        NavigationManager.NavigateTo("/admin/usuarios/crear");
+    }
+    private void EditarUsuario(string userId)
+    {
+        if (!puedeEditarUsuarios)
+            return;
+
+        NavigationManager.NavigateTo($"/admin/usuarios/edit/{userId}");
+    }
     private void VerUsuario(string userId) => NavigationManager.NavigateTo($"/admin/usuarios/view/{userId}");
     private void ToggleFilters() => mostrarFiltros = !mostrarFiltros;
 
@@ -673,7 +789,17 @@ else
 
     private async Task ExecuteBatchAction(string? action)
     {
-        if (string.IsNullOrEmpty(action) || !selectedIds.Any()) return;
+        if (string.IsNullOrEmpty(action) || !selectedIds.Any())
+            return;
+
+        if ((action == "activate" || action == "deactivate") && !puedeActivarDesactivarUsuarios)
+            return;
+
+        if ((action == "role-superadmin" || action == "role-admin") && !puedeCambiarRolUsuarios)
+            return;
+
+        if (action == "delete" && !puedeEliminarUsuarios)
+            return;
 
         try
         {
@@ -764,6 +890,9 @@ else
 
     private void ConfirmarEliminar(ApplicationUser user)
     {
+        if (!puedeEliminarUsuarios)
+            return;
+
         usuarioEliminar = user;
         mostrarModalEliminar = true;
     }
@@ -776,7 +905,8 @@ else
 
     private async Task EliminarUsuario()
     {
-        if (usuarioEliminar == null) return;
+        if (!puedeEliminarUsuarios || usuarioEliminar == null)
+            return;
 
         try
         {
@@ -800,6 +930,9 @@ else
 
     private async Task ToggleEstado(ApplicationUser user)
     {
+        if (!puedeActivarDesactivarUsuarios)
+            return;
+
         try
         {
             user.Activo = !user.Activo;

@@ -7,16 +7,20 @@
 @using System.ComponentModel.DataAnnotations
 @using RamsCottons.Data
 @using RamsCottons.Models
+@using RamsCottons.Services
 
-@attribute [Authorize(Roles = "SuperAdministrador")]
+@attribute [Authorize]
 
 @inject UserManager<ApplicationUser> UserManager
 @inject RoleManager<IdentityRole> RoleManager
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject PermisoService PermisoService
 
 <PageTitle>Editar Usuario | RAMS Cottons</PageTitle>
 
+@if (autorizadoEditarUsuario)
+{
 <br>
 @if (cargandoInicial)
 {
@@ -136,17 +140,28 @@ else
                                 <div class="form-group full-width">
                                     <label class="form-label">Estado de la Cuenta</label>
                                     <div class="status-toggle">
-                                        <label class="toggle-switch">
-                                            <InputCheckbox @bind-Value="modelo.Activo" />
-                                            <span class="toggle-slider"></span>
-                                        </label>
+                                        @if (puedeActivarDesactivarUsuarios)
+                                        {
+                                            <label class="toggle-switch">
+                                                <InputCheckbox @bind-Value="modelo.Activo" />
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        }
+
                                         <div class="status-info">
                                             <span class="status-badge @(modelo.Activo ? "status-active" : "status-inactive")">
                                                 <i class="bi @(modelo.Activo ? "bi-check-circle-fill" : "bi-x-circle-fill")"></i>
                                                 @(modelo.Activo ? "Activo" : "Inactivo")
                                             </span>
                                             <span class="status-hint">
-                                                @(modelo.Activo ? "El usuario puede acceder al sistema" : "El usuario no podrá iniciar sesión")
+                                                @if (puedeActivarDesactivarUsuarios)
+                                                {
+                                                    <span>@(modelo.Activo ? "El usuario puede acceder al sistema" : "El usuario no podrá iniciar sesión")</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>Solo lectura · No tienes permiso para cambiar el estado</span>
+                                                }
                                             </span>
                                         </div>
                                     </div>
@@ -192,39 +207,63 @@ else
                                         Rol de Usuario <span class="text-danger">*</span>
                                     </label>
                                     <ValidationMessage For="() => modelo.Rol" class="validation-message" />
-                                    <div class="roles-grid">
-                                        @foreach (var rol in roles.Where(r => !string.IsNullOrEmpty(r.Name)))
-                                        {
-                                            var roleName = rol.Name!;
-                                            var isSelected = modelo.Rol == roleName;
-                                            <div class="role-card @(isSelected ? "selected" : "")" @onclick="() => SeleccionarRol(roleName)">
+                                    @if (puedeCambiarRolUsuarios)
+                                    {
+                                        <div class="roles-grid">
+                                            @foreach (var rol in roles.Where(r => !string.IsNullOrEmpty(r.Name)))
+                                            {
+                                                var roleName = rol.Name!;
+                                                var isSelected = modelo.Rol == roleName;
+
+                                                <div class="role-card @(isSelected ? "selected" : "")"
+                                                     @onclick="() => SeleccionarRol(roleName)">
+                                                    <div class="role-icon">
+                                                        @if (rol.Name == "SuperAdministrador")
+                                                        {
+                                                            <i class="bi bi-shield-fill-check"></i>
+                                                        }
+                                                        else if (rol.Name == "Administrador")
+                                                        {
+                                                            <i class="bi bi-person-fill-gear"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi bi-person"></i>
+                                                        }
+                                                    </div>
+
+                                                    <div class="role-info">
+                                                        <span class="role-name">@rol.Name</span>
+                                                        <span class="role-desc">@GetRoleDescription(rol.Name)</span>
+                                                    </div>
+
+                                                    <div class="role-check">
+                                                        @if (isSelected)
+                                                        {
+                                                            <i class="bi bi-check-circle-fill"></i>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="roles-grid">
+                                            <div class="role-card selected" style="cursor: default;">
                                                 <div class="role-icon">
-                                                    @if (rol.Name == "SuperAdministrador")
-                                                    {
-                                                        <i class="bi bi-shield-fill-check"></i>
-                                                    }
-                                                    else if (rol.Name == "Administrador")
-                                                    {
-                                                        <i class="bi bi-person-fill-gear"></i>
-                                                    }
-                                                    else
-                                                    {
-                                                        <i class="bi bi-person"></i>
-                                                    }
+                                                    <i class="bi bi-person-fill-gear"></i>
                                                 </div>
                                                 <div class="role-info">
-                                                    <span class="role-name">@rol.Name</span>
-                                                    <span class="role-desc">@GetRoleDescription(rol.Name)</span>
+                                                    <span class="role-name">@modelo.Rol</span>
+                                                    <span class="role-desc">Solo lectura · No tienes permiso para cambiar el rol</span>
                                                 </div>
                                                 <div class="role-check">
-                                                    @if (isSelected)
-                                                    {
-                                                        <i class="bi bi-check-circle-fill"></i>
-                                                    }
+                                                    <i class="bi bi-lock-fill"></i>
                                                 </div>
                                             </div>
-                                        }
-                                    </div>
+                                        </div>
+                                    }
                                 </div>
 
                                 <!-- Botones de Acción -->
@@ -316,11 +355,19 @@ else
     </div>
 }
 
+}
+
 @code {
     [Parameter]
     public string UserId { get; set; } = string.Empty;
 
     private ApplicationUser? usuario;
+    private bool autorizadoEditarUsuario = false;
+    private bool esSuperAdminActual = false;
+    private bool puedeActivarDesactivarUsuarios = false;
+    private bool puedeCambiarRolUsuarios = false;
+    private bool estadoOriginal = false;
+    private string rolOriginal = "";
     private bool cargandoInicial = true;
     private bool guardando;
     private bool reenviandoConfirmacion;
@@ -332,15 +379,54 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        // Solo cargar los roles válidos
+        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermiso = authStatePermiso.User;
+
+        autorizadoEditarUsuario = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_Editar
+        );
+
+        if (!autorizadoEditarUsuario)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        esSuperAdminActual = userPermiso.IsInRole("SuperAdministrador");
+
+        puedeActivarDesactivarUsuarios = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_ActivarDesactivar
+        );
+
+        puedeCambiarRolUsuarios = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_CambiarRol
+        );
+
         var allRoles = await RoleManager.Roles.ToListAsync();
-        roles = allRoles
-            .Where(r => r.Name == "SuperAdministrador" || r.Name == "Administrador")
-            .ToList();
+
+        // Un Administrador nunca puede asignar el rol SuperAdministrador.
+        if (esSuperAdminActual)
+        {
+            roles = allRoles
+                .Where(r => r.Name == "SuperAdministrador" || r.Name == "Administrador")
+                .ToList();
+        }
+        else
+        {
+            roles = allRoles
+                .Where(r => r.Name == "Administrador")
+                .ToList();
+        }
     }
 
     protected override async Task OnParametersSetAsync()
     {
+        if (!autorizadoEditarUsuario)
+            return;
+
         await CargarUsuario();
     }
 
@@ -357,6 +443,16 @@ else
             {
                 var userRoles = await UserManager.GetRolesAsync(usuario);
 
+                // Un Administrador no puede editar cuentas SuperAdministrador.
+                if (!esSuperAdminActual && userRoles.Contains("SuperAdministrador"))
+                {
+                    NavigationManager.NavigateTo("/admin/usuarios", true);
+                    return;
+                }
+
+                rolOriginal = userRoles.FirstOrDefault() ?? "";
+                estadoOriginal = usuario.Activo;
+
                 modelo = new EditModel
                 {
                     NombreCompleto = usuario.NombreCompleto,
@@ -364,7 +460,7 @@ else
                     Email = usuario.Email,
                     Telefono = usuario.Telefono,
                     Activo = usuario.Activo,
-                    Rol = userRoles.FirstOrDefault() ?? ""
+                    Rol = rolOriginal
                 };
             }
         }
@@ -380,6 +476,12 @@ else
 
     private void SeleccionarRol(string rol)
     {
+        if (!puedeCambiarRolUsuarios)
+            return;
+
+        if (!esSuperAdminActual && rol == "SuperAdministrador")
+            return;
+
         modelo.Rol = rol;
     }
 
@@ -395,8 +497,44 @@ else
 
     private async Task Guardar()
     {
+        var authStatePermisoGuardar = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermisoGuardar = authStatePermisoGuardar.User;
+
+        var tienePermisoEditar = await PermisoService.TienePermisoAsync(
+            userPermisoGuardar,
+            Permissions.Usuarios_Editar
+        );
+
+        if (!tienePermisoEditar)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
         if (usuario is null)
             return;
+
+        var rolesObjetivo = await UserManager.GetRolesAsync(usuario);
+
+        if (!userPermisoGuardar.IsInRole("SuperAdministrador") &&
+            rolesObjetivo.Contains("SuperAdministrador"))
+        {
+            NavigationManager.NavigateTo("/admin/usuarios", true);
+            return;
+        }
+
+        if (!puedeActivarDesactivarUsuarios)
+            modelo.Activo = estadoOriginal;
+
+        if (!puedeCambiarRolUsuarios)
+            modelo.Rol = rolOriginal;
+
+        if (!userPermisoGuardar.IsInRole("SuperAdministrador") &&
+            modelo.Rol == "SuperAdministrador")
+        {
+            error = "No tienes permiso para asignar el rol SuperAdministrador.";
+            return;
+        }
 
         guardando = true;
         error = null;
@@ -436,7 +574,9 @@ else
             usuario.UserName = modelo.UserName;
             usuario.Email = modelo.Email;
             usuario.Telefono = modelo.Telefono;
-            usuario.Activo = modelo.Activo;
+            if (puedeActivarDesactivarUsuarios)
+                usuario.Activo = modelo.Activo;
+
             usuario.IdSucursal = null; // SuperAdmin y Admin NO tienen sucursal
 
             var updateResult = await UserManager.UpdateAsync(usuario);
@@ -449,16 +589,20 @@ else
                 return;
             }
 
-            // Actualizar rol
-            var rolesActuales = await UserManager.GetRolesAsync(usuario);
-            if (rolesActuales.Any())
+            // Actualizar rol solamente si tiene permiso.
+            if (puedeCambiarRolUsuarios)
             {
-                await UserManager.RemoveFromRolesAsync(usuario, rolesActuales);
-            }
+                var rolesActuales = await UserManager.GetRolesAsync(usuario);
 
-            if (!string.IsNullOrEmpty(modelo.Rol))
-            {
-                await UserManager.AddToRoleAsync(usuario, modelo.Rol);
+                if (rolesActuales.Any())
+                {
+                    await UserManager.RemoveFromRolesAsync(usuario, rolesActuales);
+                }
+
+                if (!string.IsNullOrEmpty(modelo.Rol))
+                {
+                    await UserManager.AddToRoleAsync(usuario, modelo.Rol);
+                }
             }
 
             mensajeExito = $"Usuario {modelo.NombreCompleto} actualizado correctamente.";

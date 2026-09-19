@@ -1,14 +1,21 @@
-﻿@implements IDisposable
+﻿@using RamsCottons.Data
+@using RamsCottons.Services
+@using Microsoft.AspNetCore.Components.Authorization
+
+@implements IDisposable
+
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject PermisoService PermisoService
 
 <div class="nav-container">
     
     <!-- Logo -->
     <div class="logo-section">
         <img src="images/logo.png" alt="RAMS COTTONS"
-     style="height: 60px; width: auto; margin-bottom: 0.5rem; 
-     filter: brightness(0) saturate(100%) invert(79%) sepia(53%) 
-     saturate(627%) hue-rotate(359deg) brightness(104%) contrast(106%);" />
+             style="height: 60px; width: auto; margin-bottom: 0.5rem; 
+             filter: brightness(0) saturate(100%) invert(79%) sepia(53%) 
+             saturate(627%) hue-rotate(359deg) brightness(104%) contrast(106%);" />
 
         <small class="menu-text" style="color: #888;">
             Sistema de Promociones
@@ -23,44 +30,62 @@
                     @{
                         var user = context.User;
                         var esSuperAdmin = user.IsInRole("SuperAdministrador");
-                        var esAdmin = user.IsInRole("Administrador");
                     }
 
                     <!-- INICIO -->
-                    <NavLink class="menu-item" href="" Match="NavLinkMatch.All">
-                        <i class="bi bi-grid-1x2-fill"></i>
-                        <span class="menu-text">Inicio</span>
-                    </NavLink>
+                    @if (puedeVerInicio)
+                    {
+                        <NavLink class="menu-item" href="" Match="NavLinkMatch.All">
+                            <i class="bi bi-grid-1x2-fill"></i>
+                            <span class="menu-text">Inicio</span>
+                        </NavLink>
+                    }
 
                     <!-- PROMOCIONES -->
-                    <div class="menu-section-title">
-                        <i class="bi bi-tags-fill me-1"></i>
-                        <span class="menu-text">PROMOCIONES</span>
-                    </div>
+                    @if (puedeVerPromociones || puedeCrearPromociones)
+                    {
+                        <div class="menu-section-title">
+                            <i class="bi bi-tags-fill me-1"></i>
+                            <span class="menu-text">PROMOCIONES</span>
+                        </div>
 
-                    <NavLink class="menu-item" href="promociones" Match="NavLinkMatch.All">
-                        <i class="bi bi-megaphone-fill"></i>
-                        <span class="menu-text">Gestionar Promociones</span>
-                    </NavLink>
+                        @if (puedeVerPromociones)
+                        {
+                            <NavLink class="menu-item"
+                                     href="promociones"
+                                     Match="NavLinkMatch.All">
+                                <i class="bi bi-megaphone-fill"></i>
+                                <span class="menu-text">Gestionar Promociones</span>
+                            </NavLink>
+                        }
 
-                    <NavLink class="menu-item" href="promociones/crear" Match="NavLinkMatch.All">
-                        <i class="bi bi-plus-circle-fill"></i>
-                        <span class="menu-text">Nueva Promoción</span>
-                    </NavLink>
+                        @if (puedeCrearPromociones)
+                        {
+                            <NavLink class="menu-item"
+                                     href="promociones/crear"
+                                     Match="NavLinkMatch.All">
+                                <i class="bi bi-plus-circle-fill"></i>
+                                <span class="menu-text">Nueva Promoción</span>
+                            </NavLink>
+                        }
+                    }
 
                     <!-- CLIENTES -->
-                    <div class="menu-section-title">
-                        <i class="bi bi-people-fill me-1"></i>
-                        <span class="menu-text">CLIENTES</span>
-                    </div>
+                    @if (puedeVerClientes)
+                    {
+                        <div class="menu-section-title">
+                            <i class="bi bi-people-fill me-1"></i>
+                            <span class="menu-text">CLIENTES</span>
+                        </div>
 
-                    <NavLink class="menu-item" href="clientes">
-                        <i class="bi bi-person-lines-fill"></i>
-                        <span class="menu-text">Todos los Clientes</span>
-                    </NavLink>
+                        <NavLink class="menu-item" href="clientes">
+                            <i class="bi bi-person-lines-fill"></i>
+                            <span class="menu-text">Todos los Clientes</span>
+                        </NavLink>
+                    }
 
-                    <!-- REPORTES - SOLO SUPERADMIN -->
-                    @if (esSuperAdmin)
+                    <!-- REPORTES -->
+                    @if (puedeVerReportes)
                     {
                         <div class="menu-section-title">
                             <i class="bi bi-graph-up me-1"></i>
@@ -73,28 +98,41 @@
                         </NavLink>
                     }
 
-                    <!-- ADMINISTRACIÓN - SOLO SUPERADMIN -->
-                    @if (esSuperAdmin)
+                    <!-- ADMINISTRACIÓN -->
+                    @if (puedeVerUsuarios || puedeCrearUsuarios || puedeVerRoles)
                     {
                         <div class="menu-section-title">
                             <i class="bi bi-gear-fill me-1"></i>
                             <span class="menu-text">ADMINISTRACIÓN</span>
                         </div>
 
-                        <NavLink class="menu-item" href="admin/usuarios/crear" Match="NavLinkMatch.All">
-                            <i class="bi bi-person-plus-fill"></i>
-                            <span class="menu-text"> Crear Usuario</span>
-                        </NavLink>
+                        @if (puedeCrearUsuarios)
+                        {
+                            <NavLink class="menu-item"
+                                     href="admin/usuarios/crear"
+                                     Match="NavLinkMatch.All">
+                                <i class="bi bi-person-plus-fill"></i>
+                                <span class="menu-text">Crear Usuario</span>
+                            </NavLink>
+                        }
 
-                        <NavLink class="menu-item" href="admin/usuarios" Match="NavLinkMatch.All">
-                            <i class="bi bi-people-fill"></i>
-                            <span class="menu-text"> Lista de Usuarios</span>
-                        </NavLink>
+                        @if (puedeVerUsuarios)
+                        {
+                            <NavLink class="menu-item"
+                                     href="admin/usuarios"
+                                     Match="NavLinkMatch.All">
+                                <i class="bi bi-people-fill"></i>
+                                <span class="menu-text">Lista de Usuarios</span>
+                            </NavLink>
+                        }
 
-                        <NavLink class="menu-item" href="admin/roles">
-                            <i class="bi bi-shield-lock-fill"></i>
-                            <span class="menu-text">Roles y Permisos</span>
-                        </NavLink>
+                        @if (puedeVerRoles)
+                        {
+                            <NavLink class="menu-item" href="admin/roles">
+                                <i class="bi bi-shield-lock-fill"></i>
+                                <span class="menu-text">Roles y Permisos</span>
+                            </NavLink>
+                        }
                     }
                 </Authorized>
 
@@ -129,6 +167,7 @@
                         <div style="color: white; font-weight: 500;">
                             @context.User.Identity?.Name
                         </div>
+
                         <div style="color: #ffd700; font-size: 0.8rem;">
                             @(esSuperAdmin ? "Super Administrador" : "Administrador")
                         </div>
@@ -150,24 +189,21 @@
 </div>
 
 <style>
-    /* Contenedor principal */
     .nav-container {
         height: 100vh;
         display: flex;
         flex-direction: column;
         background-color: #1f1f1f;
         color: #e4e4e4;
-        overflow: hidden; 
+        overflow: hidden;
     }
 
-    /* Logo */
     .logo-section {
         text-align: center;
         padding: 1.5rem 1rem;
         border-bottom: 1px solid #333;
     }
 
-    /* Menú (con scroll solo si es necesario) */
     .menu-section {
         flex: 1;
         padding: 1rem;
@@ -180,7 +216,6 @@
         height: 0px;
     }
 
-    /* Títulos de sección */
     .menu-section-title {
         color: #aaa;
         font-size: 0.75rem;
@@ -197,7 +232,6 @@
         font-size: 0.9rem;
     }
 
-    /* Items del menú */
     .menu-item {
         display: flex;
         align-items: center;
@@ -207,7 +241,7 @@
         border-radius: 0.375rem;
         margin: 0.2rem 0;
         transition: all 0.2s;
-        gap: 0.1rem; 
+        gap: 0.1rem;
     }
 
     .menu-item i {
@@ -217,7 +251,6 @@
         color: #aaa;
     }
 
-    /* Ajustes de íconos específicos */
     .bi-whatsapp,
     .bi-grid-1x2-fill,
     .bi-megaphone-fill,
@@ -244,14 +277,12 @@
         color: #ffd700;
     }
 
-    /* Footer */
     .footer-section {
         padding: 1.5rem 1rem;
         border-top: 1px solid #333;
         background-color: #1a1a1a;
     }
 
-    /* Perfil */
     .profile-info {
         display: flex;
         align-items: center;
@@ -273,7 +304,6 @@
         text-overflow: ellipsis;
     }
 
-    /* Botón de logout */
     .logout-button {
         width: 100%;
         text-align: left;
@@ -307,10 +337,65 @@
 @code {
     private string? currentUrl;
 
-    protected override void OnInitialized()
+    private bool puedeVerInicio = false;
+    private bool puedeVerPromociones = false;
+    private bool puedeCrearPromociones = false;
+    private bool puedeVerClientes = false;
+    private bool puedeVerReportes = false;
+    private bool puedeVerUsuarios = false;
+    private bool puedeCrearUsuarios = false;
+    private bool puedeVerRoles = false;
+
+    protected override async Task OnInitializedAsync()
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
+
+        await CargarPermisos();
+    }
+
+    private async Task CargarPermisos()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var permisos = await PermisoService.ObtenerPermisosAsync(user);
+
+        puedeVerInicio =
+            user.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Inicio_Ver);
+
+        puedeVerPromociones =
+            user.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Promociones_Ver);
+
+        puedeCrearPromociones =
+            user.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Promociones_Crear);
+
+        puedeVerClientes =
+            user.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Clientes_Ver);
+
+        puedeVerReportes =
+            user.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Reportes_VerClientes) ||
+            permisos.Contains(Permissions.Reportes_VerPromociones) ||
+            permisos.Contains(Permissions.Reportes_VerEnvios) ||
+            permisos.Contains(Permissions.Reportes_VerPorSucursal) ||
+            permisos.Contains(Permissions.Reportes_Exportar);
+
+        puedeVerUsuarios =
+            user.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Usuarios_Ver);
+
+        puedeCrearUsuarios =
+            user.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Usuarios_Crear);
+
+        puedeVerRoles =
+            user.IsInRole("SuperAdministrador") ||
+            permisos.Contains(Permissions.Roles_Ver);
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)

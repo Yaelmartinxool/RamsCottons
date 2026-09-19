@@ -11,11 +11,15 @@
 @inject StatsService StatsService
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject PermisoService PermisoService
 
 <PageTitle>Dashboard | RAMS Cottons</PageTitle>
 
 <AuthorizeView Context="authContext">
     <Authorized>
+        @if (autorizadoInicio)
+        {
         <div class="dashboard-container">
 
             <!-- HEADER -->
@@ -218,12 +222,14 @@
                 <p>© 2026 RAMS COTTONS - Sistema de Gestión de Promociones</p>
             </div>
         </div>
+        }
     </Authorized>
 </AuthorizeView>
 
 @code {
     private System.Threading.Timer? _timer;
     private StatsCache stats = new();
+    private bool autorizadoInicio = false;
 
     // Variables para la vista
     private bool EsSuperAdmin { get; set; }
@@ -243,9 +249,27 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermiso = authStatePermiso.User;
+
+        var tienePermisoInicio = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Inicio_Ver
+        );
+
+        if (!tienePermisoInicio)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        autorizadoInicio = true;
+
         await CargarDatos();
+
         stats = await StatsService.GetStats();
         TotalUsuarios = stats.TotalUsuarios;
+
         await base.OnInitializedAsync();
     }
 

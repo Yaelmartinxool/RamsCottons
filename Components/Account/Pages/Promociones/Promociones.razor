@@ -15,9 +15,12 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
 @inject SucursalService SucursalService
+@inject PermisoService PermisoService
 
 <PageTitle>Gestión de Promociones | RAMS Cottons</PageTitle>
 
+@if (autorizadoPromociones)
+{
 <div class="promociones-container">
     <br>
     <!-- Header -->
@@ -32,10 +35,13 @@
                     <p class="subtitle">Administra las promociones del sistema</p>
                 </div>
             </div>
-            <button class="btn-create" @onclick="CrearPromocion">
-                <i class="bi bi-plus-lg"></i>
-                <span>Nueva Promoción</span>
-            </button>
+            @if (puedeCrearPromociones)
+            {
+                <button class="btn-create" @onclick="CrearPromocion">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Nueva Promoción</span>
+                </button>
+            }
         </div>
     </div>
 
@@ -119,7 +125,7 @@
                                      @onmousedown:preventDefault
                                      @onclick="() => SeleccionarSucursal(null)">
                                     <i class="bi bi-x-circle"></i>
-                                    <span class="sucursal-nombre">Todas las sucursales</span>
+                                    <span class="sucursal-nombre">@(puedeVerPromocionesTodasSucursales ? "Todas las sucursales" : "Mi sucursal")</span>
                                 </div>
                                 
                                 @if (sucursalesFiltradas.Any())
@@ -192,10 +198,13 @@
                                     <div class="no-data">
                                         <i class="bi bi-megaphone display-4 text-muted"></i>
                                         <p class="mb-0">No hay promociones registradas</p>
-<button class="btn-create-promo-empty" @onclick="CrearPromocion">
-    <i class="bi bi-plus-lg"></i>
-    <span>Crear primera promoción</span>
-</button>
+@if (puedeCrearPromociones)
+{
+    <button class="btn-create-promo-empty" @onclick="CrearPromocion">
+        <i class="bi bi-plus-lg"></i>
+        <span>Crear primera promoción</span>
+    </button>
+}
                                     </div>
                                 </td>
                             </tr>
@@ -273,15 +282,32 @@
                                     </td>
                                     <td class="col-acciones">
                                         <div class="action-buttons">
-                                            <button class="btn-action btn-edit" @onclick="() => EditarPromocion(promo.Id)" title="Editar">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn-action btn-toggle" @onclick="() => ToggleEstado(promo)" title="@(promo.Activo ? "Desactivar" : "Activar")">
-                                                <i class="bi @(promo.Activo ? "bi-pause-circle" : "bi-play-circle")"></i>
-                                            </button>
-                                            <button class="btn-action btn-delete" @onclick="() => ConfirmarEliminar(promo)" title="Eliminar">
-                                                <i class="bi bi-trash3"></i>
-                                            </button>
+                                            @if (puedeEditarPromociones)
+                                            {
+                                                <button class="btn-action btn-edit"
+                                                        @onclick="() => EditarPromocion(promo.Id)"
+                                                        title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            }
+
+                                            @if (puedeActivarDesactivarPromociones)
+                                            {
+                                                <button class="btn-action btn-toggle"
+                                                        @onclick="() => ToggleEstado(promo)"
+                                                        title="@(promo.Activo ? "Desactivar" : "Activar")">
+                                                    <i class="bi @(promo.Activo ? "bi-pause-circle" : "bi-play-circle")"></i>
+                                                </button>
+                                            }
+
+                                            @if (puedeEliminarPromociones)
+                                            {
+                                                <button class="btn-action btn-delete"
+                                                        @onclick="() => ConfirmarEliminar(promo)"
+                                                        title="Eliminar">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            }
                                         </div>
                                     </td>
                                 </tr>
@@ -382,6 +408,8 @@
     </div>
 }
 
+}
+
 @code {
     private List<Promocion> promociones = new();
     private List<SucursalCyc> SucursalesDisponibles = new();
@@ -403,9 +431,18 @@
     private string busquedaSucursal = "";
     private bool mostrarDropdownSucursal = false;
 
-    // Variables para roles
+    // Variables para roles y permisos
     private bool esSuperAdmin = false;
     private bool esAdmin = false;
+
+    private bool autorizadoPromociones = false;
+    private bool puedeCrearPromociones = false;
+    private bool puedeEditarPromociones = false;
+    private bool puedeEliminarPromociones = false;
+    private bool puedeActivarDesactivarPromociones = false;
+    private bool puedeVerPromocionesTodasSucursales = false;
+
+    private string? sucursalUsuarioActual = null;
 
     // Propiedad para filtrar sucursales según búsqueda
     private IEnumerable<SucursalCyc> sucursalesFiltradas =>
@@ -464,14 +501,77 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermiso = authStatePermiso.User;
+
+        esSuperAdmin = userPermiso.IsInRole("SuperAdministrador");
+        esAdmin = userPermiso.IsInRole("Administrador");
+
+        autorizadoPromociones = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Promociones_Ver
+        );
+
+        if (!autorizadoPromociones)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        puedeCrearPromociones = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Promociones_Crear
+        );
+
+        puedeEditarPromociones = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Promociones_Editar
+        );
+
+        puedeEliminarPromociones = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Promociones_Eliminar
+        );
+
+        puedeActivarDesactivarPromociones = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Promociones_ActivarDesactivar
+        );
+
+        puedeVerPromocionesTodasSucursales = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Promociones_VerTodasSucursales
+        );
+
+        var usuarioActual = await UserManager.GetUserAsync(userPermiso);
+        sucursalUsuarioActual = usuarioActual?.IdSucursal;
+
         CargarSucursalesDisponibles();
         await CargarPromociones();
     }
 
     private void CargarSucursalesDisponibles()
     {
-        SucursalesDisponibles = SucursalService.GetAllSucursales();
-        SucursalesCache = SucursalesDisponibles.ToDictionary(s => s.Almacen, s => s.NombreCompleto);
+        var todasLasSucursales = SucursalService.GetAllSucursales();
+
+        if (esSuperAdmin || puedeVerPromocionesTodasSucursales)
+        {
+            SucursalesDisponibles = todasLasSucursales;
+        }
+        else if (!string.IsNullOrWhiteSpace(sucursalUsuarioActual))
+        {
+            SucursalesDisponibles = todasLasSucursales
+                .Where(s => s.Almacen == sucursalUsuarioActual)
+                .ToList();
+        }
+        else
+        {
+            SucursalesDisponibles = new List<SucursalCyc>();
+        }
+
+        SucursalesCache = todasLasSucursales
+            .GroupBy(s => s.Almacen)
+            .ToDictionary(g => g.Key, g => g.First().NombreCompleto);
     }
 
     private string GetSucursalNombre(string? almacen)
@@ -521,20 +621,36 @@
     private async Task CargarPromociones()
     {
         cargando = true;
+
         try
         {
-            var query = DbContext.Promociones.AsQueryable();
-            
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
-            
-            esSuperAdmin = user.IsInRole("SuperAdministrador");
-            esAdmin = user.IsInRole("Administrador");
-            
-            // FILTRO POR ROL
-            // SuperAdmin y Administrador ven TODAS las promociones
-            // (el filtro por sucursal se hace en el cliente)
-            
+
+            var puedeVer = await PermisoService.TienePermisoAsync(
+                user,
+                Permissions.Promociones_Ver
+            );
+
+            if (!puedeVer)
+            {
+                NavigationManager.NavigateTo("/clientes", true);
+                return;
+            }
+
+            var query = DbContext.Promociones.AsQueryable();
+
+            if (!esSuperAdmin && !puedeVerPromocionesTodasSucursales)
+            {
+                if (string.IsNullOrWhiteSpace(sucursalUsuarioActual))
+                {
+                    promociones = new List<Promocion>();
+                    return;
+                }
+
+                query = query.Where(p => p.IdSucursal == sucursalUsuarioActual);
+            }
+
             promociones = await query
                 .OrderByDescending(p => p.FechaCreacion)
                 .ToListAsync();
@@ -560,6 +676,21 @@
 
     private void SeleccionarSucursal(SucursalCyc? sucursal)
     {
+        if (!esSuperAdmin && !puedeVerPromocionesTodasSucursales)
+        {
+            filtroSucursal = sucursalUsuarioActual ?? "";
+
+            var propia = SucursalesDisponibles.FirstOrDefault();
+            busquedaSucursal =
+                propia?.NombreCompleto ??
+                propia?.Almacen ??
+                "";
+
+            mostrarDropdownSucursal = false;
+            paginaActual = 1;
+            return;
+        }
+
         if (sucursal == null)
         {
             filtroSucursal = "";
@@ -570,7 +701,7 @@
             filtroSucursal = sucursal.Almacen;
             busquedaSucursal = sucursal.NombreCompleto ?? sucursal.Almacen;
         }
-        
+
         mostrarDropdownSucursal = false;
         paginaActual = 1;
     }
@@ -589,8 +720,20 @@
         });
     }
 
-    private void CrearPromocion() => NavigationManager.NavigateTo("/promociones/crear");
-    private void EditarPromocion(int id) => NavigationManager.NavigateTo($"/promociones/editar/{id}");
+    private void CrearPromocion()
+    {
+        if (!puedeCrearPromociones)
+            return;
+
+        NavigationManager.NavigateTo("/promociones/crear");
+    }
+    private void EditarPromocion(int id)
+    {
+        if (!puedeEditarPromociones)
+            return;
+
+        NavigationManager.NavigateTo($"/promociones/editar/{id}");
+    }
     private void ToggleFilters() => mostrarFiltros = !mostrarFiltros;
     
     private void LimpiarFiltros() 
@@ -606,6 +749,17 @@
 
     private async Task ToggleEstado(Promocion promo)
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var tienePermiso = await PermisoService.TienePermisoAsync(
+            user,
+            Permissions.Promociones_ActivarDesactivar
+        );
+
+        if (!tienePermiso || !PuedeAdministrarPromocion(promo))
+            return;
+
         promo.Activo = !promo.Activo;
         await DbContext.SaveChangesAsync();
         await CargarPromociones();
@@ -613,13 +767,31 @@
 
     private void ConfirmarEliminar(Promocion promo)
     {
+        if (!puedeEliminarPromociones || !PuedeAdministrarPromocion(promo))
+            return;
+
         promocionEliminar = promo;
         mostrarModalEliminar = true;
     }
 
     private async Task EliminarPromocion()
     {
-        if (promocionEliminar == null) return;
+        if (promocionEliminar == null)
+            return;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var tienePermiso = await PermisoService.TienePermisoAsync(
+            user,
+            Permissions.Promociones_Eliminar
+        );
+
+        if (!tienePermiso || !PuedeAdministrarPromocion(promocionEliminar))
+        {
+            CerrarModalEliminar();
+            return;
+        }
 
         try
         {
@@ -651,6 +823,15 @@
         {
             CerrarModalEliminar();
         }
+    }
+
+    private bool PuedeAdministrarPromocion(Promocion promo)
+    {
+        if (esSuperAdmin || puedeVerPromocionesTodasSucursales)
+            return true;
+
+        return !string.IsNullOrWhiteSpace(sucursalUsuarioActual) &&
+               promo.IdSucursal == sucursalUsuarioActual;
     }
 
     private void CerrarModalEliminar()

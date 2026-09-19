@@ -18,6 +18,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
 @inject SucursalService SucursalService
+@inject PermisoService PermisoService
 
 <PageTitle>Clientes | RAMS Cottons</PageTitle>
 
@@ -95,6 +96,52 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
+
+/* ===== IMPORTAR / EXPORTAR ===== */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.btn-data-action {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    color: #1f2937;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    margin: 0;
+}
+
+.btn-data-action:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    color: #0f172a;
+    transform: translateY(-1px);
+}
+
+.btn-export-green {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+}
+
+.btn-export-green:hover {
+    background: #15803d;
+    border-color: #15803d;
+    color: #ffffff;
+}
+
 
 /* ===== CONTROL PANEL ===== */
 
@@ -1217,6 +1264,16 @@ button.btn-create-first span,
         gap: 1rem;
     }
 
+    .header-actions {
+        width: 100%;
+    }
+
+    .btn-data-action,
+    .btn-create {
+        flex: 1;
+        min-width: 140px;
+    }
+
     .panel-header {
         flex-direction: column;
         gap: 1rem;
@@ -1376,10 +1433,26 @@ button.btn-create-first span,
                     <p class="subtitle">Administre la base de datos de clientes</p>
                 </div>
             </div>
-            <button class="btn-create" @onclick="CrearCliente">
-                <i class="bi bi-plus-lg"></i>
-                <span>Nuevo Cliente</span>
-            </button>
+            <div class="header-actions">
+                @if (puedeExportarClientes)
+                {
+                    <a class="btn-data-action btn-export-green"
+                       href="@ExportarCsvHref"
+                       download="@NombreArchivoExportacion"
+                       title="Exportar clientes visibles a CSV">
+                        <i class="bi bi-download"></i>
+                        <span>Exportar</span>
+                    </a>
+                }
+
+                @if (puedeCrearClientes)
+                {
+                    <button class="btn-create" @onclick="CrearCliente">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Nuevo Cliente</span>
+                    </button>
+                }
+            </div>
         </div>
     </div>
 
@@ -1443,9 +1516,10 @@ button.btn-create-first span,
                     <label>Origen</label>
                     <select class="select-custom" @bind="filtroOrigen">
                         <option value="">Todos</option>
-                        <option value="Redes Sociales">Redes Sociales</option>
-                        <option value="Pagina web">Página Web</option>
-                        <option value="Mayoreo">Mayoreo</option>
+                        @foreach (var tipo in tiposCliente)
+                        {
+                            <option value="@tipo.Nombre">@tipo.Nombre</option>
+                        }
                     </select>
                 </div>
             </div>
@@ -1549,9 +1623,12 @@ button.btn-create-first span,
                     <thead>
                         <tr>
                             <th class="col-checkbox">
-                                <input type="checkbox" 
-                                       @onchange="ToggleSelectAll" 
-                                       checked="@(clientesSeleccionados.Count == clientesPaginados.Count() && clientesPaginados.Any())" />
+                                @if (puedeEnviarWhatsApp)
+                                {
+                                    <input type="checkbox"
+                                           @onchange="ToggleSelectAll"
+                                           checked="@(clientesSeleccionados.Count == clientesPaginados.Count() && clientesPaginados.Any())" />
+                                }
                             </th>
                             <th>Cliente</th>
                             <th>Telefono</th>
@@ -1572,10 +1649,13 @@ button.btn-create-first span,
                                     <div class="no-data">
                                         <i class="bi bi-people-fill display-4 text-muted"></i>
                                         <p>No hay clientes registrados</p>
-                                        <button class="btn-create-first" @onclick="CrearCliente">
-                                            <i class="bi bi-plus-lg"></i>
-                                            <span>Crear primer cliente</span>
-                                        </button>
+                                        @if (puedeCrearClientes)
+                                        {
+                                            <button class="btn-create-first" @onclick="CrearCliente">
+                                                <i class="bi bi-plus-lg"></i>
+                                                <span>Crear primer cliente</span>
+                                            </button>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -1588,18 +1668,21 @@ button.btn-create-first span,
 
                                 <tr class="cliente-row">
                                     <td class="col-checkbox">
-                                        @if (cliente.AceptaWhatsApp)
+                                        @if (puedeEnviarWhatsApp)
                                         {
-                                            <input type="checkbox" 
-                                                   @onchange="() => ToggleSeleccionCliente(cliente.Id)" 
-                                                   checked="@clientesSeleccionados.Contains(cliente.Id)" />
-                                        }
-                                        else
-                                        {
-                                            <span class="whatsapp-blocked" title="Este cliente no acepta promociones por WhatsApp">
-                                                <i class="bi bi-whatsapp text-muted"></i>
-                                                <i class="bi bi-slash-circle text-danger"></i>
-                                            </span>
+                                            @if (cliente.AceptaWhatsApp)
+                                            {
+                                                <input type="checkbox"
+                                                       @onchange="() => ToggleSeleccionCliente(cliente.Id)"
+                                                       checked="@clientesSeleccionados.Contains(cliente.Id)" />
+                                            }
+                                            else
+                                            {
+                                                <span class="whatsapp-blocked" title="Este cliente no acepta promociones por WhatsApp">
+                                                    <i class="bi bi-whatsapp text-muted"></i>
+                                                    <i class="bi bi-slash-circle text-danger"></i>
+                                                </span>
+                                            }
                                         }
                                     </td>
                                     <td>
@@ -1669,18 +1752,33 @@ button.btn-create-first span,
                                     </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button class="btn-action btn-view" @onclick="() => VerCliente(cliente.Id)" title="Ver detalles">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn-action btn-edit" @onclick="() => EditarCliente(cliente.Id)" title="Editar cliente">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn-action btn-qr" @onclick="() => GenerarQR(cliente.Id)" title="Generar QR">
-                                                <i class="bi bi-qr-code"></i>
-                                            </button>
-                                            <button class="btn-action btn-delete" @onclick="() => ConfirmarEliminar(cliente)" title="Eliminar cliente">
-                                                <i class="bi bi-trash3"></i>
-                                            </button>
+                                            @if (puedeVerClientes)
+                                            {
+                                                <button class="btn-action btn-view" @onclick="() => VerCliente(cliente.Id)" title="Ver detalles">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            }
+
+                                            @if (puedeEditarClientes)
+                                            {
+                                                <button class="btn-action btn-edit" @onclick="() => EditarCliente(cliente.Id)" title="Editar cliente">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            }
+
+                                            @if (puedeGenerarQR)
+                                            {
+                                                <button class="btn-action btn-qr" @onclick="() => GenerarQR(cliente.Id)" title="Generar QR">
+                                                    <i class="bi bi-qr-code"></i>
+                                                </button>
+                                            }
+
+                                            @if (puedeEliminarClientes)
+                                            {
+                                                <button class="btn-action btn-delete" @onclick="() => ConfirmarEliminar(cliente)" title="Eliminar cliente">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            }
                                         </div>
                                     </td>
                                 </tr>
@@ -1743,7 +1841,7 @@ button.btn-create-first span,
 </div>
 
 <!-- Barra de acciones masivas -->
-@if (clientesSeleccionados.Any())
+@if (puedeEnviarWhatsApp && clientesSeleccionados.Any())
 {
     <div class="batch-actions-bar">
         <i class="bi bi-check-circle-fill"></i>
@@ -1807,7 +1905,7 @@ button.btn-create-first span,
 }
 
 <!-- Modal Eliminar -->
-@if (mostrarModalEliminar && clienteEliminar != null)
+@if (puedeEliminarClientes && mostrarModalEliminar && clienteEliminar != null)
 {
     <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px); z-index: 1050;">
         <div class="modal-dialog modal-dialog-centered">
@@ -1851,6 +1949,8 @@ button.btn-create-first span,
     private List<Promocion> promocionesActivas = new();
     private List<SucursalCyc> SucursalesDisponibles = new();
     private Dictionary<string, string> SucursalesCache = new();
+    private List<TipoCliente> tiposCliente = new();
+
     private bool cargando = true;
     private bool mostrarFiltros = false;
 
@@ -1875,6 +1975,18 @@ button.btn-create-first span,
 
     private bool esSuperAdmin;
     private bool esAdmin;
+
+    // PERMISOS DEL USUARIO ACTUAL
+    private bool puedeVerClientes;
+    private bool puedeCrearClientes;
+    private bool puedeEditarClientes;
+    private bool puedeEliminarClientes;
+    private bool puedeExportarClientes;
+    private bool puedeAsignarCategoria;
+    private bool puedeGenerarQR;
+    private bool puedeEnviarWhatsApp;
+    private bool puedeCrearPromociones;
+
 
     private IEnumerable<SucursalCyc> sucursalesFiltradas =>
         string.IsNullOrWhiteSpace(busquedaSucursal)
@@ -1928,6 +2040,14 @@ button.btn-create-first span,
         }
     }
 
+    private async Task CargarTiposCliente()
+    {
+        tiposCliente = await DbContext.TiposCliente
+            .Where(t => t.Activo)
+            .OrderBy(t => t.Nombre)
+            .ToListAsync();
+    }
+
     private int totalPaginas => (int)Math.Ceiling((double)clientesFiltrados.Count() / elementosPorPagina);
 
     private IEnumerable<Cliente> clientesPaginados =>
@@ -1938,8 +2058,36 @@ button.btn-create-first span,
     protected override async Task OnInitializedAsync()
     {
         CargarSucursalesDisponibles();
+        await CargarPermisos();
+
+        if (!puedeVerClientes)
+        {
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        await CargarTiposCliente();
         await CargarDatos();
         await CargarUsuarioActual();
+    }
+
+    private async Task CargarPermisos()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var permisos = await PermisoService.ObtenerPermisosAsync(user);
+
+        var superAdmin = user.IsInRole("SuperAdministrador");
+
+        puedeVerClientes = superAdmin || permisos.Contains(Permissions.Clientes_Ver);
+        puedeCrearClientes = superAdmin || permisos.Contains(Permissions.Clientes_Crear);
+        puedeEditarClientes = superAdmin || permisos.Contains(Permissions.Clientes_Editar);
+        puedeEliminarClientes = superAdmin || permisos.Contains(Permissions.Clientes_Eliminar);
+        puedeExportarClientes = superAdmin || permisos.Contains(Permissions.Clientes_Exportar);
+        puedeAsignarCategoria = superAdmin || permisos.Contains(Permissions.Clientes_AsignarCategoria);
+        puedeGenerarQR = superAdmin || permisos.Contains(Permissions.Clientes_GenerarQR);
+        puedeEnviarWhatsApp = superAdmin || permisos.Contains(Permissions.WhatsApp_Crear);
+        puedeCrearPromociones = superAdmin || permisos.Contains(Permissions.Promociones_Crear);
     }
 private string GetOrigenClass(string? tipoCliente)
 {
@@ -2091,6 +2239,8 @@ private string GetOrigenClass(string? tipoCliente)
 
     private void ToggleSeleccionCliente(int clienteId)
     {
+        if (!puedeEnviarWhatsApp) return;
+
         if (clientesSeleccionados.Contains(clienteId))
             clientesSeleccionados.Remove(clienteId);
         else
@@ -2099,6 +2249,8 @@ private string GetOrigenClass(string? tipoCliente)
 
     private void ToggleSelectAll()
     {
+        if (!puedeEnviarWhatsApp) return;
+
         var clientesSeleccionables = clientesPaginados
             .Where(c => c.AceptaWhatsApp == true)
             .ToList();
@@ -2125,6 +2277,12 @@ private string GetOrigenClass(string? tipoCliente)
 
     private async Task AbrirModalPromociones()
     {
+        if (!puedeEnviarWhatsApp)
+        {
+            await MostrarNotificacionError("No tienes permiso para enviar promociones por WhatsApp");
+            return;
+        }
+
         if (clientesSeleccionados.Count == 0)
         {
             await MostrarNotificacionInfo("No has seleccionado ningun cliente");
@@ -2153,6 +2311,12 @@ private string GetOrigenClass(string? tipoCliente)
 
    private async Task EnviarPromocion(Promocion promo, string enlace)
 {
+    if (!puedeEnviarWhatsApp)
+    {
+        await MostrarNotificacionError("No tienes permiso para enviar promociones por WhatsApp");
+        return;
+    }
+
     mostrarModalPromociones = false;
 
     var clientesParaEnviar = clientesSeleccionados
@@ -2311,6 +2475,7 @@ private string GetOrigenClass(string? tipoCliente)
 }
     private void CrearPromocion()
     {
+        if (!puedeCrearPromociones) return;
         NavigationManager.NavigateTo("/promociones/crear");
     }
 
@@ -2350,10 +2515,94 @@ private string GetOrigenClass(string? tipoCliente)
         });
     }
 
-    private void CrearCliente() => NavigationManager.NavigateTo("/clientes/crear");
-    private void VerCliente(int id) => NavigationManager.NavigateTo($"/clientes/ver/{id}");
-    private void EditarCliente(int id) => NavigationManager.NavigateTo($"/clientes/editar/{id}");
-    private void GenerarQR(int id) => NavigationManager.NavigateTo($"/clientes/qr/{id}");
+    private string NombreArchivoExportacion =>
+        $"clientes_{DateTime.Now:yyyyMMdd_HHmm}.csv";
+
+    private string ExportarCsvHref
+    {
+        get
+        {
+            if (!puedeExportarClientes)
+                return "#";
+
+            var sb = new System.Text.StringBuilder();
+
+            // BOM para que Excel reconozca correctamente acentos/ñ.
+            sb.Append('\uFEFF');
+            sb.AppendLine("NombreCompleto;Telefono;Correo;Categoria;Origen;Sucursal;AceptaWhatsApp;Estado;FechaRegistro");
+
+            foreach (var cliente in clientesFiltrados)
+            {
+                var categoria = categorias
+                    .FirstOrDefault(c => c.IdCategoria == cliente.IdCategoriaProducto)?
+                    .NombreCat ?? "";
+
+                var sucursal = cliente.IdSucursal ?? "";
+
+                sb.Append(EscaparCsv(cliente.NombreCompleto));
+                sb.Append(';');
+                sb.Append(EscaparCsv(cliente.Telefono ?? ""));
+                sb.Append(';');
+                sb.Append(EscaparCsv(cliente.Correo ?? ""));
+                sb.Append(';');
+                sb.Append(EscaparCsv(categoria));
+                sb.Append(';');
+                sb.Append(EscaparCsv(cliente.TipoCliente ?? ""));
+                sb.Append(';');
+                sb.Append(EscaparCsv(sucursal));
+                sb.Append(';');
+                sb.Append(cliente.AceptaWhatsApp ? "SI" : "NO");
+                sb.Append(';');
+                sb.Append(cliente.Estado == 1 ? "ACTIVO" : "INACTIVO");
+                sb.Append(';');
+                sb.Append(cliente.FechaRegistro.ToString("yyyy-MM-dd HH:mm:ss"));
+                sb.AppendLine();
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            return $"data:text/csv;charset=utf-8;base64,{Convert.ToBase64String(bytes)}";
+        }
+    }
+
+    private static string EscaparCsv(string valor)
+    {
+        valor ??= "";
+
+        if (valor.Contains(';') ||
+            valor.Contains(',') ||
+            valor.Contains('"') ||
+            valor.Contains('\n') ||
+            valor.Contains('\r'))
+        {
+            return "\"" + valor.Replace("\"", "\"\"") + "\"";
+        }
+
+        return valor;
+    }
+
+    private void CrearCliente()
+    {
+        if (!puedeCrearClientes) return;
+        NavigationManager.NavigateTo("/clientes/crear");
+    }
+
+    private void VerCliente(int id)
+    {
+        if (!puedeVerClientes) return;
+        NavigationManager.NavigateTo($"/clientes/ver/{id}");
+    }
+
+    private void EditarCliente(int id)
+    {
+        if (!puedeEditarClientes) return;
+        NavigationManager.NavigateTo($"/clientes/editar/{id}");
+    }
+
+    private void GenerarQR(int id)
+    {
+        if (!puedeGenerarQR) return;
+        NavigationManager.NavigateTo($"/clientes/qr/{id}");
+    }
     private void ToggleFilters() => mostrarFiltros = !mostrarFiltros;
 
     private void LimpiarFiltros()
@@ -2377,6 +2626,8 @@ private string GetOrigenClass(string? tipoCliente)
 
     private void ConfirmarEliminar(Cliente cliente)
     {
+        if (!puedeEliminarClientes) return;
+
         clienteEliminar = cliente;
         mostrarModalEliminar = true;
     }
@@ -2389,6 +2640,12 @@ private string GetOrigenClass(string? tipoCliente)
 
     private async Task EliminarCliente()
     {
+        if (!puedeEliminarClientes)
+        {
+            await MostrarNotificacionError("No tienes permiso para eliminar clientes");
+            return;
+        }
+
         if (clienteEliminar == null) return;
 
         try

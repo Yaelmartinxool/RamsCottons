@@ -11,16 +11,19 @@
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.WebUtilities
 @using System.ComponentModel.DataAnnotations
-@attribute [Authorize(Roles = "SuperAdministrador")]
+@attribute [Authorize]
 
 @inject UserManager<ApplicationUser> UserManager
 @inject RoleManager<IdentityRole> RoleManager
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject PermisoService PermisoService
 
 <PageTitle>Crear Usuario | RAMS Cottons</PageTitle>
 
+@if (autorizadoCrearUsuario)
+{
 <div class="create-user-container">
     <!-- Header -->
     <div class="dashboard-header">
@@ -260,8 +263,12 @@
     }
 </div>
 
+}
+
 @code {
     private List<IdentityRole> roles = new();
+    private bool autorizadoCrearUsuario = false;
+    private bool esSuperAdminActual = false;
     private bool cargando;
     private string? error;
     private string? mensajeExito;
@@ -270,14 +277,47 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermiso = authStatePermiso.User;
+
+        var tienePermisoCrear = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Usuarios_Crear
+        );
+
+        if (!tienePermisoCrear)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        autorizadoCrearUsuario = true;
+        esSuperAdminActual = userPermiso.IsInRole("SuperAdministrador");
+
         var allRoles = await RoleManager.Roles.ToListAsync();
-        roles = allRoles
-            .Where(r => r.Name == "SuperAdministrador" || r.Name == "Administrador")
-            .ToList();
+
+        // Solo el SuperAdministrador puede crear otro SuperAdministrador.
+        if (esSuperAdminActual)
+        {
+            roles = allRoles
+                .Where(r => r.Name == "SuperAdministrador" || r.Name == "Administrador")
+                .ToList();
+        }
+        else
+        {
+            roles = allRoles
+                .Where(r => r.Name == "Administrador")
+                .ToList();
+
+            model.Rol = "Administrador";
+        }
     }
 
     private void SeleccionarRol(string rol)
     {
+        if (!esSuperAdminActual && rol == "SuperAdministrador")
+            return;
+
         model.Rol = rol;
     }
 
@@ -303,6 +343,29 @@
 
     private async Task CrearUsuario()
     {
+        var authStatePermisoCrear = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermisoCrear = authStatePermisoCrear.User;
+
+        var tienePermisoCrear = await PermisoService.TienePermisoAsync(
+            userPermisoCrear,
+            Permissions.Usuarios_Crear
+        );
+
+        if (!tienePermisoCrear)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        // Un Administrador nunca puede crear un SuperAdministrador
+        // aunque intente manipular el formulario desde el navegador.
+        if (!userPermisoCrear.IsInRole("SuperAdministrador") &&
+            model.Rol == "SuperAdministrador")
+        {
+            error = "No tienes permiso para crear usuarios SuperAdministrador.";
+            return;
+        }
+
         cargando = true;
         error = null;
         mensajeExito = null;

@@ -18,9 +18,12 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject WhatsAppService _whatsApp
 @inject SucursalService SucursalService
+@inject PermisoService PermisoService
 
 <PageTitle>Editar Cliente | RAMS Cottons</PageTitle>
 
+@if (autorizado)
+{
 <div class="editar-cliente-container">
     <div class="dashboard-header">
         <div class="header-content">
@@ -429,6 +432,8 @@
     }
 </div>
 
+}
+
 @code {
     [Parameter]
     public string Id { get; set; } = string.Empty;
@@ -442,6 +447,7 @@
     private List<TipoCliente> tiposCliente = new();
     private List<SucursalCyc> SucursalesDisponibles = new();
 
+    private bool autorizado = false;
     private bool cargando = true;
     private bool guardando = false;
 
@@ -477,6 +483,21 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermiso = authStatePermiso.User;
+
+        var tienePermiso = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Clientes_Editar
+        );
+
+        if (!tienePermiso)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        autorizado = true;
         await CargarDatos();
     }
 
@@ -567,6 +588,20 @@
 
     private async Task GuardarCliente()
     {
+        var authStatePermisoGuardar = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermisoGuardar = authStatePermisoGuardar.User;
+
+        var tienePermisoGuardar = await PermisoService.TienePermisoAsync(
+            userPermisoGuardar,
+            Permissions.Clientes_Editar
+        );
+
+        if (!tienePermisoGuardar)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
         if (cliente == null)
         {
             return;

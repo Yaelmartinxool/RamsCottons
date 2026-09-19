@@ -16,9 +16,13 @@
 @inject QrGeneratorService QrGeneratorService
 @inject IJSRuntime JSRuntime
 @inject IWebHostEnvironment WebHostEnvironment
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject PermisoService PermisoService
 
 <PageTitle>Generar QR | RAMS Cottons</PageTitle>
 
+@if (autorizado)
+{
 <div class="generar-qr-container">
     <br>
     <!-- Header -->
@@ -193,11 +197,14 @@
     }
 </div>
 
+}
+
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
 
     private int ClienteId => int.TryParse(Id, out var id) ? id : 0;
 
+    private bool autorizado = false;
     private Cliente? cliente;
     private GeneradorQR? generadorExistente;
     private bool cargando = true;
@@ -208,6 +215,21 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermiso = authStatePermiso.User;
+
+        var tienePermiso = await PermisoService.TienePermisoAsync(
+            userPermiso,
+            Permissions.Clientes_GenerarQR
+        );
+
+        if (!tienePermiso)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
+        autorizado = true;
         await CargarDatos();
     }
 
@@ -240,6 +262,20 @@
 
     private async Task GenerarQRCode()
     {
+        var authStatePermisoGenerar = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPermisoGenerar = authStatePermisoGenerar.User;
+
+        var tienePermisoGenerar = await PermisoService.TienePermisoAsync(
+            userPermisoGenerar,
+            Permissions.Clientes_GenerarQR
+        );
+
+        if (!tienePermisoGenerar)
+        {
+            NavigationManager.NavigateTo("/clientes", true);
+            return;
+        }
+
         if (cliente == null) return;
 
         generando = true;
@@ -312,6 +348,20 @@
 
   private async Task DescargarQR()
 {
+    var authStatePermisoDescargar = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+    var userPermisoDescargar = authStatePermisoDescargar.User;
+
+    var tienePermisoDescargar = await PermisoService.TienePermisoAsync(
+        userPermisoDescargar,
+        Permissions.Clientes_GenerarQR
+    );
+
+    if (!tienePermisoDescargar)
+    {
+        NavigationManager.NavigateTo("/clientes", true);
+        return;
+    }
+
     if (string.IsNullOrEmpty(qrImagenBase64)) return;
 
     try
@@ -348,6 +398,20 @@
 
 private async Task ImprimirQR()
 {
+    var authStatePermisoImprimir = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+    var userPermisoImprimir = authStatePermisoImprimir.User;
+
+    var tienePermisoImprimir = await PermisoService.TienePermisoAsync(
+        userPermisoImprimir,
+        Permissions.Clientes_GenerarQR
+    );
+
+    if (!tienePermisoImprimir)
+    {
+        NavigationManager.NavigateTo("/clientes", true);
+        return;
+    }
+
     if (string.IsNullOrEmpty(qrImagenBase64) || cliente == null)
         return;
 
