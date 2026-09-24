@@ -395,7 +395,7 @@ textarea.form-control {
     font-weight: bold;
 }
 
-/* ✅ Info de la tarjeta - UNA SOLA LÍNEA */
+/* Info de la tarjeta - UNA SOLA LÍNEA */
 .sucursal-card-info {
     flex: 1;
     min-width: 0;

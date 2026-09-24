@@ -340,8 +340,6 @@
                 .ToListAsync();
 
             // ==================== ESTADÍSTICAS ====================
-            
-            // ✅ FIX 1: Promedio Diario = promedio de envíos por día
             // Calcula los días desde el primer envío hasta hoy
             if (TotalEnvios > 0)
             {
@@ -383,8 +381,6 @@
                     PromedioDiario = 0;
                 }
             }
-
-            // ✅ FIX 2: Tasa de Envío limitada a 100% (nunca puede pasar de 100%)
             TasaEnvio = TotalClientes > 0 
                 ? Math.Min((TotalEnvios * 100 / TotalClientes), 100) 
                 : 0;

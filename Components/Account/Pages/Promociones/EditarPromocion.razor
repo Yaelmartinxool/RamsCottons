@@ -589,7 +589,7 @@
 
     private List<SucursalCyc> SucursalesDisponibles = new();
 
-    // ✅ Lista de sucursales seleccionadas
+    // Lista de sucursales seleccionadas
     private HashSet<string> selectedSucursales = new();
 
     private const long MaxFileSize = 100 * 1024 * 1024;
@@ -637,7 +637,7 @@
                 Activo = promocion.Activo
             };
 
-            // ✅ Cargar sucursales seleccionadas (todas las que tengan el mismo TokenUnico)
+            // Cargar sucursales seleccionadas (todas las que tengan el mismo TokenUnico)
             if (!string.IsNullOrEmpty(promocion.TokenUnico))
             {
                 var sucursalesMismoToken = await DbContext.Promociones
@@ -695,7 +695,7 @@
         busquedaSucursal = "";
     }
 
-    // ✅ Toggle de sucursal
+    // Toggle de sucursal
     private void ToggleSucursal(SucursalCyc sucursal)
     {
         if (selectedSucursales.Contains(sucursal.Almacen))
@@ -711,7 +711,7 @@
         mensajeErrorSucursal = "";
     }
 
-    // ✅ Seleccionar todas las filtradas
+    // Seleccionar todas las filtradas
     private void SeleccionarTodasFiltradas()
     {
         foreach (var suc in sucursalesFiltradas)
@@ -722,13 +722,13 @@
         mensajeErrorSucursal = "";
     }
 
-    // ✅ Limpiar selección
+    // Limpiar selección
     private void LimpiarSeleccionSucursales()
     {
         selectedSucursales.Clear();
     }
 
-    // ✅ Limpiar el nombre quitando el prefijo del código
+    // Limpiar el nombre quitando el prefijo del código
     private string ObtenerNombreLimpio(SucursalCyc sucursal)
     {
         if (string.IsNullOrEmpty(sucursal.NombreCompleto))
@@ -859,7 +859,7 @@
                 return;
             }
 
-            // ✅ VALIDAR SUCURSALES
+            // VALIDAR SUCURSALES
             if (!selectedSucursales.Any())
             {
                 error = "Debes seleccionar al menos una sucursal.";
@@ -870,7 +870,7 @@
 
             var sucursalesFinales = selectedSucursales.ToList();
 
-            // ✅ GUARDAR ARCHIVO SI SE REEMPLAZÓ (una sola vez)
+            // GUARDAR ARCHIVO SI SE REEMPLAZÓ (una sola vez)
             string? nuevaRutaArchivo = null;
             string? nuevoNombreArchivo = null;
             string? nuevaUrlArchivo = null;
@@ -896,12 +896,12 @@
                 nuevaRutaArchivo = filePath;
             }
 
-            // ✅ OBTENER TODAS LAS PROMOCIONES CON EL MISMO TOKEN
+            // OBTENER TODAS LAS PROMOCIONES CON EL MISMO TOKEN
             var promocionesMismoToken = await DbContext.Promociones
                 .Where(p => p.TokenUnico == promocion.TokenUnico)
                 .ToListAsync();
 
-            // ✅ ACTUALIZAR LAS EXISTENTES QUE SIGAN SELECCIONADAS
+            // ACTUALIZAR LAS EXISTENTES QUE SIGAN SELECCIONADAS
             var promocionesActualizadas = new HashSet<int>();
 
             foreach (var prom in promocionesMismoToken)
@@ -936,7 +936,7 @@
                 }
             }
 
-            // ✅ CREAR LAS NUEVAS SUCURSALES QUE NO EXISTÍAN
+            // CREAR LAS NUEVAS SUCURSALES QUE NO EXISTÍAN
             foreach (var sucursal in sucursalesFinales)
             {
                 var yaExiste = promocionesMismoToken

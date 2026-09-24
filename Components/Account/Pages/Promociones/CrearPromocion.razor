@@ -562,7 +562,7 @@
 
     private List<SucursalCyc> SucursalesDisponibles = new();
 
-    // ✅ Lista de sucursales seleccionadas
+    // Lista de sucursales seleccionadas
     private HashSet<string> selectedSucursales = new();
 
     private const long MaxFileSize = 100 * 1024 * 1024;
@@ -608,7 +608,7 @@
         busquedaSucursal = "";
     }
 
-    // ✅ Toggle de sucursal (agregar/quitar)
+    // Toggle de sucursal (agregar/quitar)
     private void ToggleSucursal(SucursalCyc sucursal)
     {
         if (selectedSucursales.Contains(sucursal.Almacen))
@@ -624,7 +624,7 @@
         mensajeErrorSucursal = "";
     }
 
-    // ✅ Seleccionar todas las filtradas
+    // Seleccionar todas las filtradas
     private void SeleccionarTodasFiltradas()
     {
         foreach (var suc in sucursalesFiltradas)
@@ -635,13 +635,13 @@
         mensajeErrorSucursal = "";
     }
 
-    // ✅ Limpiar selección
+    // Limpiar selección
     private void LimpiarSeleccionSucursales()
     {
         selectedSucursales.Clear();
     }
 
-    // ✅ Limpiar el nombre quitando el prefijo del código (ej: "01 - Almacén Central (.)" → "Almacén Central (.)")
+    // Limpiar el nombre quitando el prefijo del código (ej: "01 - Almacén Central (.)" → "Almacén Central (.)")
     private string ObtenerNombreLimpio(SucursalCyc sucursal)
     {
         if (string.IsNullOrEmpty(sucursal.NombreCompleto))
@@ -650,7 +650,7 @@
         var nombre = sucursal.NombreCompleto.Trim();
         var almacen = sucursal.Almacen?.Trim() ?? "";
 
-        // ✅ Si empieza con el código del almacén seguido de " - " o "- "
+        // Si empieza con el código del almacén seguido de " - " o "- "
         if (!string.IsNullOrEmpty(almacen))
         {
             // Caso 1: "01 - Almacén Central (.)"
@@ -668,7 +668,7 @@
             }
         }
 
-        // ✅ Fallback: si tiene "NN - " al inicio, quitarlo
+        // Fallback: si tiene "NN - " al inicio, quitarlo
         if (nombre.Length > 4 && char.IsDigit(nombre[0]) && char.IsDigit(nombre[1]))
         {
             var guionIndex = nombre.IndexOf('-', 2);
@@ -795,7 +795,7 @@
                 return;
             }
 
-            // ✅ VALIDAR SUCURSALES SELECCIONADAS
+            // VALIDAR SUCURSALES SELECCIONADAS
             List<string> sucursalesFinales = new();
 
             if (esSuperAdmin || esAdmin)
@@ -819,7 +819,7 @@
                 sucursalesFinales.Add(sucursalUsuarioActual);
             }
 
-            // ✅ GUARDAR EL ARCHIVO UNA SOLA VEZ
+            // GUARDAR EL ARCHIVO UNA SOLA VEZ
             var tokenUnico = Guid.NewGuid().ToString("N").Substring(0, 12).ToUpper();
             var baseUrl = "https://rams.no-ip.info:8082";
             var enlace = $"{baseUrl}/promociones/{tokenUnico}";
@@ -836,7 +836,7 @@
 
             var archivoUrl = $"/uploads/promociones/{fileName}";
 
-            // ✅ CREAR UNA PROMOCIÓN POR CADA SUCURSAL
+            // CREAR UNA PROMOCIÓN POR CADA SUCURSAL
             foreach (var sucursal in sucursalesFinales)
             {
                 var promocion = new Promocion
