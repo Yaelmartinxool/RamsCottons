@@ -323,7 +323,7 @@ public class WhatsAppService
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine(
-                    $"✅ Plantilla '{nombrePlantilla}' enviada a {numeroDestino}"
+                    $"Plantilla '{nombrePlantilla}' enviada a {numeroDestino}"
                 );
 
                 UltimoError = null;
@@ -332,7 +332,7 @@ public class WhatsAppService
             }
 
             Console.WriteLine(
-                $"❌ Error al enviar plantilla: {responseContent}"
+                $"Error al enviar plantilla: {responseContent}"
             );
 
             UltimoError = responseContent;
@@ -342,7 +342,7 @@ public class WhatsAppService
         catch (Exception ex)
         {
             Console.WriteLine(
-                $"❌ Excepcion al enviar plantilla: {ex.Message}"
+                $"Excepcion al enviar plantilla: {ex.Message}"
             );
 
             UltimoError = ex.Message;
@@ -864,7 +864,7 @@ public class WhatsAppService
             if (response.IsSuccessStatusCode)
             {
                 Console.WriteLine(
-                    $"✅ Plantilla con imagen '{nombrePlantilla}' enviada a {numeroDestino}"
+                    $"Plantilla con imagen '{nombrePlantilla}' enviada a {numeroDestino}"
                 );
 
                 UltimoError = null;
@@ -873,7 +873,7 @@ public class WhatsAppService
             }
 
             Console.WriteLine(
-                $"❌ Error al enviar plantilla con imagen: {responseContent}"
+                $"Error al enviar plantilla con imagen: {responseContent}"
             );
 
             UltimoError = responseContent;
@@ -883,7 +883,7 @@ public class WhatsAppService
         catch (Exception ex)
         {
             Console.WriteLine(
-                $"❌ Excepcion al enviar plantilla con imagen: {ex.Message}"
+                $"Error al enviar plantilla con imagen: {ex.Message}"
             );
 
             UltimoError = ex.Message;

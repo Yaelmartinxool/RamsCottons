@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
@@ -200,7 +202,7 @@ using (var scope = app.Services.CreateScope())
                         "SuperAdministrador");
 
                     Console.WriteLine(
-                        $"SuperAdministrador creado.");
+                        "SuperAdministrador creado.");
                 }
                 else
                 {
@@ -247,6 +249,60 @@ app.UseAntiforgery();
 app.MapControllers();
 
 // ==========================================================
+// WHATSAPP ATENCION - REDIRECCION A NUMERO DE BD
+// ==========================================================
+app.MapGet(
+    "/whatsapp/atencion",
+    async (
+        IDbContextFactory<ApplicationDbContext> dbFactory) =>
+    {
+        await using var db =
+            await dbFactory.CreateDbContextAsync();
+
+        var configuracion =
+            await db.ConfiguracionWhatsApp
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Activo);
+
+        if (configuracion == null)
+        {
+            return Results.NotFound(
+                "No existe una configuración activa de WhatsApp.");
+        }
+
+        if (string.IsNullOrWhiteSpace(
+            configuracion.WhatsAppAtencion))
+        {
+            return Results.NotFound(
+                "No se ha configurado el número de atención por WhatsApp.");
+        }
+
+        // Ejemplo:
+        // +52 1 999 442 6671
+        // ↓
+        // 5219994426671
+        var numero =
+            Regex.Replace(
+                configuracion.WhatsAppAtencion,
+                @"\D",
+                "");
+
+        if (string.IsNullOrWhiteSpace(numero))
+        {
+            return Results.BadRequest(
+                "El número de WhatsApp de atención no es válido.");
+        }
+
+        var mensaje =
+            "Hola 😊 Me gustaría hablar con un asesor de Rams Cottons.";
+
+        var urlWhatsApp =
+            $"https://wa.me/{numero}?text={Uri.EscapeDataString(mensaje)}";
+
+        return Results.Redirect(urlWhatsApp);
+    });
+
+// ==========================================================
 // WEBHOOK WHATSAPP - GET
 // ==========================================================
 app.MapGet(
@@ -281,23 +337,270 @@ app.MapGet(
 
 // ==========================================================
 // WEBHOOK WHATSAPP - POST
+// SI EL CLIENTE ESCRIBE "menu" O "menú",
+// ENVÍA AUTOMÁTICAMENTE LA PLANTILLA menu_atencion_rams
 // ==========================================================
 app.MapPost(
     "/api/whatsapp/webhook",
-    async (HttpContext context) =>
+    async (
+        HttpContext context,
+        WhatsAppService whatsApp,
+        IDbContextFactory<ApplicationDbContext> dbFactory) =>
     {
-        using var reader =
-            new StreamReader(
-                context.Request.Body);
+        try
+        {
+            using var reader =
+                new StreamReader(
+                    context.Request.Body);
 
-        var body =
-            await reader.ReadToEndAsync();
+            var body =
+                await reader.ReadToEndAsync();
 
-        Console.WriteLine(
-            $"Mensaje recibido: {body}");
+            Console.WriteLine(
+                $"Mensaje recibido: {body}");
 
-        return Results.Ok();
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                return Results.Ok();
+            }
+
+            using var document =
+                JsonDocument.Parse(body);
+
+            var root =
+                document.RootElement;
+
+            // Los estados de mensajes (sent, delivered, read, etc.)
+            // también llegan al webhook. Si no hay un mensaje de texto
+            // entrante, simplemente respondemos OK.
+            if (!TryGetIncomingTextMessage(
+                root,
+                out var numeroCliente,
+                out var textoMensaje,
+                out var messageId))
+            {
+                return Results.Ok();
+            }
+
+            Console.WriteLine(
+                $"[Webhook] Mensaje entrante {messageId} de {numeroCliente}: {textoMensaje}");
+
+            var textoNormalizado =
+                (textoMensaje ?? string.Empty)
+                    .Trim()
+                    .ToLowerInvariant();
+
+            // Por ahora solo respondemos a MENU / MENÚ.
+            if (textoNormalizado != "menu" &&
+                textoNormalizado != "menú")
+            {
+                return Results.Ok();
+            }
+
+            var numeroNormalizado =
+                Regex.Replace(
+                    numeroCliente ?? string.Empty,
+                    @"\D",
+                    "");
+
+            if (string.IsNullOrWhiteSpace(numeroNormalizado))
+            {
+                Console.WriteLine(
+                    "[Webhook] No se pudo obtener un número válido.");
+
+                return Results.Ok();
+            }
+
+            // Para localizar al cliente en la BD usamos los últimos
+            // 10 dígitos, independientemente de si está guardado con
+            // +52, espacios, guiones, paréntesis, etc.
+            var ultimos10 =
+                numeroNormalizado.Length > 10
+                    ? numeroNormalizado[^10..]
+                    : numeroNormalizado;
+
+            await using var db =
+                await dbFactory.CreateDbContextAsync();
+
+            var cliente =
+                await db.Clientes
+                    .AsNoTracking()
+                    .Where(c =>
+                        c.Telefono != null &&
+                        c.Telefono
+                            .Replace(" ", "")
+                            .Replace("-", "")
+                            .Replace("+", "")
+                            .Replace("(", "")
+                            .Replace(")", "")
+                            .EndsWith(ultimos10))
+                    .FirstOrDefaultAsync();
+
+            var primerNombre =
+                cliente?.NombreCompleto?
+                    .Split(
+                        ' ',
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault();
+
+            // Si el número aún no está registrado como cliente,
+            // el menú se sigue enviando con un saludo genérico.
+            if (string.IsNullOrWhiteSpace(primerNombre))
+            {
+                primerNombre = "Cliente";
+            }
+
+            var resultado =
+                await whatsApp.EnviarPlantillaAsync(
+                    numeroDestino: numeroNormalizado,
+                    nombrePlantilla: "menu_atencion_rams",
+                    idioma: "es_MX",
+                    parametros: new Dictionary<string, string>
+                    {
+                        { "1", primerNombre }
+                    });
+
+            if (resultado)
+            {
+                Console.WriteLine(
+                    $"[Webhook] Menú enviado correctamente a {numeroNormalizado}.");
+            }
+            else
+            {
+                Console.WriteLine(
+                    $"[Webhook] Error al enviar menú a {numeroNormalizado}: {whatsApp.UltimoError}");
+            }
+
+            // Confirmamos a Meta que el webhook fue recibido.
+            return Results.Ok();
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine(
+                $"[Webhook] JSON inválido: {ex.Message}");
+
+            return Results.Ok();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"[Webhook] Error: {ex.Message}");
+
+            return Results.Ok();
+        }
     });
+
+// ==========================================================
+// LECTOR DE MENSAJES ENTRANTES DE WHATSAPP
+// ==========================================================
+static bool TryGetIncomingTextMessage(
+    JsonElement root,
+    out string? numeroCliente,
+    out string? textoMensaje,
+    out string? messageId)
+{
+    numeroCliente = null;
+    textoMensaje = null;
+    messageId = null;
+
+    try
+    {
+        if (!root.TryGetProperty(
+                "entry",
+                out var entries) ||
+            entries.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        foreach (var entry in entries.EnumerateArray())
+        {
+            if (!entry.TryGetProperty(
+                    "changes",
+                    out var changes) ||
+                changes.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (var change in changes.EnumerateArray())
+            {
+                if (!change.TryGetProperty(
+                        "value",
+                        out var value))
+                {
+                    continue;
+                }
+
+                if (!value.TryGetProperty(
+                        "messages",
+                        out var messages) ||
+                    messages.ValueKind != JsonValueKind.Array)
+                {
+                    continue;
+                }
+
+                foreach (var message in messages.EnumerateArray())
+                {
+                    if (!message.TryGetProperty(
+                            "type",
+                            out var typeElement))
+                    {
+                        continue;
+                    }
+
+                    var tipo =
+                        typeElement.GetString();
+
+                    if (!string.Equals(
+                            tipo,
+                            "text",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (message.TryGetProperty(
+                        "from",
+                        out var fromElement))
+                    {
+                        numeroCliente =
+                            fromElement.GetString();
+                    }
+
+                    if (message.TryGetProperty(
+                        "id",
+                        out var idElement))
+                    {
+                        messageId =
+                            idElement.GetString();
+                    }
+
+                    if (message.TryGetProperty(
+                            "text",
+                            out var textElement) &&
+                        textElement.TryGetProperty(
+                            "body",
+                            out var bodyElement))
+                    {
+                        textoMensaje =
+                            bodyElement.GetString();
+                    }
+
+                    return
+                        !string.IsNullOrWhiteSpace(numeroCliente) &&
+                        !string.IsNullOrWhiteSpace(textoMensaje);
+                }
+            }
+        }
+    }
+    catch
+    {
+        return false;
+    }
+
+    return false;
+}
 
 // ==========================================================
 // RAZOR COMPONENTS

@@ -17,6 +17,10 @@ namespace RamsCottons.Data
         public DbSet<Cliente> Clientes => Set<Cliente>();
         public DbSet<HistorialEnvio> HistorialEnvios => Set<HistorialEnvio>();
 
+        // CONFIGURACIÓN DE WHATSAPP
+        public DbSet<ConfiguracionWhatsApp> ConfiguracionWhatsApp
+            => Set<ConfiguracionWhatsApp>();
+
         // TABLAS DE PERMISOS
         public DbSet<Permiso> Permisos => Set<Permiso>();
         public DbSet<RolPermiso> RolesPermisos => Set<RolPermiso>();
@@ -54,6 +58,25 @@ namespace RamsCottons.Data
             builder.Entity<Cliente>()
                 .Property(c => c.Telefono)
                 .HasMaxLength(20);
+
+            // CONFIGURACIÓN DE WHATSAPP
+            builder.Entity<ConfiguracionWhatsApp>()
+                .ToTable("ConfiguracionWhatsApp");
+
+            builder.Entity<ConfiguracionWhatsApp>()
+                .HasKey(c => c.Id);
+
+            builder.Entity<ConfiguracionWhatsApp>()
+                .Property(c => c.NumeroWhatsApp)
+                .HasMaxLength(30);
+
+            builder.Entity<ConfiguracionWhatsApp>()
+                .Property(c => c.WhatsAppAtencion)
+                .HasMaxLength(30);
+
+            builder.Entity<ConfiguracionWhatsApp>()
+                .Property(c => c.NombreMostrar)
+                .HasMaxLength(150);
 
             // CONFIGURACIONES DE PERMISOS
             builder.Entity<Permiso>()

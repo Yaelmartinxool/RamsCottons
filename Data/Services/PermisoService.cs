@@ -126,7 +126,6 @@ namespace RamsCottons.Services
                 ["Gerente"] = new()
                 {
                     Permissions.Categorias_Ver,
-                    Permissions.Clientes_Exportar,
                     Permissions.Clientes_Ver,
                     Permissions.Clientes_VerTodasSucursales,
                     Permissions.Promociones_Ver,

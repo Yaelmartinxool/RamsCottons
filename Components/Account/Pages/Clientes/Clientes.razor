@@ -97,7 +97,7 @@
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* ===== IMPORTAR / EXPORTAR ===== */
+/* ===== ACCIONES DEL ENCABEZADO ===== */
 .header-actions {
     display: flex;
     align-items: center;
@@ -129,19 +129,6 @@
     color: #0f172a;
     transform: translateY(-1px);
 }
-
-.btn-export-green {
-    background: #16a34a;
-    border-color: #16a34a;
-    color: #ffffff;
-}
-
-.btn-export-green:hover {
-    background: #15803d;
-    border-color: #15803d;
-    color: #ffffff;
-}
-
 
 /* ===== CONTROL PANEL ===== */
 
@@ -1434,17 +1421,6 @@ button.btn-create-first span,
                 </div>
             </div>
             <div class="header-actions">
-                @if (puedeExportarClientes)
-                {
-                    <a class="btn-data-action btn-export-green"
-                       href="@ExportarCsvHref"
-                       download="@NombreArchivoExportacion"
-                       title="Exportar clientes visibles a CSV">
-                        <i class="bi bi-download"></i>
-                        <span>Exportar</span>
-                    </a>
-                }
-
                 @if (puedeCrearClientes)
                 {
                     <button class="btn-create" @onclick="CrearCliente">
@@ -1846,8 +1822,8 @@ button.btn-create-first span,
     <div class="batch-actions-bar">
         <i class="bi bi-check-circle-fill"></i>
         <span>@clientesSeleccionados.Count cliente(s) seleccionado(s)</span>
-        <button class="btn-send-whatsapp" @onclick="AbrirModalPromociones">
-            <i class="bi bi-whatsapp"></i> Enviar promocion
+        <button class="btn-send-whatsapp" @onclick="AbrirModalWhatsApp">
+            <i class="bi bi-whatsapp"></i> Enviar WhatsApp
         </button>
         <button class="btn-clear-selection" @onclick="LimpiarSeleccion">
             <i class="bi bi-x"></i> Limpiar
@@ -1855,24 +1831,45 @@ button.btn-create-first span,
     </div>
 }
 
-<!-- Modal para seleccionar promocion -->
+<!-- Modal para seleccionar envío por WhatsApp -->
 @if (mostrarModalPromociones)
 {
     <div class="modal-overlay" @onclick="CerrarModal">
         <div class="modal-content" @onclick:preventDefault="true">
             <div class="modal-header">
-                <h3><i class="bi bi-megaphone-fill"></i> Seleccionar Promocion</h3>
+                <h3><i class="bi bi-whatsapp"></i> Enviar por WhatsApp</h3>
                 <button class="modal-close" @onclick="CerrarModal">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
+
             <div class="modal-body">
-                @if (promocionesActivas.Any())
-                {
-                    <div class="promociones-list">
+                <div class="promociones-list">
+
+                    <!-- MENÚ RAMS COTTONS -->
+                    <div class="promocion-item" @onclick="EnviarMenuRams">
+                        <div class="promocion-icon">
+                            <i class="bi bi-list-ul"></i>
+                        </div>
+                        <div class="promocion-info">
+                            <strong>Menú Rams Cottons</strong>
+                            <p>Enviar menú de atención al cliente con acceso a WhatsApp y Tienda Online.</p>
+                            <small>
+                                <i class="bi bi-chat-dots"></i>
+                                Plantilla: menu_atencion_rams
+                            </small>
+                        </div>
+                        <div class="promocion-action">
+                            <i class="bi bi-whatsapp"></i>
+                        </div>
+                    </div>
+
+                    @if (promocionesActivas.Any())
+                    {
                         @foreach (var promo in promocionesActivas)
                         {
-                           var enlace = $"https://rams.no-ip.info:8082/promociones/{promo.TokenUnico}";
+                            var enlace = $"https://rams.no-ip.info:8082/promociones/{promo.TokenUnico}";
+
                             <div class="promocion-item" @onclick="() => EnviarPromocion(promo, enlace)">
                                 <div class="promocion-icon">
                                     <i class="bi bi-megaphone-fill"></i>
@@ -1880,25 +1877,25 @@ button.btn-create-first span,
                                 <div class="promocion-info">
                                     <strong>@promo.Titulo</strong>
                                     <p>@promo.Descripcion</p>
-                                    <small><i class="bi bi-calendar"></i> Vence: @promo.FechaFin.ToString("dd/MM/yyyy")</small>
+                                    <small>
+                                        <i class="bi bi-calendar"></i>
+                                        Vence: @promo.FechaFin.ToString("dd/MM/yyyy")
+                                    </small>
                                 </div>
                                 <div class="promocion-action">
                                     <i class="bi bi-whatsapp"></i>
                                 </div>
                             </div>
                         }
-                    </div>
-                }
-                else
-                {
-                    <div class="no-promos">
-                        <i class="bi bi-megaphone"></i>
-                        <p>No hay promociones activas</p>
-                        <button class="btn-create-promo" @onclick="CrearPromocion">
-                            <i class="bi bi-plus-lg"></i> Crear nueva promocion
-                        </button>
-                    </div>
-                }
+                    }
+                    else
+                    {
+                        <div class="no-promos">
+                            <i class="bi bi-megaphone"></i>
+                            <p>No hay promociones activas.</p>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -1981,7 +1978,6 @@ button.btn-create-first span,
     private bool puedeCrearClientes;
     private bool puedeEditarClientes;
     private bool puedeEliminarClientes;
-    private bool puedeExportarClientes;
     private bool puedeAsignarCategoria;
     private bool puedeGenerarQR;
     private bool puedeEnviarWhatsApp;
@@ -2083,7 +2079,6 @@ button.btn-create-first span,
         puedeCrearClientes = superAdmin || permisos.Contains(Permissions.Clientes_Crear);
         puedeEditarClientes = superAdmin || permisos.Contains(Permissions.Clientes_Editar);
         puedeEliminarClientes = superAdmin || permisos.Contains(Permissions.Clientes_Eliminar);
-        puedeExportarClientes = superAdmin || permisos.Contains(Permissions.Clientes_Exportar);
         puedeAsignarCategoria = superAdmin || permisos.Contains(Permissions.Clientes_AsignarCategoria);
         puedeGenerarQR = superAdmin || permisos.Contains(Permissions.Clientes_GenerarQR);
         puedeEnviarWhatsApp = superAdmin || permisos.Contains(Permissions.WhatsApp_Crear);
@@ -2275,11 +2270,11 @@ private string GetOrigenClass(string? tipoCliente)
         clientesSeleccionados.Clear();
     }
 
-    private async Task AbrirModalPromociones()
+    private async Task AbrirModalWhatsApp()
     {
         if (!puedeEnviarWhatsApp)
         {
-            await MostrarNotificacionError("No tienes permiso para enviar promociones por WhatsApp");
+            await MostrarNotificacionError("No tienes permiso para realizar envíos por WhatsApp");
             return;
         }
 
@@ -2289,16 +2284,12 @@ private string GetOrigenClass(string? tipoCliente)
             return;
         }
 
+        // Las promociones se cargan si existen, pero ya no son obligatorias
+        // porque el Menú Rams Cottons siempre está disponible.
         promocionesActivas = await DbContext.Promociones
             .Where(p => p.Activo && p.FechaFin >= DateTime.Today)
             .OrderBy(p => p.FechaFin)
             .ToListAsync();
-
-        if (promocionesActivas.Count == 0)
-        {
-            await MostrarNotificacionInfo("No hay promociones activas para enviar");
-            return;
-        }
 
         mostrarModalPromociones = true;
     }
@@ -2307,6 +2298,177 @@ private string GetOrigenClass(string? tipoCliente)
     {
         mostrarModalPromociones = false;
         promocionesActivas.Clear();
+    }
+
+
+    private async Task EnviarMenuRams()
+    {
+        if (!puedeEnviarWhatsApp)
+        {
+            await MostrarNotificacionError("No tienes permiso para realizar envíos por WhatsApp");
+            return;
+        }
+
+        mostrarModalPromociones = false;
+
+        var clientesParaEnviar = clientesSeleccionados
+            .Select(id => clientes.FirstOrDefault(c => c.Id == id))
+            .Where(c =>
+                c != null &&
+                c.AceptaWhatsApp == true &&
+                !string.IsNullOrWhiteSpace(c.Telefono))
+            .ToList();
+
+        if (clientesParaEnviar.Count == 0)
+        {
+            await MostrarNotificacionError(
+                "Ninguno de los clientes seleccionados tiene un teléfono válido o autorización para WhatsApp");
+            return;
+        }
+
+        var enviados = 0;
+        var fallidos = 0;
+        string? ultimoError = null;
+
+        foreach (var cliente in clientesParaEnviar)
+        {
+            try
+            {
+                var telefonoLimpio = new string(
+                    cliente!.Telefono!
+                        .Where(char.IsDigit)
+                        .ToArray());
+
+                // Si el número guardado tiene 10 dígitos, agregamos México (52).
+                if (telefonoLimpio.Length == 10)
+                {
+                    telefonoLimpio = "52" + telefonoLimpio;
+                }
+                else if (!telefonoLimpio.StartsWith("52"))
+                {
+                    telefonoLimpio = "52" + telefonoLimpio;
+                }
+
+                var primerNombre = cliente.NombreCompleto?
+                    .Split(
+                        ' ',
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(primerNombre))
+                {
+                    primerNombre = "Cliente";
+                }
+
+                var resultado =
+                    await _whatsApp.EnviarPlantillaAsync(
+                        numeroDestino: telefonoLimpio,
+                        nombrePlantilla: "menu_atencion_rams",
+                        idioma: "es_MX",
+                        parametros: new Dictionary<string, string>
+                        {
+                            { "1", primerNombre }
+                        });
+
+                await JS.InvokeVoidAsync(
+                    "console.log",
+                    $"[WhatsApp Menú] Envío a {telefonoLimpio} - Resultado: {resultado}");
+
+                if (resultado)
+                {
+                    enviados++;
+                }
+                else
+                {
+                    fallidos++;
+
+                    if (!string.IsNullOrWhiteSpace(
+                        _whatsApp.UltimoError))
+                    {
+                        ultimoError =
+                            _whatsApp.UltimoError;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                fallidos++;
+                ultimoError = ex.Message;
+            }
+
+            // Pequeña separación entre envíos.
+            await Task.Delay(200);
+        }
+
+        clientesSeleccionados.Clear();
+
+        var mensajeResumen =
+            fallidos == 0
+                ? enviados == 1
+                    ? "Se envió el menú correctamente a 1 cliente"
+                    : $"Se envió el menú correctamente a {enviados} clientes"
+                : $"{enviados} enviados, {fallidos} fallidos";
+
+        var htmlError = "";
+
+        if (fallidos > 0 &&
+            !string.IsNullOrWhiteSpace(ultimoError))
+        {
+            var errorEscapado = ultimoError
+                .Replace("&", "&amp;")
+                .Replace("<", "&lt;")
+                .Replace(">", "&gt;")
+                .Replace("\"", "&quot;");
+
+            htmlError = $@"
+                <div style='margin-top: 1rem; padding: 0.75rem; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444; text-align: left; max-height: 200px; overflow-y: auto;'>
+                    <div style='font-size: 0.75rem; color: #991b1b; font-weight: 700; margin-bottom: 0.35rem;'>
+                        <i class='bi bi-exclamation-triangle-fill'></i> Error de Meta WhatsApp:
+                    </div>
+                    <div style='font-size: 0.7rem; color: #7f1d1d; word-break: break-all; font-family: monospace; line-height: 1.4;'>
+                        {errorEscapado}
+                    </div>
+                </div>";
+        }
+
+        await JS.InvokeVoidAsync(
+            "Swal.fire",
+            new
+            {
+                title =
+                    fallidos == 0
+                        ? "Menú enviado"
+                        : "Envío finalizado con errores",
+
+                html = $@"
+                    <div style='display: flex; justify-content: center; gap: 2.5rem; padding: 1rem 0;'>
+                        <div style='text-align: center;'>
+                            <div style='font-size: 1.8rem; font-weight: 700; color: #10b981;'>{enviados}</div>
+                            <div style='font-size: 0.8rem; color: #6b7280;'>Enviados</div>
+                        </div>
+                        <div style='width: 1px; background: #e5e7eb;'></div>
+                        <div style='text-align: center;'>
+                            <div style='font-size: 1.8rem; font-weight: 700; color: #ef4444;'>{fallidos}</div>
+                            <div style='font-size: 0.8rem; color: #6b7280;'>Fallidos</div>
+                        </div>
+                    </div>
+                    <div style='font-size: 0.9rem; color: #4b5563; text-align: center; padding-top: 0.5rem;'>
+                        {mensajeResumen}
+                    </div>
+                    {htmlError}",
+
+                icon =
+                    fallidos == 0
+                        ? "success"
+                        : "warning",
+
+                confirmButtonText = "Aceptar",
+                confirmButtonColor = "#0f172a",
+                width =
+                    fallidos > 0
+                        ? "600px"
+                        : "auto"
+            });
     }
 
    private async Task EnviarPromocion(Promocion promo, string enlace)
@@ -2513,71 +2675,6 @@ private string GetOrigenClass(string? tipoCliente)
             confirmButtonText = "Aceptar",
             confirmButtonColor = "#3b82f6"
         });
-    }
-
-    private string NombreArchivoExportacion =>
-        $"clientes_{DateTime.Now:yyyyMMdd_HHmm}.csv";
-
-    private string ExportarCsvHref
-    {
-        get
-        {
-            if (!puedeExportarClientes)
-                return "#";
-
-            var sb = new System.Text.StringBuilder();
-
-            // BOM para que Excel reconozca correctamente acentos/ñ.
-            sb.Append('\uFEFF');
-            sb.AppendLine("NombreCompleto;Telefono;Correo;Categoria;Origen;Sucursal;AceptaWhatsApp;Estado;FechaRegistro");
-
-            foreach (var cliente in clientesFiltrados)
-            {
-                var categoria = categorias
-                    .FirstOrDefault(c => c.IdCategoria == cliente.IdCategoriaProducto)?
-                    .NombreCat ?? "";
-
-                var sucursal = cliente.IdSucursal ?? "";
-
-                sb.Append(EscaparCsv(cliente.NombreCompleto));
-                sb.Append(';');
-                sb.Append(EscaparCsv(cliente.Telefono ?? ""));
-                sb.Append(';');
-                sb.Append(EscaparCsv(cliente.Correo ?? ""));
-                sb.Append(';');
-                sb.Append(EscaparCsv(categoria));
-                sb.Append(';');
-                sb.Append(EscaparCsv(cliente.TipoCliente ?? ""));
-                sb.Append(';');
-                sb.Append(EscaparCsv(sucursal));
-                sb.Append(';');
-                sb.Append(cliente.AceptaWhatsApp ? "SI" : "NO");
-                sb.Append(';');
-                sb.Append(cliente.Estado == 1 ? "ACTIVO" : "INACTIVO");
-                sb.Append(';');
-                sb.Append(cliente.FechaRegistro.ToString("yyyy-MM-dd HH:mm:ss"));
-                sb.AppendLine();
-            }
-
-            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
-            return $"data:text/csv;charset=utf-8;base64,{Convert.ToBase64String(bytes)}";
-        }
-    }
-
-    private static string EscaparCsv(string valor)
-    {
-        valor ??= "";
-
-        if (valor.Contains(';') ||
-            valor.Contains(',') ||
-            valor.Contains('"') ||
-            valor.Contains('\n') ||
-            valor.Contains('\r'))
-        {
-            return "\"" + valor.Replace("\"", "\"\"") + "\"";
-        }
-
-        return valor;
     }
 
     private void CrearCliente()

@@ -204,11 +204,27 @@
                                            @bind:event="oninput"
                                            @onfocus="AbrirDropdownSucursal" />
 
-                                    <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"></i>
+                                    <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"
+   style="cursor:pointer;"
+   @onclick="ToggleDropdownSucursal"></i>
 
                                     @if (mostrarDropdownSucursal)
                                     {
                                         <div class="sucursal-dropdown">
+
+    <div class="sucursal-dropdown-item cerrar-lista"
+         @onmousedown:preventDefault
+         @onclick="CerrarDropdownSucursal">
+
+        <span class="sucursal-almacen">
+            <i class="bi bi-x-circle"></i>
+        </span>
+
+        <span class="sucursal-nombre">
+            Cerrar lista
+        </span>
+
+    </div>
 
                                             @if (sucursalesFiltradas.Any())
                                             {
@@ -397,6 +413,17 @@
 
 }
 
+<style>
+.cerrar-lista {
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.cerrar-lista:hover {
+    background: #f8fafc;
+}
+</style>
+
 @code {
     private List<CategoriaProducto> categorias = new();
     private List<TipoCliente> tiposCliente = new();
@@ -510,6 +537,16 @@
     private void AbrirDropdownSucursal()
     {
         mostrarDropdownSucursal = true;
+    }
+
+    private void CerrarDropdownSucursal()
+    {
+        mostrarDropdownSucursal = false;
+    }
+
+    private void ToggleDropdownSucursal()
+    {
+        mostrarDropdownSucursal = !mostrarDropdownSucursal;
     }
 
     private void SeleccionarSucursal(
