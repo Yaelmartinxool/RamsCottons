@@ -24,6 +24,8 @@ namespace RamsCottons.Services
                     if (_sucursalesCache == null)
                     {
                         _sucursalesCache = _cycContext.Sucursales
+                            .AsNoTracking()
+                            .Where(s => s.Activo == "S")
                             .OrderBy(s => s.CiudadEstado)
                             .ThenBy(s => s.Nombre)
                             .ToList();
@@ -37,22 +39,31 @@ namespace RamsCottons.Services
         public async Task<SucursalCyc?> GetSucursalByAlmacenAsync(string almacen)
         {
             return await _cycContext.Sucursales
-                .FirstOrDefaultAsync(s => s.Almacen == almacen);
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s =>
+                    s.Almacen == almacen &&
+                    s.Activo == "S");
         }
 
         public async Task<List<SucursalCyc>> GetSucursalesByCiudadAsync(string ciudad)
         {
             return await _cycContext.Sucursales
-                .Where(s => s.CiudadEstado != null && s.CiudadEstado.Contains(ciudad))
+                .AsNoTracking()
+                .Where(s =>
+                    s.Activo == "S" &&
+                    s.CiudadEstado != null &&
+                    s.CiudadEstado.Contains(ciudad))
                 .OrderBy(s => s.Nombre)
                 .ToListAsync();
         }
 
         public async Task<List<string>> GetCiudadesAsync()
         {
-            // Traer todos los datos y extraer la ciudad en memoria
             var sucursales = await _cycContext.Sucursales
-                .Where(s => s.CiudadEstado != null)
+                .AsNoTracking()
+                .Where(s =>
+                    s.Activo == "S" &&
+                    s.CiudadEstado != null)
                 .ToListAsync();
 
             return sucursales

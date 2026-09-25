@@ -58,69 +58,44 @@ namespace RamsCottons.Models.CycData
         [Column("folio2")]
         public long? Folio2 { get; set; }
 
-        // ============================================
-        // PROPIEDADES CALCULADAS
-        // ============================================
-        
+        [Column("activo")]
+        public string? Activo { get; set; }
+
         [NotMapped]
-        public int IdSucursal 
-        { 
-            get 
+        public int IdSucursal
+        {
+            get
             {
                 if (int.TryParse(Almacen, out int id))
                     return id;
+
                 return 0;
             }
         }
 
         [NotMapped]
-        public string Ciudad 
-        { 
-            get 
+        public string Ciudad
+        {
+            get
             {
-                // PRIMERO: intentar con CiudadEstadoSuc (tiene la ciudad real)
                 if (!string.IsNullOrEmpty(CiudadEstadoSuc))
                 {
                     var partes = CiudadEstadoSuc.Split(',');
                     return partes.Length > 0 ? partes[0].Trim() : "Sin ciudad";
                 }
-                
-                // SEGUNDO: si no tiene, usar CiudadEstado
+
                 if (!string.IsNullOrEmpty(CiudadEstado))
                 {
                     var partes = CiudadEstado.Split(',');
                     return partes.Length > 0 ? partes[0].Trim() : "Sin ciudad";
                 }
-                
+
                 return "Sin ciudad";
             }
         }
 
         [NotMapped]
-        public string Estado 
-        { 
-            get 
-            {
-                // PRIMERO: intentar con CiudadEstadoSuc
-                if (!string.IsNullOrEmpty(CiudadEstadoSuc))
-                {
-                    var partes = CiudadEstadoSuc.Split(',');
-                    return partes.Length > 1 ? partes[1].Trim() : "Sin estado";
-                }
-                
-                // SEGUNDO: usar CiudadEstado
-                if (!string.IsNullOrEmpty(CiudadEstado))
-                {
-                    var partes = CiudadEstado.Split(',');
-                    return partes.Length > 1 ? partes[1].Trim() : "Sin estado";
-                }
-                
-                return "Sin estado";
-            }
-        }
-
-        [NotMapped]
-        public string NombreCompleto => $"{Almacen} - {Nombre} ({CiudadEstadoSuc})";
+        public string NombreCompleto => $"{Nombre} ({CiudadEstadoSuc})";
 
         [NotMapped]
         public string NombreCompletoConCiudad => $"{Ciudad} - {Nombre}";

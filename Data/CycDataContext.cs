@@ -18,7 +18,7 @@ namespace RamsCottons.Data
             {
                 entity.ToTable("sucursales");
                 entity.HasKey(e => e.Almacen);
-                
+
                 entity.Property(e => e.Almacen).HasColumnName("Almacen");
                 entity.Property(e => e.Nombre).HasColumnName("Nombre");
                 entity.Property(e => e.Ubicacion).HasColumnName("Ubicacion");
@@ -36,6 +36,9 @@ namespace RamsCottons.Data
                 entity.Property(e => e.Telefonos).HasColumnName("Telefonos");
                 entity.Property(e => e.DctoGlobal).HasColumnName("Dctoglobal");
                 entity.Property(e => e.Folio2).HasColumnName("folio2");
+                entity.Property(e => e.Activo)
+                    .HasColumnName("activo")
+                    .HasColumnType("char(1)");
             });
 
             base.OnModelCreating(modelBuilder);
