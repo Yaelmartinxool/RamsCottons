@@ -10,6 +10,8 @@ namespace RamsCottons.Models
 
         public string? NombreMostrar { get; set; }
 
+        public string? CanalWhatsApp { get; set; }
+
         public bool Activo { get; set; }
     }
 }
