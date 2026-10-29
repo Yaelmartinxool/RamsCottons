@@ -1,3 +1,4 @@
+
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,10 @@ namespace RamsCottons.Models
         [Required]
         [StringLength(30)]
         public string TipoPromocion { get; set; } = "PrecioUnico";
+
+        [Column("PublicoObjetivo")]
+        [StringLength(20)]
+        public string? PublicoObjetivo { get; set; }
 
         public string? ImagenUrl { get; set; }
 

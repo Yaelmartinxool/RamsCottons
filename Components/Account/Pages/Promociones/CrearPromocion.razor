@@ -22,6 +22,48 @@
 
 <PageTitle>Nueva Promoción | RAMS Cottons</PageTitle>
 
+<style>
+    /* Iconos clicables para abrir el calendario nativo */
+    .crear-promo-container .calendar-button,
+    .editar-promo-container .calendar-button {
+        position: absolute;
+        left: 0.45rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 5;
+        width: 30px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: #64748b;
+        cursor: pointer;
+        pointer-events: auto;
+    }
+
+    .crear-promo-container .calendar-button:hover,
+    .editar-promo-container .calendar-button:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .crear-promo-container .calendar-button:focus-visible,
+    .editar-promo-container .calendar-button:focus-visible {
+        outline: 2px solid #0f172a;
+        outline-offset: 2px;
+    }
+
+    .calendar-button i {
+        pointer-events: none;
+        font-size: 1rem;
+        line-height: 1;
+    }
+</style>
+
 <div class="crear-promo-container">
     <br />
 
@@ -152,6 +194,27 @@
                                 </div>
                             </div>
 
+                            <!-- NUEVO: Público objetivo del catálogo/promoción -->
+                            <div class="form-group full-width">
+                                <label class="form-label">
+                                    Público objetivo
+                                    <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-wrapper">
+                                    <i class="bi bi-people-fill input-icon"></i>
+                                    <InputSelect @bind-Value="modelo.PublicoObjetivo" class="form-control">
+                                        <option value="">Seleccione el público objetivo</option>
+                                        <option value="Hombre">Hombre (catálogo caballero)</option>
+                                        <option value="Mujer">Mujer (catálogo dama)</option>
+                                        <option value="Todos">Todos (promoción general)</option>
+                                    </InputSelect>
+                                </div>
+                                <ValidationMessage For="() => modelo.PublicoObjetivo" class="validation-message" />
+                                <small class="form-text text-muted d-block mt-1">
+                                    Este campo permite filtrar los destinatarios al enviar la promoción por WhatsApp.
+                                </small>
+                            </div>
+
                             @if (modelo.TipoPromocion == "PrecioUnico")
                             {
                                 <div class="form-group">
@@ -214,9 +277,10 @@
                                 </label>
 
                                 <div class="input-wrapper @(errorFechaInicio ? "is-invalid-wrapper" : "")">
-                                    <i class="bi bi-calendar-plus input-icon"
-                                       style="cursor:pointer; pointer-events:auto;"
-                                       onclick="const el = document.getElementById('fechaInicio'); if(el.showPicker){el.showPicker();} else {el.focus(); el.click();}"></i>
+                                    <button type="button" class="calendar-button" aria-label="Abrir calendario de fecha de inicio" title="Seleccionar fecha de inicio"
+                                            onclick="const campo = document.getElementById('fechaInicio'); if (campo) { try { if (typeof campo.showPicker === 'function') campo.showPicker(); else campo.focus(); } catch { campo.focus(); } }">
+                                        <i class="bi bi-calendar-plus"></i>
+                                    </button>
 
                                     <InputDate @bind-Value="modelo.FechaInicio"
                                                id="fechaInicio"
@@ -234,9 +298,10 @@
                                 </label>
 
                                 <div class="input-wrapper @(errorFechaFin ? "is-invalid-wrapper" : "")">
-                                    <i class="bi bi-calendar-x input-icon"
-                                       style="cursor:pointer; pointer-events:auto;"
-                                       onclick="const el = document.getElementById('fechaFin'); if(el.showPicker){el.showPicker();} else {el.focus(); el.click();}"></i>
+                                    <button type="button" class="calendar-button" aria-label="Abrir calendario de fecha de fin" title="Seleccionar fecha de fin"
+                                            onclick="const campo = document.getElementById('fechaFin'); if (campo) { try { if (typeof campo.showPicker === 'function') campo.showPicker(); else campo.focus(); } catch { campo.focus(); } }">
+                                        <i class="bi bi-calendar-x"></i>
+                                    </button>
 
                                     <InputDate @bind-Value="modelo.FechaFin"
                                                id="fechaFin"
@@ -759,6 +824,14 @@
 
         try
         {
+            if (modelo.PublicoObjetivo != "Hombre" &&
+                modelo.PublicoObjetivo != "Mujer" &&
+                modelo.PublicoObjetivo != "Todos")
+            {
+                error = "Debes seleccionar el público objetivo de la promoción.";
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(modelo.TipoPromocion))
             {
                 error = "Debes seleccionar el tipo de promoción.";
@@ -844,6 +917,7 @@
                     Titulo = modelo.Titulo,
                     Descripcion = modelo.Descripcion ?? "",
                     TipoPromocion = modelo.TipoPromocion,
+                    PublicoObjetivo = modelo.PublicoObjetivo,
                     Precio = modelo.TipoPromocion == "PrecioUnico" ? modelo.Precio : null,
                     DescuentoPorcentaje = modelo.TipoPromocion == "PrecioUnico" ? modelo.DescuentoPorcentaje : null,
                     DescuentoMonto = modelo.TipoPromocion == "PrecioUnico" ? modelo.DescuentoMonto : null,
@@ -932,6 +1006,9 @@
 
         [Required(ErrorMessage = "El tipo de promoción es obligatorio")]
         public string TipoPromocion { get; set; } = "Catalogo";
+
+          [Required(ErrorMessage = "Selecciona el público objetivo")]
+          public string PublicoObjetivo { get; set; } = "";
 
         [Range(0.01, 999999.99, ErrorMessage = "El precio debe ser mayor a 0")]
         public decimal? Precio { get; set; }

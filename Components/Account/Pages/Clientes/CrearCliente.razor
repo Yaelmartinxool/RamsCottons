@@ -1,9 +1,12 @@
+
 @page "/clientes/crear"
 @rendermode InteractiveServer
 
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.Data.SqlClient
+@using Microsoft.AspNetCore.Components.Forms
 @using RamsCottons.Models
 @using RamsCottons.Data
 @using RamsCottons.Models.CycData
@@ -20,411 +23,522 @@
 @inject WhatsAppService _whatsApp
 @inject SucursalService SucursalService
 @inject PermisoService PermisoService
+@inject IConfiguration Configuration
+@inject IWebHostEnvironment HostEnvironment
 
 <PageTitle>Nuevo Cliente | RAMS Cottons</PageTitle>
 
 @if (autorizado)
 {
-<div class="crear-cliente-container">
-    <div class="dashboard-header">
-        <div class="header-content">
-            <div class="header-title">
-                <div class="title-icon">
-                    <i class="bi bi-person-plus-fill"></i>
-                </div>
-                <div>
-                    <h1>Nuevo Cliente</h1>
-                    <p class="subtitle">Registre un nuevo cliente en el sistema</p>
-                </div>
-            </div>
+    <div class="crear-cliente-container">
 
-            <button class="btn-back" @onclick="Volver">
-                <span>Volver</span>
-            </button>
-        </div>
-    </div>
+        <!-- ENCABEZADO -->
+        <div class="dashboard-header">
+            <div class="header-content">
 
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="form-card">
-                <div class="card-header">
-                    <div class="header-left">
-                        <i class="bi bi-pencil-square"></i>
-                        <h3>Información del Cliente</h3>
+                <div class="header-title">
+                    <div class="title-icon">
+                        <i class="bi bi-person-plus-fill"></i>
                     </div>
 
-                    <span class="required-badge">
-                        * Campos obligatorios
-                    </span>
+                    <div>
+                        <h1>Nuevo Cliente</h1>
+                        <p class="subtitle">
+                            Registre un nuevo cliente en el sistema
+                        </p>
+                    </div>
                 </div>
 
-                <div class="card-body">
-                    <EditForm Model="modelo"
-                              OnValidSubmit="GuardarCliente"
-                              FormName="crearCliente">
+                <button class="btn-back" @onclick="Volver">
+                    <span>Volver</span>
+                </button>
 
-                        <DataAnnotationsValidator />
-                        <ValidationSummary class="validation-summary" />
+            </div>
+        </div>
 
-                        <div class="form-grid">
+        <div class="row">
 
-                            <div class="form-group full-width">
-                                <label class="form-label">
-                                    Nombre Completo
-                                    <span class="text-danger">*</span>
-                                </label>
+            <!-- FORMULARIO -->
+            <div class="col-lg-8">
+                <div class="form-card">
 
-                                <div class="input-wrapper">
-                                    <i class="bi bi-person input-icon"></i>
+                    <div class="card-header">
+                        <div class="header-left">
+                            <i class="bi bi-pencil-square"></i>
+                            <h3>Información del Cliente</h3>
+                        </div>
 
-                                    <InputText @bind-Value="modelo.NombreCompleto"
-                                               class="form-control"
-                                               placeholder="Ej: Juan Carlos Perez" />
-                                </div>
+                        <span class="required-badge">
+                            * Campos obligatorios
+                        </span>
+                    </div>
 
-                                <ValidationMessage For="() => modelo.NombreCompleto"
-                                                   class="validation-message" />
-                            </div>
+                    <div class="card-body">
 
-                            <div class="form-group">
-                                <label class="form-label">
-                                    Teléfono
-                                    <span class="text-danger">*</span>
-                                </label>
+                        <EditForm Model="modelo"
+                                  OnValidSubmit="GuardarCliente"
+                                  FormName="crearCliente">
 
-                                <div class="input-wrapper">
-                                    <i class="bi bi-telephone input-icon"></i>
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="validation-summary" />
 
-                                    <InputText @bind-Value="modelo.Telefono"
-                                               class="form-control"
-                                               placeholder="+521234567890" />
-                                </div>
+                            <div class="form-grid">
 
-                                <ValidationMessage For="() => modelo.Telefono"
-                                                   class="validation-message" />
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">
-                                    Correo Electrónico
-                                </label>
-
-                                <div class="input-wrapper">
-                                    <i class="bi bi-envelope input-icon"></i>
-
-                                    <InputText @bind-Value="modelo.Correo"
-                                               class="form-control"
-                                               placeholder="cliente@correo.com" />
-                                </div>
-
-                                <ValidationMessage For="() => modelo.Correo"
-                                                   class="validation-message" />
-                            </div>
-
-                            <div class="form-group full-width">
-                                <label class="form-label">
-                                    Categoría
-                                </label>
-
-                                <div class="input-wrapper">
-                                    <i class="bi bi-tags input-icon"></i>
-
-                                    <select @bind="modelo.IdCategoriaProducto"
-                                            class="form-control"
-                                            disabled="@(!puedeAsignarCategoria)">
-
-                                        <option value="">
-                                            @(puedeAsignarCategoria
-                                                ? "Seleccione una categoría"
-                                                : "Sin permiso para asignar categoría")
-                                        </option>
-
-                                        @if (puedeAsignarCategoria)
-                                        {
-                                            @foreach (var cat in categorias)
-                                            {
-                                                <option value="@cat.IdCategoria">
-                                                    @cat.NombreCat
-                                                </option>
-                                            }
-                                        }
-
-                                    </select>
-                                </div>
-
-                                @if (!puedeAsignarCategoria)
-                                {
-                                    <small class="form-text text-muted d-block mt-1">
-                                        <i class="bi bi-lock-fill me-1"></i>
-                                        No tienes permiso para asignar una categoría al cliente.
-                                    </small>
-                                }
-                            </div>
-
-                            <div class="form-group full-width">
-                                <label class="form-label">
-                                    Tipo de Cliente
-                                </label>
-
-                                <div class="input-wrapper">
-                                    <i class="bi bi-diagram-3 input-icon"></i>
-
-                                    <select @bind="modelo.TipoCliente"
-                                            class="form-control">
-
-                                        <option value="">
-                                            Seleccione una opción
-                                        </option>
-
-                                        @foreach (var tipo in tiposCliente)
-                                        {
-                                            <option value="@tipo.Nombre">
-                                                @tipo.Nombre
-                                            </option>
-                                        }
-
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-group full-width">
-                                <label class="form-label">
-                                    Sucursal
-                                    <span class="text-danger">*</span>
-                                </label>
-
-                                <div class="sucursal-search-wrapper @(errorSucursal ? "has-error" : "")">
-
-                                    <i class="bi bi-shop sucursal-search-icon"></i>
-
-                                    <input type="text"
-                                           class="sucursal-search-input"
-                                           placeholder="Busca y selecciona una sucursal..."
-                                           @bind="busquedaSucursal"
-                                           @bind:event="oninput"
-                                           @onfocus="AbrirDropdownSucursal" />
-
-                                    <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"
-   style="cursor:pointer;"
-   @onclick="ToggleDropdownSucursal"></i>
-
-                                    @if (mostrarDropdownSucursal)
-                                    {
-                                        <div class="sucursal-dropdown">
-
-    <div class="sucursal-dropdown-item cerrar-lista"
-         @onmousedown:preventDefault
-         @onclick="CerrarDropdownSucursal">
-
-        <span class="sucursal-almacen">
-            <i class="bi bi-x-circle"></i>
-        </span>
-
-        <span class="sucursal-nombre">
-            Cerrar lista
-        </span>
-
-    </div>
-
-                                            @if (sucursalesFiltradas.Any())
-                                            {
-                                                @foreach (var sucursal in sucursalesFiltradas)
-                                                {
-                                                    <div class="sucursal-dropdown-item @(selectedSucursal == sucursal.Almacen ? "selected" : "")"
-                                                         @onmousedown:preventDefault
-                                                         @onclick="() => SeleccionarSucursal(sucursal)">
-
-                                                        <span class="sucursal-almacen">
-                                                            @sucursal.Almacen
-                                                        </span>
-
-                                                        <span class="sucursal-nombre">
-                                                            @sucursal.NombreCompleto
-                                                        </span>
-
-                                                    </div>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <div class="sucursal-dropdown-empty">
-                                                    <i class="bi bi-search"></i>
-                                                    No se encontraron sucursales
-                                                </div>
-                                            }
-
-                                        </div>
-                                    }
-
-                                </div>
-
-                                @if (errorSucursal)
-                                {
-                                    <div class="validation-message"
-                                         style="margin-top: 0.25rem;">
-
-                                        <i class="bi bi-exclamation-circle-fill me-1"></i>
-                                        @mensajeErrorSucursal
-
-                                    </div>
-                                }
-                            </div>
-
-                            <div class="form-group full-width">
-                                <div class="form-check">
-
-                                    <InputCheckbox @bind-Value="modelo.AceptaWhatsApp"
-                                                   id="aceptaWhatsApp"
-                                                   class="form-check-input" />
-
-                                    <label class="form-check-label"
-                                           for="aceptaWhatsApp">
-
-                                        <i class="bi bi-whatsapp text-success"></i>
-                                        Acepta recibir promociones por WhatsApp
-
+                                <!-- NOMBRE -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Nombre Completo
+                                        <span class="text-danger">*</span>
                                     </label>
 
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-person input-icon"></i>
+
+                                        <InputText
+                                            @bind-Value="modelo.NombreCompleto"
+                                            class="form-control"
+                                            placeholder="Ej: Juan Carlos Perez" />
+                                    </div>
+
+                                    <ValidationMessage
+                                        For="() => modelo.NombreCompleto"
+                                        class="validation-message" />
+                                </div>
+
+                                <!-- TELÉFONO -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Teléfono
+                                        <span class="text-danger">*</span>
+                                    </label>
+
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-telephone input-icon"></i>
+
+                                        <InputText
+                                            @bind-Value="modelo.Telefono"
+                                            class="form-control"
+                                            placeholder="+521234567890" />
+                                    </div>
+
+                                    <ValidationMessage
+                                        For="() => modelo.Telefono"
+                                        class="validation-message" />
+                                </div>
+
+                                <!-- CORREO -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        Correo Electrónico
+                                    </label>
+
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-envelope input-icon"></i>
+
+                                        <InputText
+                                            @bind-Value="modelo.Correo"
+                                            class="form-control"
+                                            placeholder="cliente@correo.com" />
+                                    </div>
+
+                                    <ValidationMessage
+                                        For="() => modelo.Correo"
+                                        class="validation-message" />
+                                </div>
+
+                                <!-- CUMPLEAÑOS -->
+                                <div class="form-group full-width">
+                                    <label class="form-label"
+                                           for="fechaCumpleanos">
+                                        Fecha de cumpleaños
+                                        <span class="text-danger">*</span>
+                                    </label>
+
+                                    <InputDate TValue="DateTime?"
+                                               id="fechaCumpleanos"
+                                               @bind-Value="modelo.FechaNacimiento"
+                                               class="rams-cumpleanos-fecha"
+                                               max="@FechaMaximaCumpleanos"
+                                               required
+                                               DisplayName="Fecha de cumpleaños" />
+
                                     <small class="form-text text-muted d-block mt-1">
-                                        Si el cliente no acepta, no podrá recibir promociones por WhatsApp
+                                        Selecciona una fecha en el calendario
+                                        o escríbela manualmente.
                                     </small>
 
+                                    <ValidationMessage
+                                        For="() => modelo.FechaNacimiento"
+                                        class="validation-message" />
                                 </div>
+
+                                <!-- CATEGORÍA -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Categoría
+                                    </label>
+
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-tags input-icon"></i>
+
+                                        <select @bind="modelo.IdCategoriaProducto"
+                                                class="form-control"
+                                                disabled="@(!puedeAsignarCategoria)">
+
+                                            <option value="">
+                                                @(puedeAsignarCategoria
+                                                    ? "Seleccione una categoría"
+                                                    : "Sin permiso para asignar categoría")
+                                            </option>
+
+                                            @if (puedeAsignarCategoria)
+                                            {
+                                                @foreach (var cat in categorias)
+                                                {
+                                                    <option value="@cat.IdCategoria">
+                                                        @cat.NombreCat
+                                                    </option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+
+                                    @if (!puedeAsignarCategoria)
+                                    {
+                                        <small class="form-text text-muted d-block mt-1">
+                                            <i class="bi bi-lock-fill me-1"></i>
+                                            No tienes permiso para asignar
+                                            una categoría al cliente.
+                                        </small>
+                                    }
+                                </div>
+
+                                <!-- TIPO DE CLIENTE -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Tipo de Cliente
+                                    </label>
+
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-diagram-3 input-icon"></i>
+
+                                        <select @bind="modelo.TipoCliente"
+                                                class="form-control">
+
+                                            <option value="">
+                                                Seleccione una opción
+                                            </option>
+
+                                            @foreach (var tipo in tiposCliente)
+                                            {
+                                                <option value="@tipo.Nombre">
+                                                    @tipo.Nombre
+                                                </option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- GÉNERO -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Género
+                                    </label>
+
+                                    <div class="input-wrapper">
+                                        <i class="bi bi-people input-icon"></i>
+
+                                        <select class="form-control"
+                                                @bind="modelo.Genero">
+
+                                            <option value="">
+                                                Sin especificar
+                                            </option>
+
+                                            <option value="Hombre">
+                                                Hombre
+                                            </option>
+
+                                            <option value="Mujer">
+                                                Mujer
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <small class="form-text text-muted d-block mt-1">
+                                        Se utiliza para filtrar los
+                                        catálogos y promociones.
+                                    </small>
+                                </div>
+
+                                <!-- SUCURSAL -->
+                                <div class="form-group full-width">
+                                    <label class="form-label">
+                                        Sucursal
+                                        <span class="text-danger">*</span>
+                                    </label>
+
+                                    <div class="sucursal-search-wrapper @(errorSucursal ? "has-error" : "")">
+
+                                        <i class="bi bi-shop sucursal-search-icon"></i>
+
+                                        <input type="text"
+                                               class="sucursal-search-input"
+                                               placeholder="Busca y selecciona una sucursal..."
+                                               @bind="busquedaSucursal"
+                                               @bind:event="oninput"
+                                               @onfocus="AbrirDropdownSucursal" />
+
+                                        <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"
+                                           style="cursor:pointer;"
+                                           @onclick="ToggleDropdownSucursal"></i>
+
+                                        @if (mostrarDropdownSucursal)
+                                        {
+                                            <div class="sucursal-dropdown">
+
+                                                <div class="sucursal-dropdown-item cerrar-lista"
+                                                     @onmousedown:preventDefault
+                                                     @onclick="CerrarDropdownSucursal">
+
+                                                    <span class="sucursal-almacen">
+                                                        <i class="bi bi-x-circle"></i>
+                                                    </span>
+
+                                                    <span class="sucursal-nombre">
+                                                        Cerrar lista
+                                                    </span>
+                                                </div>
+
+                                                @if (sucursalesFiltradas.Any())
+                                                {
+                                                    @foreach (var sucursal in sucursalesFiltradas)
+                                                    {
+                                                        <div class="sucursal-dropdown-item @(selectedSucursal == sucursal.Almacen ? "selected" : "")"
+                                                             @onmousedown:preventDefault
+                                                             @onclick="() => SeleccionarSucursal(sucursal)">
+
+                                                            <span class="sucursal-almacen">
+                                                                @sucursal.Almacen
+                                                            </span>
+
+                                                            <span class="sucursal-nombre">
+                                                                @sucursal.NombreCompleto
+                                                            </span>
+                                                        </div>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <div class="sucursal-dropdown-empty">
+                                                        <i class="bi bi-search"></i>
+                                                        No se encontraron sucursales
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+
+                                    @if (errorSucursal)
+                                    {
+                                        <div class="validation-message"
+                                             style="margin-top:0.25rem;">
+
+                                            <i class="bi bi-exclamation-circle-fill me-1"></i>
+                                            @mensajeErrorSucursal
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- WHATSAPP -->
+                                <div class="form-group full-width">
+                                    <div class="form-check">
+
+                                        <InputCheckbox
+                                            @bind-Value="modelo.AceptaWhatsApp"
+                                            id="aceptaWhatsApp"
+                                            class="form-check-input" />
+
+                                        <label class="form-check-label"
+                                               for="aceptaWhatsApp">
+
+                                            <i class="bi bi-whatsapp text-success"></i>
+                                            Acepta recibir promociones por WhatsApp
+                                        </label>
+
+                                        <small class="form-text text-muted d-block mt-1">
+                                            Si el cliente no acepta,
+                                            no podrá recibir promociones por WhatsApp.
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- INFORMACIÓN -->
+                                <div class="info-message full-width">
+                                    <i class="bi bi-info-circle-fill"></i>
+
+                                    <span>
+                                        <strong>Nota:</strong>
+                                        El cliente quedará registrado con estado activo.
+                                        Puedes generar su código QR después.
+                                    </span>
+                                </div>
+
+                                <!-- BOTONES -->
+                                <div class="form-actions full-width">
+
+                                    <button type="submit"
+                                            class="btn-submit"
+                                            disabled="@guardando">
+
+                                        @(guardando
+                                            ? "Guardando..."
+                                            : "Guardar Cliente")
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn-cancel"
+                                            @onclick="Volver">
+                                        Cancelar
+                                    </button>
+                                </div>
+
                             </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
 
-                            <div class="info-message full-width">
-                                <i class="bi bi-info-circle-fill"></i>
+            <!-- PANEL DERECHO -->
+            <div class="col-lg-4">
+                <div class="info-card">
 
-                                <span>
-                                    <strong>Nota:</strong>
-                                    El cliente quedará registrado con estado activo.
-                                    Puedes generar su código QR después.
-                                </span>
+                    <div class="info-card-header">
+                        <i class="bi bi-diagram-3"></i>
+                        <h4>Proceso de Registro</h4>
+                    </div>
+
+                    <div class="info-card-body">
+
+                        <div class="process-step">
+                            <div class="step-number">1</div>
+                            <div class="step-text">
+                                Completa el formulario con los datos del cliente
                             </div>
-
-                            <div class="form-actions full-width">
-
-                                <button type="submit"
-                                        class="btn-submit"
-                                        disabled="@guardando">
-
-                                    @(guardando ? "Guardando..." : "Guardar Cliente")
-
-                                </button>
-
-                                <button type="button"
-                                        class="btn-cancel"
-                                        @onclick="Volver">
-
-                                    Cancelar
-
-                                </button>
-
-                            </div>
-
                         </div>
 
-                    </EditForm>
+                        <div class="process-step">
+                            <div class="step-number">2</div>
+                            <div class="step-text">
+                                El sistema valida la información
+                            </div>
+                        </div>
+
+                        <div class="process-step">
+                            <div class="step-number">3</div>
+                            <div class="step-text">
+                                El cliente queda registrado en la base de datos
+                            </div>
+                        </div>
+
+                        <div class="process-step">
+                            <div class="step-number">4</div>
+                            <div class="step-text">
+                                Genera el código QR para el cliente
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tip-card">
+                    <i class="bi bi-lightbulb"></i>
+
+                    <div>
+                        <h5>Consejo de Registro</h5>
+
+                        <p>
+                            Utiliza un teléfono válido y un correo electrónico
+                            real para que el cliente pueda recibir sus
+                            promociones y código QR.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-4">
-
-            <div class="info-card">
-
-                <div class="info-card-header">
-                    <i class="bi bi-diagram-3"></i>
-                    <h4>Proceso de Registro</h4>
-                </div>
-
-                <div class="info-card-body">
-
-                    <div class="process-step">
-                        <div class="step-number">1</div>
-                        <div class="step-text">
-                            Completa el formulario con los datos del cliente
-                        </div>
-                    </div>
-
-                    <div class="process-step">
-                        <div class="step-number">2</div>
-                        <div class="step-text">
-                            El sistema valida la información
-                        </div>
-                    </div>
-
-                    <div class="process-step">
-                        <div class="step-number">3</div>
-                        <div class="step-text">
-                            El cliente queda registrado en la base de datos
-                        </div>
-                    </div>
-
-                    <div class="process-step">
-                        <div class="step-number">4</div>
-                        <div class="step-text">
-                            Genera el código QR para el cliente
-                        </div>
-                    </div>
-
-                </div>
+        <!-- NOTIFICACIONES -->
+        @if (!string.IsNullOrEmpty(mensajeExito))
+        {
+            <div class="toast-notification toast-success">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>@mensajeExito</span>
             </div>
+        }
 
-            <div class="tip-card">
-
-                <i class="bi bi-lightbulb"></i>
-
-                <div>
-                    <h5>Consejo de Registro</h5>
-
-                    <p>
-                        Utiliza un teléfono válido y un correo electrónico real
-                        para que el cliente pueda recibir sus promociones y código QR.
-                    </p>
-                </div>
-
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="toast-notification toast-error">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>@error</span>
             </div>
-
-        </div>
+        }
     </div>
-
-    @if (!string.IsNullOrEmpty(mensajeExito))
-    {
-        <div class="toast-notification toast-success">
-
-            <i class="bi bi-check-circle-fill"></i>
-            <span>@mensajeExito</span>
-
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(error))
-    {
-        <div class="toast-notification toast-error">
-
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            <span>@error</span>
-
-        </div>
-    }
-
-</div>
-
 }
 
 <style>
-.cerrar-lista {
-    font-weight: 600;
-    border-bottom: 1px solid #e5e7eb;
-}
+    .cerrar-lista {
+        font-weight: 600;
+        border-bottom: 1px solid #e5e7eb;
+    }
 
-.cerrar-lista:hover {
-    background: #f8fafc;
-}
+    .cerrar-lista:hover {
+        background: #f8fafc;
+    }
+
+    /* CALENDARIO NATIVO */
+
+    input.rams-cumpleanos-fecha[type="date"] {
+        display: block !important;
+        width: 100% !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        box-sizing: border-box;
+        padding: 10px 14px !important;
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 9px !important;
+        font-size: 15px;
+        font-family: inherit;
+        color-scheme: light;
+        appearance: auto !important;
+        -webkit-appearance: auto !important;
+    }
+
+    input.rams-cumpleanos-fecha[type="date"]:focus {
+        outline: none;
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    input.rams-cumpleanos-fecha[type="date"]::-webkit-calendar-picker-indicator {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        position: static !important;
+        width: 22px !important;
+        height: 22px !important;
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
 </style>
 
 @code {
+
+    // ============================================
+    // VARIABLES
+    // ============================================
+
     private List<CategoriaProducto> categorias = new();
     private List<TipoCliente> tiposCliente = new();
     private List<SucursalCyc> SucursalesDisponibles = new();
@@ -432,15 +546,21 @@
     private bool autorizado = false;
     private bool puedeAsignarCategoria = false;
     private bool guardando = false;
+
     private string? error;
     private string? mensajeExito;
+
     private ClienteModel modelo = new();
 
     private string? selectedSucursal = null;
     private string busquedaSucursal = "";
     private bool mostrarDropdownSucursal = false;
+
     private bool errorSucursal = false;
     private string mensajeErrorSucursal = "";
+
+    private string FechaMaximaCumpleanos =>
+        DateTime.Today.ToString("yyyy-MM-dd");
 
     private IEnumerable<SucursalCyc> sucursalesFiltradas =>
         string.IsNullOrWhiteSpace(busquedaSucursal)
@@ -448,26 +568,30 @@
             : SucursalesDisponibles.Where(s =>
                 s.Almacen.Contains(
                     busquedaSucursal,
-                    StringComparison.OrdinalIgnoreCase
-                ) ||
+                    StringComparison.OrdinalIgnoreCase)
+                ||
                 (
                     s.NombreCompleto != null &&
                     s.NombreCompleto.Contains(
                         busquedaSucursal,
-                        StringComparison.OrdinalIgnoreCase
-                    )
-                )
-            );
+                        StringComparison.OrdinalIgnoreCase)
+                ));
+
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authState =
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
         var user = authState.User;
 
-        var tienePermiso = await PermisoService.TienePermisoAsync(
-            user,
-            Permissions.Clientes_Crear
-        );
+        var tienePermiso =
+            await PermisoService.TienePermisoAsync(
+                user,
+                Permissions.Clientes_Crear);
 
         if (!tienePermiso)
         {
@@ -475,12 +599,13 @@
             return;
         }
 
-        puedeAsignarCategoria = await PermisoService.TienePermisoAsync(
-            user,
-            Permissions.Clientes_AsignarCategoria
-        );
+        puedeAsignarCategoria =
+            await PermisoService.TienePermisoAsync(
+                user,
+                Permissions.Clientes_AsignarCategoria);
 
         autorizado = true;
+
         await CargarDatos();
     }
 
@@ -506,14 +631,12 @@
     {
         try
         {
-            categorias = await DbContext
-                .CategoriaProductos
-                .ToListAsync();
+            categorias =
+                await DbContext.CategoriaProductos.ToListAsync();
         }
         catch (Exception ex)
         {
-            error =
-                $"Error cargando categorías: {ex.Message}";
+            error = $"Error cargando categorías: {ex.Message}";
         }
     }
 
@@ -521,18 +644,21 @@
     {
         try
         {
-            tiposCliente = await DbContext
-                .TiposCliente
-                .Where(t => t.Activo)
-                .OrderBy(t => t.IdTipoCliente)
-                .ToListAsync();
+            tiposCliente =
+                await DbContext.TiposCliente
+                    .Where(t => t.Activo)
+                    .OrderBy(t => t.IdTipoCliente)
+                    .ToListAsync();
         }
         catch (Exception ex)
         {
-            error =
-                $"Error cargando tipos de cliente: {ex.Message}";
+            error = $"Error cargando tipos de cliente: {ex.Message}";
         }
     }
+
+    // ============================================
+    // SUCURSALES
+    // ============================================
 
     private void AbrirDropdownSucursal()
     {
@@ -546,33 +672,138 @@
 
     private void ToggleDropdownSucursal()
     {
-        mostrarDropdownSucursal = !mostrarDropdownSucursal;
+        mostrarDropdownSucursal =
+            !mostrarDropdownSucursal;
     }
 
-    private void SeleccionarSucursal(
-        SucursalCyc sucursal
-    )
+    private void SeleccionarSucursal(SucursalCyc sucursal)
     {
         selectedSucursal = sucursal.Almacen;
-
         busquedaSucursal =
-            sucursal.NombreCompleto ??
-            sucursal.Almacen;
+            sucursal.NombreCompleto ?? sucursal.Almacen;
 
         mostrarDropdownSucursal = false;
         errorSucursal = false;
         mensajeErrorSucursal = "";
     }
 
+    // ============================================
+    // VALIDACIÓN DE CONEXIONES SQL
+    // ============================================
+
+    private const string InstanciaLocal =
+        @"MSI\SQLEXPRESS";
+
+    private const string InstanciaProduccion =
+        @"SERVCOMPU\SERVIDORAMS";
+
+    private void ValidarBasesAutorizadas()
+    {
+        var conexionPrincipal =
+            DbContext.Database.GetConnectionString();
+
+        var conexionCyc =
+            Configuration.GetConnectionString("CycDataConnection");
+
+        if (string.IsNullOrWhiteSpace(conexionPrincipal) ||
+            string.IsNullOrWhiteSpace(conexionCyc))
+        {
+            throw new InvalidOperationException(
+                "Falta configurar DefaultConnection o CycDataConnection.");
+        }
+
+        var principal =
+            new SqlConnectionStringBuilder(conexionPrincipal);
+
+        var cyc =
+            new SqlConnectionStringBuilder(conexionCyc);
+
+        if (!string.Equals(
+                principal.DataSource,
+                cyc.DataSource,
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            !string.Equals(
+                principal.InitialCatalog,
+                "RamsCottonsDB",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            !string.Equals(
+                cyc.InitialCatalog,
+                "cycdata",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Se canceló el registro: las conexiones deben apuntar " +
+                "a RamsCottonsDB y cycdata en la misma instancia SQL.");
+        }
+
+        var instancia = principal.DataSource.Trim();
+
+        var autorizada =
+            (HostEnvironment.IsDevelopment() &&
+             string.Equals(
+                 instancia,
+                 InstanciaLocal,
+                 StringComparison.OrdinalIgnoreCase))
+            ||
+            (HostEnvironment.IsProduction() &&
+             string.Equals(
+                 instancia,
+                 InstanciaProduccion,
+                 StringComparison.OrdinalIgnoreCase));
+
+        if (!autorizada)
+        {
+            throw new InvalidOperationException(
+                "Se canceló el registro: entorno/instancia SQL no autorizados. " +
+                $"Entorno: {HostEnvironment.EnvironmentName}; " +
+                $"Instancia: {instancia}. " +
+                "Revisa el servidor configurado antes de registrar puntos.");
+        }
+    }
+
+    // ============================================
+    // NORMALIZAR TELÉFONO
+    // ============================================
+
+    private static string NormalizarTelefonoPuntos(string telefono)
+    {
+        var digitos =
+            new string(telefono.Where(char.IsDigit).ToArray());
+
+        var esValido =
+            digitos.Length == 10 ||
+            (digitos.Length == 12 &&
+             digitos.StartsWith("52")) ||
+            (digitos.Length == 13 &&
+             digitos.StartsWith("521"));
+
+        if (!esValido)
+        {
+            throw new InvalidOperationException(
+                "Ingresa un teléfono mexicano de 10 dígitos " +
+                "(se permite +52).");
+        }
+
+        return digitos[^10..];
+    }
+
+    // ============================================
+    // REGISTRO DEL CLIENTE
+    // ============================================
+
     private async Task GuardarCliente()
     {
-        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authStatePermiso =
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
         var userPermiso = authStatePermiso.User;
 
-        var tienePermiso = await PermisoService.TienePermisoAsync(
-            userPermiso,
-            Permissions.Clientes_Crear
-        );
+        var tienePermiso =
+            await PermisoService.TienePermisoAsync(
+                userPermiso,
+                Permissions.Clientes_Crear);
 
         if (!tienePermiso)
         {
@@ -583,19 +814,21 @@
         var puedeAsignarCategoriaGuardar =
             await PermisoService.TienePermisoAsync(
                 userPermiso,
-                Permissions.Clientes_AsignarCategoria
-            );
+                Permissions.Clientes_AsignarCategoria);
 
         if (!puedeAsignarCategoriaGuardar)
         {
             modelo.IdCategoriaProducto = null;
         }
 
-        guardando = true;
+        if (guardando)
+        {
+            return;
+        }
 
+        guardando = true;
         error = null;
         mensajeExito = null;
-
         errorSucursal = false;
         mensajeErrorSucursal = "";
 
@@ -603,68 +836,75 @@
 
         try
         {
-            if (string.IsNullOrEmpty(selectedSucursal))
+            // ====================================
+            // 1. VALIDAR SUCURSAL
+            // ====================================
+
+            if (string.IsNullOrWhiteSpace(selectedSucursal))
             {
-                error =
-                    "Debes seleccionar una sucursal";
-
+                error = "Debes seleccionar una sucursal.";
                 errorSucursal = true;
-
-                mensajeErrorSucursal =
-                    "Debes seleccionar una sucursal";
-
-                guardando = false;
-
-                StateHasChanged();
-
+                mensajeErrorSucursal = error;
                 return;
             }
 
-            var authState =
-                await AuthenticationStateProvider
-                    .GetAuthenticationStateAsync();
+            // ====================================
+            // 2. VALIDAR CUMPLEAÑOS
+            // ====================================
 
-            var user =
-                authState.User;
+            if (!modelo.FechaNacimiento.HasValue)
+            {
+                error = "La fecha de cumpleaños es obligatoria.";
+                return;
+            }
+
+            if (modelo.FechaNacimiento.Value.Date > DateTime.Today)
+            {
+                error = "La fecha de cumpleaños no puede ser futura.";
+                return;
+            }
+
+            // ====================================
+            // 3. VALIDAR CONEXIONES
+            // ====================================
+
+            ValidarBasesAutorizadas();
+
+            // ====================================
+            // 4. NORMALIZAR TELÉFONO
+            // ====================================
+
+            var telefonoPuntos =
+                NormalizarTelefonoPuntos(modelo.Telefono);
+
+            // ====================================
+            // 5. OBTENER USUARIO
+            // ====================================
+
+            var authState =
+                await AuthenticationStateProvider.GetAuthenticationStateAsync();
 
             var usuario =
-                await UserManager
-                    .GetUserAsync(user);
+                await UserManager.GetUserAsync(authState.User);
 
             if (usuario == null)
             {
-                error =
-                    "No se pudo identificar al usuario actual.";
-
-                guardando = false;
-
-                StateHasChanged();
-
+                error = "No se pudo identificar al usuario actual.";
                 return;
             }
 
-            var existe =
-                await DbContext.Clientes.AnyAsync(
-                    c => c.Telefono == modelo.Telefono
-                );
-
-            if (existe)
-            {
-                error =
-                    "Ya existe un cliente con este número de teléfono.";
-
-                guardando = false;
-
-                StateHasChanged();
-
-                return;
-            }
+            // ====================================
+            // 6. PREPARAR CLIENTE
+            // ====================================
 
             var cliente = new Cliente
             {
                 NombreCompleto = modelo.NombreCompleto,
                 Telefono = modelo.Telefono,
                 Correo = modelo.Correo,
+
+                FechaNacimiento = modelo.FechaNacimiento?.Date,
+
                 IdUsuario = usuario.Id,
                 IdSucursal = selectedSucursal,
 
@@ -677,118 +917,375 @@
                 FechaRegistro = DateTime.Now,
                 Estado = 1,
                 AceptaWhatsApp = modelo.AceptaWhatsApp,
-                TipoCliente = modelo.TipoCliente
+                TipoCliente = modelo.TipoCliente,
+
+                Genero = modelo.Genero is "Hombre" or "Mujer"
+                    ? modelo.Genero
+                    : null
             };
 
-            DbContext.Clientes.Add(cliente);
+            // ====================================
+            // 7. TRANSACCIÓN
+            // ====================================
 
-            await DbContext.SaveChangesAsync();
+            bool bonoOtorgado = false;
 
-           if (
-    cliente.AceptaWhatsApp &&
-    !string.IsNullOrEmpty(cliente.Telefono)
-)
-{
-    try
-    {
-        var telefonoLimpio =
-            cliente.Telefono
-                .Replace(" ", "")
-                .Replace("-", "")
-                .Replace("+", "");
+            await using (var transaccion =
+                await DbContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // ====================================
+                    // BLOQUEO POR TELÉFONO
+                    // ====================================
 
-        if (!telefonoLimpio.StartsWith("52"))
-        {
-            telefonoLimpio = "52" + telefonoLimpio;
-        }
+                    var recursoBloqueo =
+                        "RAMS-CLIENTE-" + telefonoPuntos;
 
-        var primerNombre =
-            cliente.NombreCompleto
-                .Split(' ')[0];
+                    await DbContext.Database
+                        .ExecuteSqlInterpolatedAsync($@"
+                            DECLARE @resultadoBloqueo INT;
 
-        await _whatsApp.EnviarPlantillaConImagenAsync(
-    numeroDestino: telefonoLimpio,
-    nombrePlantilla: "bienvenida_rams_cliente",
-    idioma: "es_MX",
-    parametros: new Dictionary<string, string>
-    {
-        { "1", primerNombre }
-    },
-    imagenUrl: "https://rams.no-ip.info:8082/images/LogoRamsCottons.jpg"
-);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine(
-            $"Error al enviar mensaje de bienvenida: {ex.Message}"
-        );
-    }
-}
+                            EXEC @resultadoBloqueo = sys.sp_getapplock
+                                @Resource = {recursoBloqueo},
+                                @LockMode = 'Exclusive',
+                                @LockOwner = 'Transaction',
+                                @LockTimeout = 10000;
 
-            mensajeExito =
-                $"Cliente {modelo.NombreCompleto} registrado correctamente.";
+                            IF @resultadoBloqueo < 0
+                            BEGIN
+                                RAISERROR(
+                                    'No se pudo obtener el bloqueo del cliente.',
+                                    16, 1);
+                            END
+                        ");
+
+                    // ====================================
+                    // VALIDAR CLIENTE EXISTENTE
+                    // ====================================
+
+                    // Si el teléfono ya existe en dbo.clientes,
+                    // no duplicar al cliente activo.
+                    //
+                    // Si fue eliminado anteriormente,
+                    // sí permitimos registrarlo nuevamente.
+
+                    var existe =
+                        await DbContext.Clientes
+                            .AsNoTracking()
+                            .AnyAsync(c =>
+                                c.Telefono != null &&
+                                c.Telefono.Replace(" ", "")
+                                    .Replace("-", "")
+                                    .Replace("+", "")
+                                    .Replace("(", "")
+                                    .Replace(")", "")
+                                    .EndsWith(telefonoPuntos));
+
+                    if (existe)
+                    {
+                        throw new InvalidOperationException(
+                            "Ya existe un cliente con este número de teléfono.");
+                    }
+
+                    // ====================================
+                    // GUARDAR CLIENTE
+                    // ====================================
+
+                    DbContext.Clientes.Add(cliente);
+                    await DbContext.SaveChangesAsync();
+
+                    // ====================================
+                    // CONTROL PERMANENTE DEL REGISTRO
+                    // ====================================
+
+                    // ControlPrimerRegistro está en
+                    // RamsCottonsDB.
+                    //
+                    // Un teléfono se registra aquí una sola vez.
+                    //
+                    // Si se insertó: es un teléfono nuevo.
+                    // Si ya existía: es un cliente que regresa.
+                    //
+                    // No se elimina este control cuando
+                    // vencen los puntos.
+                    //
+                    // Todo se ejecuta en la transacción actual.
+
+                    var filasControl =
+                        await DbContext.Database
+                            .ExecuteSqlInterpolatedAsync($@"
+                                INSERT INTO [dbo].[ControlPrimerRegistro]
+                                (
+                                    [Telefono]
+                                )
+                                SELECT {telefonoPuntos}
+                                WHERE NOT EXISTS
+                                (
+                                    SELECT 1
+                                    FROM [dbo].[ControlPrimerRegistro]
+                                         WITH (UPDLOCK, HOLDLOCK)
+                                    WHERE [Telefono] = {telefonoPuntos}
+                                );
+                            ");
+
+                    if (filasControl < 0 || filasControl > 1)
+                    {
+                        throw new InvalidOperationException(
+                            "No fue posible verificar el primer registro del cliente.");
+                    }
+
+                    bool esPrimerRegistro =
+                        filasControl == 1;
+
+                    // ====================================
+                    // OTORGAR 10 PUNTOS SOLO AL NUEVO
+                    // ====================================
+
+                    // Si el teléfono ya está registrado
+                    // en ControlPrimerRegistro,
+                    // no se insertan nuevos puntos.
+                    //
+                    // REQUISITO DEL INGENIERO:
+                    // folio_factura = 0.
+                    //
+                    // Se mantiene la comprobación de
+                    // bonos históricos como protección adicional.
+
+                    if (esPrimerRegistro)
+                    {
+                        var telefono52 = "52" + telefonoPuntos;
+                        var telefono521 = "521" + telefonoPuntos;
+
+                        var folioFactura = 0;
+                        var fechaBono = DateTime.Today;
+                        var sucursalPuntos = selectedSucursal;
+
+                        var filasInsertadas =
+                            await DbContext.Database
+                                .ExecuteSqlInterpolatedAsync($@"
+                                    INSERT INTO [cycdata].[dbo].[puntosrams]
+                                    (
+                                        [folio_factura],
+                                        [totalventa],
+                                        [puntos],
+                                        [fecha],
+                                        [pagos],
+                                        [cliente],
+                                        [almacen]
+                                    )
+                                    SELECT
+                                        {folioFactura},
+                                        {0f},
+                                        {10},
+                                        {fechaBono},
+                                        {0},
+                                        {telefonoPuntos},
+                                        {sucursalPuntos}
+                                    WHERE NOT EXISTS
+                                    (
+                                        SELECT 1
+                                        FROM [cycdata].[dbo].[puntosrams]
+                                             WITH (UPDLOCK, HOLDLOCK)
+                                        WHERE
+                                            REPLACE(
+                                                REPLACE(
+                                                    REPLACE(
+                                                        REPLACE(
+                                                            REPLACE(
+                                                                LTRIM(RTRIM([cliente])),
+                                                                ' ', ''
+                                                            ),
+                                                            '-', ''
+                                                        ),
+                                                        '+', ''
+                                                    ),
+                                                    '(', ''
+                                                ),
+                                                ')', ''
+                                            ) IN
+                                            (
+                                                {telefonoPuntos},
+                                                {telefono52},
+                                                {telefono521}
+                                            )
+                                            AND
+                                            (
+                                                CONVERT(
+                                                    NVARCHAR(100),
+                                                    [folio_factura]
+                                                ) LIKE N'BIENVENIDA-RAMS-%'
+
+                                                OR
+
+                                                (
+                                                    LTRIM(
+                                                        RTRIM(
+                                                            CONVERT(
+                                                                NVARCHAR(100),
+                                                                [folio_factura]
+                                                            )
+                                                        )
+                                                    ) = N'0'
+
+                                                    AND ISNULL([totalventa], 0) = 0
+                                                    AND ISNULL([puntos], 0) = 10
+                                                )
+                                            )
+                                    );
+                                ");
+
+                        bonoOtorgado =
+                            filasInsertadas == 1;
+                    }
+
+                    // ====================================
+                    // CONFIRMAR TRANSACCIÓN
+                    // ====================================
+
+                    // Si el cliente es nuevo:
+                    // guarda cliente + control + bono.
+                    //
+                    // Si ya estaba registrado:
+                    // guarda cliente sin nuevo bono.
+                    //
+                    // Si algo falla:
+                    // se revierte la operación completa.
+
+                    await transaccion.CommitAsync();
+                }
+                catch
+                {
+                    await transaccion.RollbackAsync();
+
+                    DbContext.ChangeTracker.Clear();
+
+                    throw;
+                }
+            }
+
+            // ====================================
+            // WHATSAPP DE BIENVENIDA
+            // ====================================
+
+            // Se envía si el cliente autoriza WhatsApp.
+            //
+            // No depende del bonoOtorgado:
+            // también se da la bienvenida a quien regresa.
+            //
+            // El mensaje no agrega puntos.
+            //
+            // Si Meta falla, se conserva el registro.
+
+            if (cliente.AceptaWhatsApp &&
+                !string.IsNullOrEmpty(cliente.Telefono))
+            {
+                try
+                {
+                    var telefonoLimpio =
+                        "52" + telefonoPuntos;
+
+                    var primerNombre =
+                        cliente.NombreCompleto
+                            .Split(
+                                ' ',
+                                StringSplitOptions.RemoveEmptyEntries)
+                            .FirstOrDefault() ?? "Cliente";
+
+                    await _whatsApp.EnviarPlantillaConImagenAsync(
+                        numeroDestino: telefonoLimpio,
+                        nombrePlantilla: "bienvenida_rams_cliente_v2",
+                        idioma: "es_MX",
+                        parametros: new Dictionary<string, string>
+                        {
+                            { "1", primerNombre }
+                        },
+                        imagenUrl:
+                            "https://rams.no-ip.info:8082/images/LogoRamsCottons.jpg"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(
+                        $"Error al enviar mensaje de bienvenida: {ex.Message}");
+                }
+            }
+
+            // ====================================
+            // RESULTADO
+            // ====================================
+
+            mensajeExito = bonoOtorgado
+                ? $"Cliente {modelo.NombreCompleto} registrado con 10 puntos de bienvenida."
+                : $"Cliente {modelo.NombreCompleto} registrado correctamente. " +
+                  "Este teléfono ya estuvo registrado anteriormente " +
+                  "o ya recibió su bono de bienvenida.";
 
             await Task.Delay(2000);
 
-            NavigationManager.NavigateTo(
-                "/clientes"
-            );
+            NavigationManager.NavigateTo("/clientes");
         }
         catch (Exception ex)
         {
+            Console.Error.WriteLine(
+                $"[CrearCliente/Puntos] {ex}");
+
             error =
-                $"Error inesperado: {ex.Message}";
+                "No se completó el registro del cliente y sus puntos. " +
+                $"Detalle: {ex.GetBaseException().Message}";
         }
         finally
         {
             guardando = false;
-
             StateHasChanged();
         }
     }
 
+    // ============================================
+    // VOLVER
+    // ============================================
+
     private void Volver()
     {
-        NavigationManager.NavigateTo(
-            "/clientes"
-        );
+        NavigationManager.NavigateTo("/clientes");
     }
+
+    // ============================================
+    // MODELO DEL FORMULARIO
+    // ============================================
 
     private class ClienteModel
     {
         [Required(
-            ErrorMessage =
-                "El nombre completo es obligatorio"
-        )]
+            ErrorMessage = "El nombre completo es obligatorio")]
         [StringLength(
             180,
             MinimumLength = 3,
             ErrorMessage =
-                "El nombre debe tener entre 3 y 180 caracteres"
-        )]
+                "El nombre debe tener entre 3 y 180 caracteres")]
         public string NombreCompleto { get; set; } = "";
 
         [Required(
-            ErrorMessage =
-                "El teléfono es obligatorio"
-        )]
+            ErrorMessage = "El teléfono es obligatorio")]
         [RegularExpression(
             @"^[0-9+\s-]{8,20}$",
-            ErrorMessage =
-                "Formato de teléfono inválido"
-        )]
+            ErrorMessage = "Formato de teléfono inválido")]
         public string Telefono { get; set; } = "";
 
         [EmailAddress(
-            ErrorMessage =
-                "Formato de correo inválido"
-        )]
+            ErrorMessage = "Formato de correo inválido")]
         public string? Correo { get; set; }
 
         public int? IdCategoriaProducto { get; set; }
 
         public bool AceptaWhatsApp { get; set; } = false;
 
-        public string? TipoCliente { get; set; }
+        public string? TipoCliente { get; set; } =
+            "Clientes de tiendas";
+
+        public string? Genero { get; set; }
+
+        [Required(ErrorMessage = "La fecha de cumpleaños es obligatoria.")]
+        public DateTime? FechaNacimiento { get; set; }
     }
 }

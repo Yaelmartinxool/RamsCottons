@@ -8,6 +8,7 @@
 @using RamsCottons.Data
 @using RamsCottons.Models.CycData
 @using RamsCottons.Services
+@using System.Text.Json
 
 @attribute [Authorize]
 
@@ -128,6 +129,18 @@
     border-color: #9ca3af;
     color: #0f172a;
     transform: translateY(-1px);
+}
+
+.btn-data-action.whatsapp-action {
+    background: #25D366;
+    color: white;
+    border: none;
+}
+
+.btn-data-action.whatsapp-action:hover {
+    background: #128C7E;
+    color: white;
+    border-color: #128C7E;
 }
 
 /* ===== CONTROL PANEL ===== */
@@ -473,7 +486,7 @@
 }
 
 .crud-table th {
-    padding: 0.6rem 0.4rem;
+    padding: 0.5rem 0.35rem;
     text-align: left;
     font-weight: 600;
     color: #374151;
@@ -486,7 +499,7 @@
 }
 
 .crud-table td {
-    padding: 0.6rem 0.4rem;
+    padding: 0.5rem 0.35rem;
     border-bottom: 1px solid #e5e7eb;
     vertical-align: middle;
     font-size: 0.85rem;
@@ -501,9 +514,9 @@
 
 .crud-table th:nth-child(1),
 .crud-table td:nth-child(1) {
-    width: 40px !important;
-    min-width: 40px !important;
-    max-width: 40px !important;
+    width: 35px !important;
+    min-width: 35px !important;
+    max-width: 35px !important;
     padding: 0.4rem 0.2rem !important;
     text-align: center;
 }
@@ -535,21 +548,21 @@ input[type="checkbox"] {
 
 .crud-table th:nth-child(2),
 .crud-table td:nth-child(2) {
-    width: 190px !important;
-    min-width: 170px;
+    width: 150px !important;
+    min-width: 150px;
     max-width: 200px;
 }
 
-.crud-table th:nth-child(3),
-.crud-table td:nth-child(3) {
+.crud-table th:nth-child(4),
+.crud-table td:nth-child(4) {
     width: 80px !important;
     min-width: 110px;
     max-width: 130px;
     white-space: nowrap;
 }
 
-.crud-table th:nth-child(4),
-.crud-table td:nth-child(4) {
+.crud-table th:nth-child(5),
+.crud-table td:nth-child(5) {
     width: 50px !important;
     min-width: 50px;
     max-width: 60px;
@@ -559,48 +572,131 @@ input[type="checkbox"] {
     color: #94a3b8;
 }
 
-.crud-table th:nth-child(5),
-.crud-table td:nth-child(5) {
+.crud-table th:nth-child(6),
+.crud-table td:nth-child(6) {
     width: 90px !important;
     min-width: 100px;
     max-width: 120px;
 }
 
-.crud-table th:nth-child(6),
-.crud-table td:nth-child(6) {
-    width: 160px !important;
+.crud-table th:nth-child(7),
+.crud-table td:nth-child(7) {
+    width: 130px !important;
     min-width: 110px;
     max-width: 140px;
 }
 
-.crud-table th:nth-child(7),
-.crud-table td:nth-child(7) {
-    width: 250px !important;
-    min-width: 230px;
-    max-width: 270px;
+/*  Sucursal más compacta */
+.crud-table th:nth-child(8),
+.crud-table td:nth-child(8) {
+    width: 200px !important;
+    min-width: 180px;
+    max-width: 215px;
     font-size: 0.75rem;
 }
 
-.crud-table th:nth-child(8),
-.crud-table td:nth-child(8) {
-    width: 100px !important;
-    min-width: 100px;
-    max-width: 120px;
-    white-space: nowrap;
-}
-
+/*  Fecha Registro más compacta */
 .crud-table th:nth-child(9),
 .crud-table td:nth-child(9) {
+    width: 120px !important;
+    min-width: 120px;
+    max-width: 130px;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.crud-table th:nth-child(10),
+.crud-table td:nth-child(10) {
     width: 90px !important;
     min-width: 90px;
     max-width: 110px;
 }
 
-.crud-table th:nth-child(10),
-.crud-table td:nth-child(10) {
-    width: 150px !important;
-    min-width: 140px;
-    max-width: 160px;
+.crud-table th:nth-child(11),
+.crud-table td:nth-child(11) {
+    width: 165px !important;
+    min-width: 155px;
+    max-width: 175px;
+    overflow: visible !important;
+    padding-right: 0.6rem !important;
+}
+
+/* ===== COLUMNA GÉNERO ===== */
+
+.crud-table th:nth-child(3),
+.crud-table td:nth-child(3) {
+    width: 110px !important;
+    min-width: 100px;
+    max-width: 120px;
+    white-space: nowrap;
+}
+
+/* ===== GENERO MINIMALISTA ===== */
+
+.genero-icono {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.genero-icono i {
+    line-height: 1;
+}
+
+.genero-icono.hombre {
+    background: #e8f1ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+}
+
+.genero-icono.mujer {
+    background: #fde7f3;
+    color: #db2777;
+    border-color: #f9a8d4;
+}
+
+.genero-icono.sin-genero {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #cbd5e1;
+}
+
+.genero-display {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.genero-icono {
+    flex-shrink: 0;
+}
+
+.genero-texto {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+}
+
+.genero-texto.hombre {
+    color: #2563eb;
+}
+
+.genero-texto.mujer {
+    color: #db2777;
+}
+
+.genero-texto.sin-genero {
+    color: #64748b;
 }
 
 /* ===== COLUMNA CLIENTE ===== */
@@ -968,6 +1064,275 @@ input[type="checkbox"] {
 
 .btn-clear-selection:hover { background: #e5e7eb; }
 
+/* Confirmación de consentimiento previo (no es prueba de autorización por sí sola) */
+.confirmacion-contacto-previo {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 10px;
+    padding: 0.8rem;
+    margin-top: 1rem;
+    color: #7c2d12;
+    font-size: 0.82rem;
+}
+.confirmacion-contacto-previo input { margin-top: 0.2rem; flex-shrink: 0; }
+
+/* ===== ACTIVACIÓN DE WHATSAPP ===== */
+
+.activacion-modal {
+    max-width: 760px;
+}
+
+.activacion-resumen {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+.activacion-resumen strong {
+    color: #111827;
+}
+
+.activacion-filtros {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.activacion-tipo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.activacion-tipo label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.activacion-tipo select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #374151;
+    outline: none;
+    font-size: 0.88rem;
+}
+
+.activacion-tipo select:focus {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+}
+
+.activacion-search {
+    position: relative;
+    align-self: end;
+    min-width: 0;
+    width: 100%;
+}
+
+.activacion-search i {
+    position: absolute;
+    left: 0.85rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+}
+
+.activacion-search input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0.65rem 0.85rem 0.65rem 2.4rem;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    outline: none;
+}
+
+.activacion-search input:focus {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+}
+
+.activacion-cliente-tipo {
+    display: inline-block;
+    margin-top: 0.3rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+
+@@media (max-width: 640px) {
+    .activacion-filtros {
+        grid-template-columns: 1fr;
+    }
+
+    .activacion-search {
+        align-self: stretch;
+    }
+}
+
+.activacion-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.activacion-seleccionar-todos {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+}
+
+.activacion-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 360px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+}
+
+.activacion-cliente {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.activacion-cliente:hover {
+    background: #f9fafb;
+}
+
+.activacion-cliente-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.activacion-cliente-nombre {
+    display: block;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: #1f2937;
+}
+
+.activacion-cliente-telefono {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.78rem;
+    color: #6b7280;
+}
+
+.activacion-sin-telefono {
+    font-size: 0.72rem;
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.activacion-vacio {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #6b7280;
+}
+
+.activacion-vacio i {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 0.65rem;
+    color: #9ca3af;
+}
+
+.activacion-footer {
+    padding: 1rem 1.5rem 1.25rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.activacion-progreso {
+    margin-right: auto;
+    font-size: 0.82rem;
+    color: #4b5563;
+    font-weight: 600;
+}
+
+.btn-activar-confirmar {
+    background: #25D366;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-activar-confirmar:hover:not(:disabled) {
+    background: #128C7E;
+}
+
+.btn-activar-confirmar:disabled,
+.btn-activar-cancelar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-activar-cancelar {
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.modal-segmentacion-resumen {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.75rem 0.9rem;
+    margin-bottom: 0.9rem;
+    background: #f1f5f9;
+    border-radius: 10px;
+    color: #334155;
+    font-size: 0.8rem;
+}
+.modal-segmentacion-resumen strong { color: #0f172a; font-size: 0.9rem; }
+
 /* ===== MODALES ===== */
 
 .modal-overlay {
@@ -1108,13 +1473,71 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
+/* ===== TIPOS DE MENSAJES EN EL MODAL WHATSAPP ===== */
+
+/* Bienvenida: azul */
+.promocion-item.opcion-bienvenida {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid #2563eb;
+}
+.promocion-item.opcion-bienvenida:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+}
+.promocion-item.opcion-bienvenida .promocion-icon {
+    background: #2563eb;
+}
+.promocion-item.opcion-bienvenida .promocion-action i,
+.promocion-item.opcion-bienvenida .promocion-info small {
+    color: #1d4ed8;
+}
+
+/* Cumpleaños: naranja acorde al cupón RAMS */
+.promocion-item.opcion-cumpleanos {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-left: 4px solid #f97316;
+}
+.promocion-item.opcion-cumpleanos:hover {
+    background: #ffedd5;
+    border-color: #fdba74;
+}
+.promocion-item.opcion-cumpleanos .promocion-icon {
+    background: #ea580c;
+}
+.promocion-item.opcion-cumpleanos .promocion-action i,
+.promocion-item.opcion-cumpleanos .promocion-info small {
+    color: #c2410c;
+}
+
+/* Promociones y catálogos: verde */
+.promocion-item.opcion-promocion {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-left: 4px solid #16a34a;
+}
+.promocion-item.opcion-promocion:hover {
+    background: #dcfce7;
+    border-color: #86efac;
+}
+.promocion-item.opcion-promocion .promocion-icon {
+    background: #15803d;
+}
+.promocion-item.opcion-promocion .promocion-action i,
+.promocion-item.opcion-promocion .promocion-info small {
+    color: #15803d;
+}
+
+/* ===== BOTÓN "CREAR PRIMER CLIENTE" ===== */
+
 .clientes-container button.btn-create-first,
 .clientes-container .btn-create-first,
 button.btn-create-first,
 .btn-create-first {
     /* Reset TOTAL de Bootstrap */
     all: unset !important;
-    
+
     /* Mis estilos */
     display: inline-flex !important;
     align-items: center !important;
@@ -1154,7 +1577,7 @@ button.btn-create-first,
 
     box-sizing: border-box !important;
     box-shadow: none !important;
-    
+
     transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease !important;
 
     /* Resetear estados del botón */
@@ -1342,8 +1765,8 @@ button.btn-create-first span,
     .btn-send-whatsapp    { font-size: 0.85rem; padding: 0.5rem 0.8rem; }
     .btn-clear-selection  { font-size: 0.85rem; padding: 0.5rem 0.8rem; }
 
-     .crud-table th:nth-child(7),
-    .crud-table td:nth-child(7) {
+     .crud-table th:nth-child(8),
+    .crud-table td:nth-child(8) {
         width: 280px !important;
         min-width: 280px !important;
         max-width: 320px !important;
@@ -1361,15 +1784,13 @@ button.btn-create-first span,
         overflow: visible !important;
         text-overflow: clip !important;
     }
-    
 }
-
 
 /* ===== RESPONSIVE - MÓVIL (≤480px) ===== */
 
 @@media (max-width: 480px) {
     .crud-table { min-width: 1300px !important; }
-    
+
     .crud-table th,
     .crud-table td { padding: 0.5rem 0.4rem; }
 
@@ -1384,8 +1805,8 @@ button.btn-create-first span,
 
     input[type="checkbox"] { width: 14px; height: 14px; }
 
-    .crud-table th:nth-child(7),
-    .crud-table td:nth-child(7) {
+    .crud-table th:nth-child(8),
+    .crud-table td:nth-child(8) {
         width: 300px !important;
         min-width: 300px !important;
         max-width: 340px !important;
@@ -1421,6 +1842,15 @@ button.btn-create-first span,
                 </div>
             </div>
             <div class="header-actions">
+                @if (puedeEnviarWhatsApp)
+                {
+                    <button class="btn-data-action whatsapp-action"
+                            @onclick="AbrirModalActivacionWhatsApp">
+                        <i class="bi bi-whatsapp"></i>
+                        <span>Solicitar autorización</span>
+                    </button>
+                }
+
                 @if (puedeCrearClientes)
                 {
                     <button class="btn-create" @onclick="CrearCliente">
@@ -1548,6 +1978,16 @@ button.btn-create-first span,
                 </div>
 
                 <div class="filter-group">
+                    <label>Género</label>
+                    <select class="select-custom" @bind="filtroGenero" @bind:after="AlCambiarFiltroGenero">
+                        <option value="">Todos</option>
+                        <option value="Hombre">Hombres</option>
+                        <option value="Mujer">Mujeres</option>
+                        <option value="sin_especificar">Sin especificar</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
                     <label>Ordenar por</label>
                     <select class="select-custom" @bind="ordenarPor">
                         <option value="reciente">Mas recientes primero</option>
@@ -1570,7 +2010,30 @@ button.btn-create-first span,
                 </div>
             </div>
 
+            <!-- NUEVO: Filtro de cumpleaños por mes -->
             <div class="filter-row">
+                <div class="filter-group">
+                    <label for="filtroMesCumpleanos">Mes de cumpleaños</label>
+                    <select id="filtroMesCumpleanos"
+                            class="select-custom"
+                            @bind="filtroMesCumpleanos"
+                            @bind:after="AlCambiarFiltroMesCumpleanos">
+                        <option value="0">Todos los meses</option>
+                        <option value="1">Enero</option>
+                        <option value="2">Febrero</option>
+                        <option value="3">Marzo</option>
+                        <option value="4">Abril</option>
+                        <option value="5">Mayo</option>
+                        <option value="6">Junio</option>
+                        <option value="7">Julio</option>
+                        <option value="8">Agosto</option>
+                        <option value="9">Septiembre</option>
+                        <option value="10">Octubre</option>
+                        <option value="11">Noviembre</option>
+                        <option value="12">Diciembre</option>
+                    </select>
+                </div>
+
                 <div class="filter-group">
                     <label>&nbsp;</label>
                     <button class="btn-clear-filters" @onclick="LimpiarFiltros">
@@ -1602,11 +2065,15 @@ button.btn-create-first span,
                                 @if (puedeEnviarWhatsApp)
                                 {
                                     <input type="checkbox"
+                                           title="Seleccionar o deseleccionar todos los clientes del filtro que aceptan WhatsApp, en todas las páginas"
+                                           aria-label="Seleccionar todos los clientes filtrados que pueden recibir WhatsApp"
                                            @onchange="ToggleSelectAll"
-                                           checked="@(clientesSeleccionados.Count == clientesPaginados.Count() && clientesPaginados.Any())" />
+                                           checked="@TodosElegiblesFiltradosSeleccionados"
+                                           disabled="@(CantidadElegiblesFiltrados == 0)" />
                                 }
                             </th>
                             <th>Cliente</th>
+                            <th>Género</th>
                             <th>Telefono</th>
                             <th>Email</th>
                             <th>Categoria</th>
@@ -1621,7 +2088,7 @@ button.btn-create-first span,
                         @if (!clientesFiltrados.Any())
                         {
                             <tr>
-                                <td colspan="10" class="text-center py-5">
+                                <td colspan="11" class="text-center py-5">
                                     <div class="no-data">
                                         <i class="bi bi-people-fill display-4 text-muted"></i>
                                         <p>No hay clientes registrados</p>
@@ -1646,7 +2113,7 @@ button.btn-create-first span,
                                     <td class="col-checkbox">
                                         @if (puedeEnviarWhatsApp)
                                         {
-                                            @if (cliente.AceptaWhatsApp)
+                                            @if (ClientePuedeRecibirWhatsApp(cliente))
                                             {
                                                 <input type="checkbox"
                                                        @onchange="() => ToggleSeleccionCliente(cliente.Id)"
@@ -1654,7 +2121,8 @@ button.btn-create-first span,
                                             }
                                             else
                                             {
-                                                <span class="whatsapp-blocked" title="Este cliente no acepta promociones por WhatsApp">
+                                                <span class="whatsapp-blocked"
+                                                      title="El cliente no acepta WhatsApp o no tiene teléfono registrado">
                                                     <i class="bi bi-whatsapp text-muted"></i>
                                                     <i class="bi bi-slash-circle text-danger"></i>
                                                 </span>
@@ -1667,10 +2135,56 @@ button.btn-create-first span,
                                                 @cliente.NombreCompleto.Substring(0,1).ToUpper()
                                             </div>
                                             <div class="user-details">
-                                                <span class="user-name">@GetNombreFormateado(cliente.NombreCompleto)</span>
-                                                <small class="text-muted">ID: @cliente.Id</small>
+                                                <span class="user-name">
+                                                    @GetNombreFormateado(cliente.NombreCompleto)
+                                                </span>
+
+                                                <small class="text-muted">
+                                                    ID: @cliente.Id
+                                                </small>
+
+                                                @if (cliente.FechaNacimiento.HasValue)
+                                                {
+                                                    <small class="text-muted"
+                                                           title="Cumpleaños: @cliente.FechaNacimiento.Value.ToString("dd/MM/yyyy")">
+
+                                                        <i class="bi bi-gift-fill me-1"></i>
+
+                                                        @cliente.FechaNacimiento.Value.ToString("dd/MM")
+
+                                                    </small>
+                                                }
                                             </div>
                                         </div>
+                                    </td>
+                                    <td>
+                                        @if (string.Equals(cliente.Genero?.Trim(), "Hombre", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <div class="genero-display">
+                                                <span class="genero-icono hombre">
+                                                    <i class="bi bi-gender-male"></i>
+                                                </span>
+                                                <span class="genero-texto hombre">Hombre</span>
+                                            </div>
+                                        }
+                                        else if (string.Equals(cliente.Genero?.Trim(), "Mujer", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <div class="genero-display">
+                                                <span class="genero-icono mujer">
+                                                    <i class="bi bi-gender-female"></i>
+                                                </span>
+                                                <span class="genero-texto mujer">Mujer</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="genero-display">
+                                                <span class="genero-icono sin-genero">
+                                                    <i class="bi bi-question-circle"></i>
+                                                </span>
+                                                <span class="genero-texto sin-genero">S/G</span>
+                                            </div>
+                                        }
                                     </td>
                                     <td>@cliente.Telefono</td>
                                     <td>
@@ -1695,18 +2209,18 @@ button.btn-create-first span,
                                             <span class="text-muted">-</span>
                                         }
                                     </td>
-<td class="origen-cell">
-    @if (!string.IsNullOrEmpty(cliente.TipoCliente))
-    {
-        <span class="origen-badge @GetOrigenClass(cliente.TipoCliente)">
-            @cliente.TipoCliente
-        </span>
-    }
-    else
-    {
-        <span class="text-muted">-</span>
-    }
-</td>
+                                    <td class="origen-cell">
+                                        @if (!string.IsNullOrEmpty(cliente.TipoCliente))
+                                        {
+                                            <span class="origen-badge @GetOrigenClass(cliente.TipoCliente)">
+                                                @cliente.TipoCliente
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
                                     <td>
                                         @if (!string.IsNullOrEmpty(cliente.IdSucursal))
                                         {
@@ -1816,6 +2330,134 @@ button.btn-create-first span,
     }
 </div>
 
+<!-- Solicitud de autorización para clientes ya registrados -->
+@if (mostrarModalActivacionWhatsApp)
+{
+    <div class="modal-overlay" @onclick="CerrarModalActivacionWhatsApp">
+        <div class="modal-content activacion-modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3><i class="bi bi-whatsapp"></i> Solicitar autorización</h3>
+                <button class="modal-close" @onclick="CerrarModalActivacionWhatsApp"
+                        disabled="@procesandoActivacionWhatsApp">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="activacion-resumen">
+                    <div><strong>@clientesPendientesWhatsApp.Count()</strong> cliente(s) activos registrados.</div>
+                    <div><strong>@clientesActivacionSeleccionados.Count</strong> seleccionado(s)</div>
+                </div>
+                <div class="activacion-filtros">
+                    <div class="activacion-tipo">
+                        <label>Tipo de cliente</label>
+                        <select value="@filtroTipoActivacionWhatsApp"
+                                @onchange="CambiarFiltroTipoActivacion"
+                                disabled="@procesandoActivacionWhatsApp">
+                            <option value="">Todos (@clientesPendientesWhatsApp.Count())</option>
+                            @foreach (var tipo in tiposActivacionWhatsApp)
+                            {
+                                <option value="@tipo">@tipo (@ContarPendientesTipo(tipo))</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="activacion-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" @bind="busquedaActivacionWhatsApp"
+                               @bind:event="oninput"
+                               placeholder="Buscar por nombre, teléfono o correo..."
+                               disabled="@procesandoActivacionWhatsApp" />
+                    </div>
+                </div>
+                <div class="activacion-toolbar">
+                    <span class="text-muted small">Selecciona individualmente (máximo 20).</span>
+                    <span class="text-muted small">@clientesPendientesWhatsAppFiltrados.Count() resultado(s)</span>
+                </div>
+                <div class="activacion-lista">
+                    @if (!clientesPendientesWhatsAppFiltrados.Any())
+                    {
+                        <div class="activacion-vacio">
+                            <i class="bi bi-person-check"></i>
+                            <span>No se encontraron clientes.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var cliente in clientesPendientesWhatsAppFiltrados)
+                        {
+                            var tieneTelefono = !string.IsNullOrWhiteSpace(cliente.Telefono);
+                            <label class="activacion-cliente">
+                                <input type="checkbox"
+                                       checked="@clientesActivacionSeleccionados.Contains(cliente.Id)"
+                                       @onchange="() => ToggleClienteActivacion(cliente.Id)"
+                                       disabled="@(!tieneTelefono || procesandoActivacionWhatsApp)" />
+                                <div class="activacion-cliente-info">
+                                    <span class="activacion-cliente-nombre">@cliente.NombreCompleto</span>
+                                    @if (tieneTelefono)
+                                    {
+                                        <span class="activacion-cliente-telefono">@cliente.Telefono</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="activacion-sin-telefono">Sin teléfono</span>
+                                    }
+                                    <span class="activacion-cliente-tipo">
+                                        @(string.IsNullOrWhiteSpace(cliente.TipoCliente) ? "Sin tipo" : cliente.TipoCliente)
+                                    </span>
+                                    <span class="activacion-cliente-tipo">
+                                        @(cliente.AceptaWhatsApp ? "Promociones activadas" : "Promociones desactivadas")
+                                    </span>
+                                </div>
+                                @if (tieneTelefono)
+                                {
+                                    <i class="bi bi-whatsapp text-success"></i>
+                                }
+                            </label>
+                        }
+                    }
+                </div>
+                <label class="confirmacion-contacto-previo">
+                    <input type="checkbox" @bind="confirmacionContactoPrevio"
+                           disabled="@procesandoActivacionWhatsApp" />
+                    <span>
+                        Confirmo que cada cliente seleccionado autorizó previamente
+                        recibir este contacto por WhatsApp y no retiró su permiso.
+                        Tenerlo registrado no equivale a tener autorización.
+                    </span>
+                </label>
+                <small class="text-muted d-block mt-2">
+                    La plantilla no activa las promociones. La decisión se actualizará cuando
+                    el cliente pulse «Sí, Autorizo» o «No, Gracias».
+                </small>
+            </div>
+            <div class="activacion-footer">
+                @if (procesandoActivacionWhatsApp)
+                {
+                    <div class="activacion-progreso">
+                        Enviando @progresoActivacionActual de @progresoActivacionTotal...
+                    </div>
+                }
+                <button class="btn-activar-cancelar" @onclick="CerrarModalActivacionWhatsApp"
+                        disabled="@procesandoActivacionWhatsApp">Cancelar</button>
+                <button class="btn-activar-confirmar" @onclick="ProcesarActivacionWhatsApp"
+                        disabled="@(procesandoActivacionWhatsApp ||
+                                    clientesActivacionSeleccionados.Count == 0 ||
+                                    !confirmacionContactoPrevio)">
+                    @if (procesandoActivacionWhatsApp)
+                    {
+                        <span class="spinner-border spinner-border-sm"></span>
+                        <span>Enviando...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-send-check-fill"></i>
+                        <span>Enviar solicitud</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- Barra de acciones masivas -->
 @if (puedeEnviarWhatsApp && clientesSeleccionados.Any())
 {
@@ -1835,7 +2477,7 @@ button.btn-create-first span,
 @if (mostrarModalPromociones)
 {
     <div class="modal-overlay" @onclick="CerrarModal">
-        <div class="modal-content" @onclick:preventDefault="true">
+        <div class="modal-content" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h3><i class="bi bi-whatsapp"></i> Enviar por WhatsApp</h3>
                 <button class="modal-close" @onclick="CerrarModal">
@@ -1844,19 +2486,26 @@ button.btn-create-first span,
             </div>
 
             <div class="modal-body">
+                <div class="modal-segmentacion-resumen">
+                    <strong>@clientesSeleccionados.Count cliente(s) seleccionado(s)</strong>
+                    <span>
+                        Se muestran solo catálogos compatibles con estos clientes.
+                        Las promociones generales también están disponibles.
+                    </span>
+                </div>
                 <div class="promociones-list">
 
-                    <!-- MENÚ RAMS COTTONS -->
-                    <div class="promocion-item" @onclick="EnviarMenuRams">
+                    <!-- BIENVENIDA RAMS COTTONS -->
+                    <div class="promocion-item opcion-bienvenida" @onclick="EnviarBienvenidaRams">
                         <div class="promocion-icon">
-                            <i class="bi bi-list-ul"></i>
+                            <i class="bi bi-person-heart"></i>
                         </div>
                         <div class="promocion-info">
-                            <strong>Menú Rams Cottons</strong>
-                            <p>Enviar menú de atención al cliente con acceso a WhatsApp y Tienda Online.</p>
+                            <strong>Bienvenida RAMS COTTONS</strong>
+                            <p>Enviar la plantilla de bienvenida con opciones para canal, asesor, tienda y saldo a clientes que aceptaron WhatsApp.</p>
                             <small>
                                 <i class="bi bi-chat-dots"></i>
-                                Plantilla: menu_atencion_rams
+                                Plantilla: bienvenida_rams_cliente_v2
                             </small>
                         </div>
                         <div class="promocion-action">
@@ -1864,19 +2513,48 @@ button.btn-create-first span,
                         </div>
                     </div>
 
-                    @if (promocionesActivas.Any())
+                    <!-- CUMPLEAÑOS RAMS: aparece al filtrar un mes -->
+                    @if (filtroMesCumpleanos >= 1 && filtroMesCumpleanos <= 12)
                     {
-                        @foreach (var promo in promocionesActivas)
+                        <div class="promocion-item opcion-cumpleanos"
+                             @onclick="EnviarCuponCumpleanos"
+                             title="Enviar cupón de cumpleaños a los clientes seleccionados y autorizados">
+                            <div class="promocion-icon">
+                                <i class="bi bi-gift-fill"></i>
+                            </div>
+                            <div class="promocion-info">
+                                <strong>Cumpleaños RAMS COTTONS – 20% de descuento</strong>
+                                <p>Enviar tarjeta de cumpleaños y cupón RAMSREGALO20 a los cumpleañeros seleccionados.</p>
+                                <small>
+                                    <i class="bi bi-chat-dots"></i>
+                                    Plantilla: cumpleanos_rams_20
+                                    · Elegibles: @ContarDestinatariosCumpleanos()
+                                </small>
+                            </div>
+                            <div class="promocion-action">
+                                <i class="bi bi-whatsapp"></i>
+                            </div>
+                        </div>
+                    }
+
+                    @if (promocionesCompatibles.Any())
+                    {
+                        @foreach (var promo in promocionesCompatibles)
                         {
                             var enlace = $"https://rams.no-ip.info:8082/promociones/{promo.TokenUnico}";
 
-                            <div class="promocion-item" @onclick="() => EnviarPromocion(promo, enlace)">
+                            <div class="promocion-item opcion-promocion" @onclick="() => EnviarPromocion(promo, enlace)">
                                 <div class="promocion-icon">
                                     <i class="bi bi-megaphone-fill"></i>
                                 </div>
                                 <div class="promocion-info">
                                     <strong>@promo.Titulo</strong>
                                     <p>@promo.Descripcion</p>
+                                    <small>
+                                        <i class="bi bi-people"></i>
+                                        Público: @(string.IsNullOrWhiteSpace(promo.PublicoObjetivo) ? "Todos (sin clasificar)" : promo.PublicoObjetivo)
+                                        · Destinatarios elegibles: @ContarDestinatariosPromocion(promo)
+                                    </small>
                                     <small>
                                         <i class="bi bi-calendar"></i>
                                         Vence: @promo.FechaFin.ToString("dd/MM/yyyy")
@@ -1892,7 +2570,8 @@ button.btn-create-first span,
                     {
                         <div class="no-promos">
                             <i class="bi bi-megaphone"></i>
-                            <p>No hay promociones activas.</p>
+                            <p>No hay catálogos activos compatibles con los clientes seleccionados.</p>
+                            <small>No hay promociones disponibles para enviar. Puedes utilizar la bienvenida si necesitas reenviarla a clientes autorizados.</small>
                         </div>
                     }
                 </div>
@@ -1941,6 +2620,10 @@ button.btn-create-first span,
 }
 
 @code {
+    // =====================================================================
+    // CAMPOS
+    // =====================================================================
+
     private List<Cliente> clientes = new();
     private List<CategoriaProducto> categorias = new();
     private List<Promocion> promocionesActivas = new();
@@ -1956,6 +2639,9 @@ button.btn-create-first span,
     private string filtroEstado = "";
     private string filtroWhatsApp = "todos";
     private string filtroOrigen = "";
+    private string filtroGenero = "";
+    // 0 = todos; 1 a 12 = mes del cumpleaños, sin importar el año.
+    private int filtroMesCumpleanos = 0;
     private string filtroSucursal = "";
     private string ordenarPor = "reciente";
     private int paginaActual = 1;
@@ -1969,6 +2655,19 @@ button.btn-create-first span,
 
     private HashSet<int> clientesSeleccionados = new();
     private bool mostrarModalPromociones = false;
+    // Control de la acción en pantalla (no crea tablas en SQL).
+    private bool enviandoCuponCumpleanos = false;
+
+
+    // Activación independiente de WhatsApp.
+    private bool mostrarModalActivacionWhatsApp = false;
+    private bool procesandoActivacionWhatsApp = false;
+    private bool confirmacionContactoPrevio = false;
+    private string busquedaActivacionWhatsApp = "";
+    private string filtroTipoActivacionWhatsApp = "";
+    private HashSet<int> clientesActivacionSeleccionados = new();
+    private int progresoActivacionActual = 0;
+    private int progresoActivacionTotal = 0;
 
     private bool esSuperAdmin;
     private bool esAdmin;
@@ -1983,6 +2682,9 @@ button.btn-create-first span,
     private bool puedeEnviarWhatsApp;
     private bool puedeCrearPromociones;
 
+    // =====================================================================
+    // PROPIEDADES
+    // =====================================================================
 
     private IEnumerable<SucursalCyc> sucursalesFiltradas =>
         string.IsNullOrWhiteSpace(busquedaSucursal)
@@ -2022,8 +2724,21 @@ button.btn-create-first span,
             if (!string.IsNullOrEmpty(filtroOrigen))
                 query = query.Where(c => c.TipoCliente == filtroOrigen);
 
+            if (filtroGenero == "sin_especificar")
+                query = query.Where(c => string.IsNullOrWhiteSpace(c.Genero));
+            else if (!string.IsNullOrWhiteSpace(filtroGenero))
+                query = query.Where(c => string.Equals(
+                    c.Genero?.Trim(), filtroGenero, StringComparison.OrdinalIgnoreCase));
+
             if (!string.IsNullOrEmpty(filtroSucursal))
                 query = query.Where(c => c.IdSucursal == filtroSucursal);
+
+            // NUEVO: únicamente quienes tienen fecha de cumpleaños registrada
+            // y cumplen años en el mes seleccionado, sin importar el año.
+            if (filtroMesCumpleanos >= 1 && filtroMesCumpleanos <= 12)
+                query = query.Where(c =>
+                    c.FechaNacimiento.HasValue &&
+                    c.FechaNacimiento.Value.Month == filtroMesCumpleanos);
 
             query = ordenarPor switch
             {
@@ -2036,20 +2751,98 @@ button.btn-create-first span,
         }
     }
 
-    private async Task CargarTiposCliente()
-    {
-        tiposCliente = await DbContext.TiposCliente
-            .Where(t => t.Activo)
-            .OrderBy(t => t.Nombre)
-            .ToListAsync();
-    }
-
     private int totalPaginas => (int)Math.Ceiling((double)clientesFiltrados.Count() / elementosPorPagina);
 
     private IEnumerable<Cliente> clientesPaginados =>
         clientesFiltrados
             .Skip((paginaActual - 1) * elementosPorPagina)
             .Take(elementosPorPagina);
+
+    // Conservamos el nombre de la propiedad para no afectar los filtros existentes.
+    // Ahora muestra todos los clientes activos registrados.
+    private IEnumerable<Cliente> clientesPendientesWhatsApp =>
+        clientes
+            .Where(c => c.Estado == 1)
+            .OrderBy(c => c.NombreCompleto);
+
+    private IEnumerable<string> tiposActivacionWhatsApp =>
+        clientesPendientesWhatsApp
+            .Where(c => !string.IsNullOrWhiteSpace(c.TipoCliente))
+            .Select(c => c.TipoCliente!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(tipo => tipo);
+
+    private IEnumerable<Cliente> clientesPendientesWhatsAppFiltrados
+    {
+        get
+        {
+            var query = clientesPendientesWhatsApp;
+
+            if (!string.IsNullOrWhiteSpace(filtroTipoActivacionWhatsApp))
+            {
+                query = query.Where(c =>
+                    !string.IsNullOrWhiteSpace(c.TipoCliente) &&
+                    string.Equals(
+                        c.TipoCliente.Trim(),
+                        filtroTipoActivacionWhatsApp,
+                        StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(busquedaActivacionWhatsApp))
+            {
+                var texto = busquedaActivacionWhatsApp.Trim();
+
+                query = query.Where(c =>
+                    c.NombreCompleto.Contains(
+                        texto,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    (c.Telefono != null &&
+                     c.Telefono.Contains(
+                         texto,
+                         StringComparison.OrdinalIgnoreCase)) ||
+                    (c.Correo != null &&
+                     c.Correo.Contains(
+                         texto,
+                         StringComparison.OrdinalIgnoreCase)));
+            }
+
+            return query;
+        }
+    }
+
+    private bool TodosPendientesVisiblesSeleccionados
+    {
+        get
+        {
+            var ids = clientesPendientesWhatsAppFiltrados
+                .Where(c => !string.IsNullOrWhiteSpace(c.Telefono))
+                .Select(c => c.Id)
+                .ToList();
+
+            return ids.Any() &&
+                   ids.All(id =>
+                       clientesActivacionSeleccionados.Contains(id));
+        }
+    }
+
+    // Se filtra sobre todos los resultados, incluidos los de otras páginas.
+    private IEnumerable<Cliente> clientesElegiblesFiltrados =>
+        clientesFiltrados.Where(ClientePuedeRecibirWhatsApp);
+
+    private int CantidadElegiblesFiltrados => clientesElegiblesFiltrados.Count();
+
+    private bool TodosElegiblesFiltradosSeleccionados =>
+        clientesElegiblesFiltrados.Any() &&
+        clientesElegiblesFiltrados.All(c => clientesSeleccionados.Contains(c.Id));
+
+    // No basta con aplicar el filtro visible: usamos los clientes realmente seleccionados.
+    // Por eso funciona también al seleccionar páginas diferentes o un grupo mixto.
+    private IEnumerable<Promocion> promocionesCompatibles =>
+        promocionesActivas.Where(p => ContarDestinatariosPromocion(p) > 0);
+
+    // =====================================================================
+    // CICLO DE VIDA
+    // =====================================================================
 
     protected override async Task OnInitializedAsync()
     {
@@ -2066,6 +2859,10 @@ button.btn-create-first span,
         await CargarDatos();
         await CargarUsuarioActual();
     }
+
+    // =====================================================================
+    // PERMISOS Y USUARIO
+    // =====================================================================
 
     private async Task CargarPermisos()
     {
@@ -2084,25 +2881,1155 @@ button.btn-create-first span,
         puedeEnviarWhatsApp = superAdmin || permisos.Contains(Permissions.WhatsApp_Crear);
         puedeCrearPromociones = superAdmin || permisos.Contains(Permissions.Promociones_Crear);
     }
-private string GetOrigenClass(string? tipoCliente)
-{
-    if (string.IsNullOrWhiteSpace(tipoCliente))
-        return "origen-sin";
 
-    return tipoCliente.Trim().ToLowerInvariant() switch
+    private async Task CargarUsuarioActual()
     {
-        "redes sociales" => "origen-redes",
-        "página web" => "origen-web",
-        "pagina web" => "origen-web",
-        "mayoreo" => "origen-mayoreo",
-        "clientes de tiendas" => "origen-tiendas",
-        _ => "origen-sin"
-    };
-}
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        esSuperAdmin = user.IsInRole("SuperAdministrador");
+        esAdmin = user.IsInRole("Administrador");
+    }
+
+    // =====================================================================
+    // CARGA DE DATOS
+    // =====================================================================
+
+    private async Task CargarTiposCliente()
+    {
+        tiposCliente = await DbContext.TiposCliente
+            .Where(t => t.Activo)
+            .OrderBy(t => t.Nombre)
+            .ToListAsync();
+    }
+
     private void CargarSucursalesDisponibles()
     {
         SucursalesDisponibles = SucursalService.GetAllSucursales();
         SucursalesCache = SucursalesDisponibles.ToDictionary(s => s.Almacen, s => s.NombreCompleto);
+    }
+
+    private async Task CargarDatos()
+    {
+        await CargarClientes();
+        await CargarCategorias();
+    }
+
+    private async Task CargarClientes()
+    {
+        cargando = true;
+        try
+        {
+            clientes = await DbContext.Clientes.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar clientes: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task CargarCategorias()
+    {
+        try
+        {
+            categorias = await DbContext.CategoriaProductos.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando categorias: {ex.Message}");
+        }
+    }
+
+    // =====================================================================
+    // FILTROS Y PAGINACIÓN
+    // =====================================================================
+
+    private void ToggleFilters() => mostrarFiltros = !mostrarFiltros;
+
+    private void AlCambiarFiltroGenero()
+    {
+        paginaActual = 1;
+        // Evita conservar una selección anterior al cambiar el género.
+        clientesSeleccionados.Clear();
+    }
+
+    private void AlCambiarFiltroMesCumpleanos()
+    {
+        // Regresar a la primera página y evitar enviar mensajes
+        // a clientes seleccionados bajo otro mes/filtro.
+        paginaActual = 1;
+        clientesSeleccionados.Clear();
+    }
+
+    private void LimpiarFiltros()
+    {
+        filtroBusqueda = "";
+        filtroCategoria = 0;
+        filtroEstado = "";
+        filtroWhatsApp = "todos";
+        filtroOrigen = "";
+        filtroGenero = "";
+        filtroMesCumpleanos = 0;
+        filtroSucursal = "";
+        busquedaSucursal = "";
+        ordenarPor = "reciente";
+        paginaActual = 1;
+        // No conservar destinatarios de filtros que ya se limpiaron.
+        clientesSeleccionados.Clear();
+    }
+
+    private void CambiarPagina(int pagina)
+    {
+        if (pagina >= 1 && pagina <= totalPaginas)
+            paginaActual = pagina;
+    }
+
+    private void AbrirDropdownSucursal()
+    {
+        mostrarDropdownSucursal = true;
+    }
+
+    private void SeleccionarSucursal(SucursalCyc? sucursal)
+    {
+        if (sucursal == null)
+        {
+            filtroSucursal = "";
+            busquedaSucursal = "";
+        }
+        else
+        {
+            filtroSucursal = sucursal.Almacen;
+            busquedaSucursal = sucursal.NombreCompleto ?? sucursal.Almacen;
+        }
+
+        mostrarDropdownSucursal = false;
+        paginaActual = 1;
+    }
+
+    // =====================================================================
+    // SELECCIÓN DE CLIENTES PARA WHATSAPP
+    // =====================================================================
+
+    private static bool ClientePuedeRecibirWhatsApp(Cliente cliente) =>
+        cliente.AceptaWhatsApp && !string.IsNullOrWhiteSpace(cliente.Telefono);
+
+    private void ToggleSeleccionCliente(int clienteId)
+    {
+        if (!puedeEnviarWhatsApp) return;
+
+        if (!clientes.Any(c => c.Id == clienteId && ClientePuedeRecibirWhatsApp(c)))
+            return;
+
+        if (clientesSeleccionados.Contains(clienteId))
+            clientesSeleccionados.Remove(clienteId);
+        else
+            clientesSeleccionados.Add(clienteId);
+    }
+
+    private void ToggleSelectAll()
+    {
+        if (!puedeEnviarWhatsApp) return;
+
+        // Incluye TODAS las páginas del filtro actual, no solo las filas visibles.
+        // No selecciona usuarios sin consentimiento de WhatsApp o sin teléfono.
+        var clientesSeleccionables = clientesElegiblesFiltrados.ToList();
+        if (clientesSeleccionables.Count == 0) return;
+
+        var todosSeleccionados = clientesSeleccionables
+            .All(c => clientesSeleccionados.Contains(c.Id));
+
+        if (todosSeleccionados)
+        {
+            foreach (var cliente in clientesSeleccionables)
+                clientesSeleccionados.Remove(cliente.Id);
+        }
+        else
+        {
+            foreach (var cliente in clientesSeleccionables)
+                clientesSeleccionados.Add(cliente.Id);
+        }
+    }
+
+    private void LimpiarSeleccion()
+    {
+        clientesSeleccionados.Clear();
+    }
+
+    // =====================================================================
+    // ACTIVACIÓN DE WHATSAPP
+    // =====================================================================
+
+    private async Task AbrirModalActivacionWhatsApp()
+    {
+        if (!puedeEnviarWhatsApp)
+        {
+            await MostrarNotificacionError(
+                "No tienes permiso para realizar envíos por WhatsApp");
+            return;
+        }
+
+        clientesActivacionSeleccionados.Clear();
+        busquedaActivacionWhatsApp = "";
+        filtroTipoActivacionWhatsApp = "";
+        progresoActivacionActual = 0;
+        progresoActivacionTotal = 0;
+        confirmacionContactoPrevio = false;
+        mostrarModalActivacionWhatsApp = true;
+    }
+
+    private void CerrarModalActivacionWhatsApp()
+    {
+        if (procesandoActivacionWhatsApp)
+            return;
+
+        mostrarModalActivacionWhatsApp = false;
+        confirmacionContactoPrevio = false;
+        clientesActivacionSeleccionados.Clear();
+        busquedaActivacionWhatsApp = "";
+        filtroTipoActivacionWhatsApp = "";
+        progresoActivacionActual = 0;
+        progresoActivacionTotal = 0;
+    }
+
+    private void CambiarFiltroTipoActivacion(ChangeEventArgs e)
+    {
+        if (procesandoActivacionWhatsApp)
+            return;
+
+        filtroTipoActivacionWhatsApp = e.Value?.ToString() ?? "";
+
+        // Evita enviar accidentalmente clientes que quedaron seleccionados
+        // pero ya no están visibles al cambiar de tipo.
+        clientesActivacionSeleccionados.Clear();
+    }
+
+    private void ToggleClienteActivacion(int clienteId)
+    {
+        if (!puedeEnviarWhatsApp || procesandoActivacionWhatsApp)
+            return;
+
+        var cliente = clientes.FirstOrDefault(c => c.Id == clienteId);
+
+        if (cliente == null || cliente.Estado != 1 ||
+            string.IsNullOrWhiteSpace(cliente.Telefono))
+            return;
+
+        if (!clientesActivacionSeleccionados.Remove(clienteId) &&
+            clientesActivacionSeleccionados.Count < 20)
+        {
+            clientesActivacionSeleccionados.Add(clienteId);
+        }
+    }
+
+    private int ContarPendientesTipo(string tipo)
+    {
+        return clientesPendientesWhatsApp.Count(c =>
+            !string.IsNullOrWhiteSpace(c.TipoCliente) &&
+            string.Equals(
+                c.TipoCliente.Trim(),
+                tipo,
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+    // El mensaje se envía sin modificar la autorización del cliente.
+    // Esa autorización se actualiza exclusivamente por el webhook firmado de Meta.
+    private async Task ProcesarActivacionWhatsApp()
+    {
+        if (!puedeEnviarWhatsApp || procesandoActivacionWhatsApp)
+            return;
+
+        if (!confirmacionContactoPrevio)
+        {
+            await MostrarNotificacionInfo(
+                "Confirma que los clientes ya autorizaron este contacto por WhatsApp.");
+            return;
+        }
+
+        var seleccionados = clientesActivacionSeleccionados
+            .Select(id => clientes.FirstOrDefault(c => c.Id == id))
+            .Where(c => c != null && c.Estado == 1 &&
+                        !string.IsNullOrWhiteSpace(c.Telefono))
+            .Cast<Cliente>()
+            .ToList();
+
+        if (seleccionados.Count < 1 || seleccionados.Count > 20)
+        {
+            await MostrarNotificacionInfo("Selecciona de 1 a 20 clientes con teléfono.");
+            return;
+        }
+
+        var respuesta = await JS.InvokeAsync<JsonElement>(
+            "Swal.fire", new
+            {
+                title = "¿Enviar solicitudes de autorización?",
+                text = $"Se enviará la plantilla a {seleccionados.Count} cliente(s). " +
+                       "Ningún registro se activará automáticamente.",
+                icon = "question",
+                showCancelButton = true,
+                confirmButtonText = "Sí, enviar solicitudes",
+                cancelButtonText = "Cancelar",
+                confirmButtonColor = "#25D366",
+                focusCancel = true
+            });
+
+        if (!respuesta.TryGetProperty("isConfirmed", out var ok) ||
+            !ok.GetBoolean())
+            return;
+
+        procesandoActivacionWhatsApp = true;
+        progresoActivacionActual = 0;
+        progresoActivacionTotal = seleccionados.Count;
+
+        int enviados = 0;
+        int fallidos = 0;
+        string? ultimoError = null;
+
+        try
+        {
+            foreach (var cliente in seleccionados)
+            {
+                progresoActivacionActual++;
+                StateHasChanged();
+
+                try
+                {
+                    var telefono = new string(
+                        cliente.Telefono!.Where(char.IsDigit).ToArray());
+
+                    if (telefono.Length == 10)
+                        telefono = "52" + telefono;
+                    else if (telefono.Length == 13 && telefono.StartsWith("521"))
+                        telefono = "52" + telefono[^10..];
+
+                    if (telefono.Length != 12 || !telefono.StartsWith("52"))
+                    {
+                        fallidos++;
+                        ultimoError = $"Teléfono inválido para cliente {cliente.Id}.";
+                        continue;
+                    }
+
+                    var ultimos10 = telefono[^10..];
+                    var coincidencias = clientes.Count(c =>
+                    {
+                        var digitos = new string((c.Telefono ?? "")
+                            .Where(char.IsDigit).ToArray());
+                        return digitos.Length >= 10 && digitos.EndsWith(ultimos10);
+                    });
+
+                    if (coincidencias != 1)
+                    {
+                        fallidos++;
+                        ultimoError = $"Teléfono ambiguo para cliente {cliente.Id}.";
+                        continue;
+                    }
+
+                    var enviado = await _whatsApp
+                        .EnviarSolicitudAutorizacionAsync(telefono);
+
+                    if (enviado)
+                    {
+                        enviados++;
+                        clientesActivacionSeleccionados.Remove(cliente.Id);
+                    }
+                    else
+                    {
+                        fallidos++;
+                        ultimoError = _whatsApp.UltimoError;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    fallidos++;
+                    ultimoError = ex.Message;
+                }
+
+                await Task.Delay(200);
+            }
+        }
+        finally
+        {
+            procesandoActivacionWhatsApp = false;
+            progresoActivacionActual = 0;
+            progresoActivacionTotal = 0;
+        }
+
+        mostrarModalActivacionWhatsApp = false;
+        confirmacionContactoPrevio = false;
+        clientesActivacionSeleccionados.Clear();
+        busquedaActivacionWhatsApp = "";
+        filtroTipoActivacionWhatsApp = "";
+
+        var detalle = string.IsNullOrWhiteSpace(ultimoError)
+            ? ""
+            : $" Último error: {ultimoError}";
+
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Solicitudes procesadas",
+            text = $"Aceptadas para envío por Meta: {enviados}. " +
+                   $"Fallidas: {fallidos}. " +
+                   "La autorización se actualizará solo cuando el cliente responda." +
+                   detalle,
+            icon = fallidos == 0 ? "success" : "warning",
+            confirmButtonText = "Aceptar",
+            confirmButtonColor = "#0f172a"
+        });
+    }
+
+    // =====================================================================
+    // ENVÍO POR WHATSAPP (PROMOCIONES Y BIENVENIDA)
+    // =====================================================================
+
+    private async Task AbrirModalWhatsApp()
+    {
+        if (!puedeEnviarWhatsApp)
+        {
+            await MostrarNotificacionError("No tienes permiso para realizar envíos por WhatsApp");
+            return;
+        }
+
+        if (clientesSeleccionados.Count == 0)
+        {
+            await MostrarNotificacionInfo("No has seleccionado ningun cliente");
+            return;
+        }
+
+        // Las promociones son opcionales: también se puede reenviar
+        // la plantilla de bienvenida a clientes autorizados.
+        promocionesActivas = await DbContext.Promociones
+            .Where(p => p.Activo && p.FechaFin >= DateTime.Today)
+            .OrderBy(p => p.FechaFin)
+            .ToListAsync();
+
+        mostrarModalPromociones = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModalPromociones = false;
+        promocionesActivas.Clear();
+    }
+
+    // Compatibilidad con promociones existentes (PublicoObjetivo NULL): se consideran generales.
+    // Las promociones dirigidas a Hombre o Mujer nunca incluyen clientes sin clasificar.
+    private static bool CoincidePublicoObjetivo(Cliente cliente, string? publicoObjetivo)
+    {
+        if (string.IsNullOrWhiteSpace(publicoObjetivo) ||
+            string.Equals(publicoObjetivo.Trim(), "Todos", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.Equals(cliente.Genero?.Trim(), publicoObjetivo.Trim(),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private List<Cliente> ObtenerDestinatariosPromocion(Promocion promo)
+    {
+        return clientes
+            .Where(c => clientesSeleccionados.Contains(c.Id) &&
+                        c.AceptaWhatsApp &&
+                        !string.IsNullOrWhiteSpace(c.Telefono) &&
+                        CoincidePublicoObjetivo(c, promo.PublicoObjetivo))
+            .ToList();
+    }
+
+    private int ContarDestinatariosPromocion(Promocion promo) =>
+        ObtenerDestinatariosPromocion(promo).Count;
+
+    // =====================================================================
+    // CUPÓN DE CUMPLEAÑOS – MISMO SERVICIO WHATSAPP QUE LA BIENVENIDA
+    // =====================================================================
+
+    private List<Cliente> ObtenerDestinatariosCumpleanos()
+    {
+        return clientes
+            .Where(c =>
+                clientesSeleccionados.Contains(c.Id) &&
+                c.Estado == 1 &&
+                c.AceptaWhatsApp &&
+                !string.IsNullOrWhiteSpace(c.Telefono) &&
+                c.FechaNacimiento.HasValue &&
+                c.FechaNacimiento.Value.Month == filtroMesCumpleanos)
+            .ToList();
+    }
+
+    private int ContarDestinatariosCumpleanos() =>
+        ObtenerDestinatariosCumpleanos().Count;
+
+    private static string? NormalizarTelefonoCumpleanos(string? telefono)
+    {
+        if (string.IsNullOrWhiteSpace(telefono)) return null;
+
+        var digitos = new string(telefono.Where(c => c >= '0' && c <= '9').ToArray());
+
+        bool valido =
+            digitos.Length == 10 ||
+            (digitos.Length == 12 && digitos.StartsWith("52")) ||
+            (digitos.Length == 13 && digitos.StartsWith("521"));
+
+        return valido ? digitos.Substring(digitos.Length - 10, 10) : null;
+    }
+
+    private async Task EnviarCuponCumpleanos()
+    {
+        if (enviandoCuponCumpleanos) return;
+
+        if (!puedeEnviarWhatsApp)
+        {
+            await MostrarNotificacionError("No tienes permiso para enviar WhatsApp.");
+            return;
+        }
+
+        // El cupón es válido durante el mes de cumpleaños.
+        if (filtroMesCumpleanos < 1 || filtroMesCumpleanos > 12)
+        {
+            await MostrarNotificacionInfo("Selecciona primero un mes de cumpleaños en los filtros.");
+            return;
+        }
+
+        if (filtroMesCumpleanos != DateTime.Today.Month)
+        {
+            await MostrarNotificacionInfo(
+                "Puedes consultar otros meses, pero el cupón solo se envía durante el mes actual de cumpleaños.");
+            return;
+        }
+
+        // Evita repetir un mismo número dentro de este envío concreto.
+        // No equivale a control de duplicados entre distintos envíos.
+        var destinatarios = ObtenerDestinatariosCumpleanos()
+            .GroupBy(c => NormalizarTelefonoCumpleanos(c.Telefono))
+            .Where(g => !string.IsNullOrEmpty(g.Key))
+            .Select(g => g.First())
+            .ToList();
+
+        if (destinatarios.Count == 0)
+        {
+            await MostrarNotificacionInfo(
+                "No hay cumpleañeros seleccionados con autorización de WhatsApp y teléfono válido.");
+            return;
+        }
+
+        var confirmacion = await JS.InvokeAsync<JsonElement>("Swal.fire", new
+        {
+            title = "Confirmar cupón de cumpleaños",
+            text = $"Se enviará cumpleanos_rams_20 a {destinatarios.Count} cliente(s) " +
+                   "con el cupón RAMSREGALO20. Verifica que el cupón esté activo. " +
+                   "No hay bloqueo de reenvíos de campañas anteriores; confirma que no se les haya enviado antes.",
+            icon = "question",
+            showCancelButton = true,
+            confirmButtonText = "Sí, enviar cupón",
+            cancelButtonText = "Cancelar",
+            confirmButtonColor = "#ea580c",
+            cancelButtonColor = "#6b7280",
+            focusCancel = true
+        });
+
+        if (!confirmacion.TryGetProperty("isConfirmed", out var confirmado) ||
+            !confirmado.GetBoolean())
+            return;
+
+        enviandoCuponCumpleanos = true;
+        mostrarModalPromociones = false;
+
+        int enviados = 0;
+        int fallidos = 0;
+        int omitidos = 0;
+        string? ultimoError = null;
+
+        try
+        {
+            foreach (var registro in destinatarios)
+            {
+                try
+                {
+                    // Volver a consultar el registro actual antes del envío.
+                    var cliente = await DbContext.Clientes.AsNoTracking()
+                        .FirstOrDefaultAsync(c => c.Id == registro.Id);
+
+                    if (cliente == null || cliente.Estado != 1 ||
+                        !cliente.AceptaWhatsApp ||
+                        !cliente.FechaNacimiento.HasValue ||
+                        cliente.FechaNacimiento.Value.Month != DateTime.Today.Month)
+                    {
+                        omitidos++;
+                        continue;
+                    }
+
+                    var telefono10 = NormalizarTelefonoCumpleanos(cliente.Telefono);
+                    if (telefono10 == null)
+                    {
+                        omitidos++;
+                        continue;
+                    }
+
+                    var primerNombre = cliente.NombreCompleto?
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .FirstOrDefault() ?? "Cliente";
+
+                    var resultado = await _whatsApp.EnviarPlantillaConImagenAsync(
+                        numeroDestino: "52" + telefono10,
+                        nombrePlantilla: "cumpleanos_rams_20",
+                        idioma: "es_MX",
+                        parametros: new Dictionary<string, string>
+                        {
+                            { "1", primerNombre }
+                        },
+                        imagenUrl: "https://rams.no-ip.info:8082/images/Tarjeta.jpeg"
+                    );
+
+                    if (resultado)
+                    {
+                        enviados++;
+                    }
+                    else
+                    {
+                        fallidos++;
+                        ultimoError = _whatsApp.UltimoError;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    fallidos++;
+                    ultimoError = ex.Message;
+                }
+
+                await Task.Delay(200);
+            }
+        }
+        finally
+        {
+            enviandoCuponCumpleanos = false;
+            clientesSeleccionados.Clear();
+        }
+
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Envío de cumpleaños finalizado",
+            text = $"Aceptados por Meta: {enviados}. Fallidos: {fallidos}. " +
+                   $"Omitidos: {omitidos}. " +
+                   (string.IsNullOrWhiteSpace(ultimoError) ? "" : $"Último error: {ultimoError}"),
+            icon = fallidos == 0 ? "success" : "warning",
+            confirmButtonText = "Aceptar",
+            confirmButtonColor = "#ea580c"
+        });
+    }
+
+    private async Task EnviarBienvenidaRams()
+    {
+        if (!puedeEnviarWhatsApp)
+        {
+            await MostrarNotificacionError("No tienes permiso para realizar envíos por WhatsApp");
+            return;
+        }
+
+        var clientesParaEnviar = clientesSeleccionados
+            .Select(id => clientes.FirstOrDefault(c => c.Id == id))
+            .Where(c =>
+                c != null &&
+                c.AceptaWhatsApp == true &&
+                !string.IsNullOrWhiteSpace(c.Telefono))
+            .ToList();
+
+        if (clientesParaEnviar.Count == 0)
+        {
+            await MostrarNotificacionError(
+                "Ninguno de los clientes seleccionados tiene un teléfono válido o autorización para WhatsApp");
+            return;
+        }
+
+        var confirmacionBienvenida = await JS.InvokeAsync<JsonElement>("Swal.fire", new
+        {
+            title = "Confirmar envío de bienvenida",
+            text = $"Se reenviará la bienvenida RAMS COTTONS a {clientesParaEnviar.Count} cliente(s) autorizado(s). No se modificarán sus puntos.",
+            icon = "question",
+            showCancelButton = true,
+            confirmButtonText = "Sí, enviar mensajes",
+            cancelButtonText = "Cancelar",
+            confirmButtonColor = "#25D366",
+            cancelButtonColor = "#6b7280",
+            focusCancel = true
+        });
+
+        if (!confirmacionBienvenida.TryGetProperty("isConfirmed", out var confirmadaBienvenida) ||
+            !confirmadaBienvenida.GetBoolean())
+            return;
+
+        mostrarModalPromociones = false;
+
+        var enviados = 0;
+        var fallidos = 0;
+        string? ultimoError = null;
+
+        foreach (var cliente in clientesParaEnviar)
+        {
+            try
+            {
+                var telefonoLimpio = new string(
+                    cliente!.Telefono!
+                        .Where(char.IsDigit)
+                        .ToArray());
+
+                // Si el número guardado tiene 10 dígitos, agregamos México (52).
+                if (telefonoLimpio.Length == 10)
+                {
+                    telefonoLimpio = "52" + telefonoLimpio;
+                }
+                else if (!telefonoLimpio.StartsWith("52"))
+                {
+                    telefonoLimpio = "52" + telefonoLimpio;
+                }
+
+                var primerNombre = cliente.NombreCompleto?
+                    .Split(
+                        ' ',
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(primerNombre))
+                {
+                    primerNombre = "Cliente";
+                }
+
+                var resultado =
+                    await _whatsApp.EnviarPlantillaConImagenAsync(
+                        numeroDestino: telefonoLimpio,
+                        nombrePlantilla: "bienvenida_rams_cliente_v2",
+                        idioma: "es_MX",
+                        parametros: new Dictionary<string, string>
+                        {
+                            { "1", primerNombre }
+                        },
+                        imagenUrl: "https://rams.no-ip.info:8082/images/LogoRamsCottons.jpg");
+
+                await JS.InvokeVoidAsync(
+                    "console.log",
+                    $"[WhatsApp Bienvenida] Envío a {telefonoLimpio} - Resultado: {resultado}");
+
+                if (resultado)
+                {
+                    enviados++;
+                }
+                else
+                {
+                    fallidos++;
+
+                    if (!string.IsNullOrWhiteSpace(
+                        _whatsApp.UltimoError))
+                    {
+                        ultimoError =
+                            _whatsApp.UltimoError;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                fallidos++;
+                ultimoError = ex.Message;
+            }
+
+            // Pequeña separación entre envíos.
+            await Task.Delay(200);
+        }
+
+        clientesSeleccionados.Clear();
+
+        var mensajeResumen =
+            fallidos == 0
+                ? enviados == 1
+                    ? "Se envió la bienvenida correctamente a 1 cliente"
+                    : $"Se envió la bienvenida correctamente a {enviados} clientes"
+                : $"{enviados} enviados, {fallidos} fallidos";
+
+        var htmlError = "";
+
+        if (fallidos > 0 &&
+            !string.IsNullOrWhiteSpace(ultimoError))
+        {
+            var errorEscapado = ultimoError
+                .Replace("&", "&amp;")
+                .Replace("<", "&lt;")
+                .Replace(">", "&gt;")
+                .Replace("\"", "&quot;");
+
+            htmlError = $@"
+                <div style='margin-top: 1rem; padding: 0.75rem; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444; text-align: left; max-height: 200px; overflow-y: auto;'>
+                    <div style='font-size: 0.75rem; color: #991b1b; font-weight: 700; margin-bottom: 0.35rem;'>
+                        <i class='bi bi-exclamation-triangle-fill'></i> Error de Meta WhatsApp:
+                    </div>
+                    <div style='font-size: 0.7rem; color: #7f1d1d; word-break: break-all; font-family: monospace; line-height: 1.4;'>
+                        {errorEscapado}
+                    </div>
+                </div>";
+        }
+
+        await JS.InvokeVoidAsync(
+            "Swal.fire",
+            new
+            {
+                title =
+                    fallidos == 0
+                        ? "Bienvenida enviada"
+                        : "Envío finalizado con errores",
+
+                html = $@"
+                    <div style='display: flex; justify-content: center; gap: 2.5rem; padding: 1rem 0;'>
+                        <div style='text-align: center;'>
+                            <div style='font-size: 1.8rem; font-weight: 700; color: #10b981;'>{enviados}</div>
+                            <div style='font-size: 0.8rem; color: #6b7280;'>Enviados</div>
+                        </div>
+                        <div style='width: 1px; background: #e5e7eb;'></div>
+                        <div style='text-align: center;'>
+                            <div style='font-size: 1.8rem; font-weight: 700; color: #ef4444;'>{fallidos}</div>
+                            <div style='font-size: 0.8rem; color: #6b7280;'>Fallidos</div>
+                        </div>
+                    </div>
+                    <div style='font-size: 0.9rem; color: #4b5563; text-align: center; padding-top: 0.5rem;'>
+                        {mensajeResumen}
+                    </div>
+                    {htmlError}",
+
+                icon =
+                    fallidos == 0
+                        ? "success"
+                        : "warning",
+
+                confirmButtonText = "Aceptar",
+                confirmButtonColor = "#0f172a",
+                width =
+                    fallidos > 0
+                        ? "600px"
+                        : "auto"
+            });
+    }
+
+    private async Task EnviarPromocion(Promocion promo, string enlace)
+    {
+        if (!puedeEnviarWhatsApp)
+        {
+            await MostrarNotificacionError("No tienes permiso para enviar promociones por WhatsApp");
+            return;
+        }
+
+        // Se vuelve a validar el público objetivo al enviar (no solo al mostrar el modal).
+        var clientesParaEnviar = ObtenerDestinatariosPromocion(promo);
+
+        if (clientesParaEnviar.Count == 0)
+        {
+            await MostrarNotificacionInfo(
+                "No hay clientes seleccionados que coincidan con el público de esta promoción, " +
+                "tengan teléfono y acepten recibir promociones por WhatsApp.");
+            return;
+        }
+
+        // Confirmación obligatoria: consultar el modal NO debe disparar mensajes reales.
+        var confirmacionEnvio = await JS.InvokeAsync<JsonElement>("Swal.fire", new
+        {
+            title = "Confirmar envío de promoción",
+            text = $"Promoción: {promo.Titulo}. " +
+                   $"Público: {(string.IsNullOrWhiteSpace(promo.PublicoObjetivo) ? "Todos" : promo.PublicoObjetivo)}. " +
+                   $"Se enviarán mensajes a {clientesParaEnviar.Count} cliente(s).",
+            icon = "question",
+            showCancelButton = true,
+            confirmButtonText = "Sí, enviar mensajes",
+            cancelButtonText = "Cancelar",
+            confirmButtonColor = "#25D366",
+            cancelButtonColor = "#6b7280",
+            focusCancel = true
+        });
+
+        if (!confirmacionEnvio.TryGetProperty("isConfirmed", out var confirmadoEnvio) ||
+            !confirmadoEnvio.GetBoolean())
+        {
+            return;
+        }
+
+        mostrarModalPromociones = false;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var usuarioActual = await UserManager.GetUserAsync(user);
+        var usuarioId = usuarioActual?.Id ?? "";
+
+        var enviados = 0;
+        var fallidos = 0;
+        string? ultimoError = null;
+
+        foreach (var cliente in clientesParaEnviar)
+        {
+            try
+            {
+                var telefonoLimpio = cliente!.Telefono!.Replace(" ", "").Replace("-", "").Replace("+", "");
+                if (!telefonoLimpio.StartsWith("52")) telefonoLimpio = "52" + telefonoLimpio;
+
+                var resultado = await _whatsApp.EnviarPlantillaConBotonAsync(
+                    numeroDestino: telefonoLimpio,
+                    nombrePlantilla: "promocion_rams_v6",
+                    idioma: "es_MX",
+                    parametros: new Dictionary<string, string>
+                    {
+                        { "1", cliente.NombreCompleto.Split(' ')[0] },
+                        { "2", $"{promo.Titulo} - {promo.Descripcion}" },
+                        { "3", promo.FechaFin.ToString("dd/MM/yyyy") }
+                    },
+                    urlBoton: promo.TokenUnico ?? ""
+                );
+
+                //  LOG en el navegador (F12 → Console)
+                await JS.InvokeVoidAsync("console.log", $"[WhatsApp] Envío a {telefonoLimpio} - Resultado: {resultado}");
+                await JS.InvokeVoidAsync("console.log", $"[WhatsApp] Error: {_whatsApp.UltimoError ?? "Ninguno"}");
+
+                // Guardar el error para mostrarlo después
+                if (!resultado && !string.IsNullOrEmpty(_whatsApp.UltimoError))
+                {
+                    ultimoError = _whatsApp.UltimoError;
+                }
+
+                var historial = new HistorialEnvio
+                {
+                    ClienteId = cliente.Id,
+                    PromocionId = promo.Id,
+                    UsuarioEnvioId = usuarioId,
+                    Mensaje = $"{promo.Titulo} - {promo.Descripcion}",
+                    EnlacePromocion = enlace,
+                    EnlaceWhatsApp = $"https://wa.me/{telefonoLimpio}?text={Uri.EscapeDataString($"{promo.Titulo} - {promo.Descripcion}")}",
+                    FechaEnvio = DateTime.Now,
+                    Estatus = resultado ? "Enviado" : "Fallido",
+                    Observaciones = resultado
+                        ? $"Enviado a {cliente.Telefono}"
+                        : $"Error: {_whatsApp.UltimoError ?? "desconocido"}"
+                };
+                DbContext.HistorialEnvios.Add(historial);
+
+                if (resultado)
+                    enviados++;
+                else
+                    fallidos++;
+            }
+            catch (Exception ex)
+            {
+                fallidos++;
+                ultimoError = ex.Message;
+
+                var historial = new HistorialEnvio
+                {
+                    ClienteId = cliente!.Id,
+                    PromocionId = promo.Id,
+                    UsuarioEnvioId = usuarioId,
+                    Mensaje = $"{promo.Titulo} - {promo.Descripcion}",
+                    EnlacePromocion = enlace,
+                    EnlaceWhatsApp = "",
+                    FechaEnvio = DateTime.Now,
+                    Estatus = "Error",
+                    Observaciones = $"Error: {ex.Message}"
+                };
+                DbContext.HistorialEnvios.Add(historial);
+            }
+
+            await Task.Delay(200);
+        }
+
+        await DbContext.SaveChangesAsync();
+        clientesSeleccionados.Clear();
+
+        var mensajeResumen = fallidos == 0
+            ? (enviados == 1
+                ? "Se envió 1 mensaje correctamente"
+                : $"Se enviaron {enviados} mensajes correctamente")
+            : (enviados == 1 && fallidos == 1
+                ? "1 enviado, 1 fallo"
+                : fallidos == 1
+                    ? $"{enviados} enviados, 1 fallo"
+                    : $"{enviados} enviados, {fallidos} fallaron");
+
+        // HTML del Swal: muestra el error de Meta si hay fallos
+        var htmlError = "";
+        if (fallidos > 0 && !string.IsNullOrEmpty(ultimoError))
+        {
+            // Escapar HTML para que no rompa el Swal
+            var errorEscapado = ultimoError
+                .Replace("&", "&amp;")
+                .Replace("<", "&lt;")
+                .Replace(">", "&gt;")
+                .Replace("\"", "&quot;");
+
+            htmlError = $@"
+                <div style='margin-top: 1rem; padding: 0.75rem; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444; text-align: left; max-height: 200px; overflow-y: auto;'>
+                    <div style='font-size: 0.75rem; color: #991b1b; font-weight: 700; margin-bottom: 0.35rem;'>
+                        <i class='bi bi-exclamation-triangle-fill'></i> Error de Meta WhatsApp:
+                    </div>
+                    <div style='font-size: 0.7rem; color: #7f1d1d; word-break: break-all; font-family: monospace; line-height: 1.4;'>
+                        {errorEscapado}
+                    </div>
+                </div>";
+        }
+
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = fallidos == 0 ? "Promoción enviada" : "Error al enviar",
+            html = $@"
+                <div style='display: flex; justify-content: center; gap: 2.5rem; padding: 1rem 0;'>
+                    <div style='text-align: center;'>
+                        <div style='font-size: 1.8rem; font-weight: 700; color: #10b981;'>{enviados}</div>
+                        <div style='font-size: 0.8rem; color: #6b7280;'>Enviados</div>
+                    </div>
+                    <div style='width: 1px; background: #e5e7eb;'></div>
+                    <div style='text-align: center;'>
+                        <div style='font-size: 1.8rem; font-weight: 700; color: #ef4444;'>{fallidos}</div>
+                        <div style='font-size: 0.8rem; color: #6b7280;'>Fallidos</div>
+                    </div>
+                </div>
+                <div style='font-size: 0.9rem; color: #4b5563; text-align: center; padding-top: 0.5rem;'>
+                    {mensajeResumen}
+                </div>
+                {htmlError}
+            ",
+            icon = fallidos == 0 ? "success" : "warning",
+            confirmButtonText = "Aceptar",
+            confirmButtonColor = "#0f172a",
+            width = fallidos > 0 ? "600px" : "auto"
+        });
+    }
+
+    // =====================================================================
+    // ACCIONES CRUD Y NAVEGACIÓN
+    // =====================================================================
+
+    private void CrearPromocion()
+    {
+        if (!puedeCrearPromociones) return;
+        NavigationManager.NavigateTo("/promociones/crear");
+    }
+
+    private void CrearCliente()
+    {
+        if (!puedeCrearClientes) return;
+        NavigationManager.NavigateTo("/clientes/crear");
+    }
+
+    private void VerCliente(int id)
+    {
+        if (!puedeVerClientes) return;
+        NavigationManager.NavigateTo($"/clientes/ver/{id}");
+    }
+
+    private void EditarCliente(int id)
+    {
+        if (!puedeEditarClientes) return;
+        NavigationManager.NavigateTo($"/clientes/editar/{id}");
+    }
+
+    private void GenerarQR(int id)
+    {
+        if (!puedeGenerarQR) return;
+        NavigationManager.NavigateTo($"/clientes/qr/{id}");
+    }
+
+    private void ConfirmarEliminar(Cliente cliente)
+    {
+        if (!puedeEliminarClientes) return;
+
+        clienteEliminar = cliente;
+        mostrarModalEliminar = true;
+    }
+
+    private void CerrarModalEliminar()
+    {
+        mostrarModalEliminar = false;
+        clienteEliminar = null;
+    }
+
+    private async Task EliminarCliente()
+    {
+        if (!puedeEliminarClientes)
+        {
+            await MostrarNotificacionError("No tienes permiso para eliminar clientes");
+            return;
+        }
+
+        if (clienteEliminar == null) return;
+
+        try
+        {
+            var nombreCliente = clienteEliminar.NombreCompleto;
+            DbContext.Clientes.Remove(clienteEliminar);
+            await DbContext.SaveChangesAsync();
+
+            await CargarClientes();
+            await MostrarNotificacionExito($"Cliente {nombreCliente} eliminado correctamente");
+        }
+        catch (Exception ex)
+        {
+            await MostrarNotificacionError($"Error al eliminar cliente: {ex.Message}");
+        }
+        finally
+        {
+            CerrarModalEliminar();
+        }
+    }
+
+    // =====================================================================
+    // NOTIFICACIONES
+    // =====================================================================
+
+    private async Task MostrarNotificacionExito(string mensaje)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Exito!",
+            text = mensaje,
+            icon = "success",
+            confirmButtonText = "Aceptar",
+            confirmButtonColor = "#0f172a",
+        });
+    }
+
+    private async Task MostrarNotificacionError(string mensaje)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Error",
+            text = mensaje,
+            icon = "error",
+            confirmButtonText = "Aceptar",
+            confirmButtonColor = "#ef4444"
+        });
+    }
+
+    private async Task MostrarNotificacionInfo(string mensaje)
+    {
+        await JS.InvokeVoidAsync("Swal.fire", new
+        {
+            title = "Informacion",
+            text = mensaje,
+            icon = "info",
+            confirmButtonText = "Aceptar",
+            confirmButtonColor = "#3b82f6"
+        });
+    }
+
+    // =====================================================================
+    // HELPERS DE PRESENTACIÓN
+    // =====================================================================
+
+    private string GetOrigenClass(string? tipoCliente)
+    {
+        if (string.IsNullOrWhiteSpace(tipoCliente))
+            return "origen-sin";
+
+        return tipoCliente.Trim().ToLowerInvariant() switch
+        {
+            "redes sociales" => "origen-redes",
+            "página web" => "origen-web",
+            "pagina web" => "origen-web",
+            "mayoreo" => "origen-mayoreo",
+            "clientes de tiendas" => "origen-tiendas",
+            _ => "origen-sin"
+        };
     }
 
     private string GetSucursalNombre(string? almacen)
@@ -2154,614 +4081,16 @@ private string GetOrigenClass(string? tipoCliente)
             return new MarkupString(nombreCompleto);
 
         var palabras = nombreCompleto.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        
+
         if (palabras.Length <= 1)
             return new MarkupString(nombreCompleto);
 
         var mitad = (palabras.Length + 1) / 2;
-        
+
         var linea1 = string.Join(" ", palabras.Take(mitad));
         var linea2 = string.Join(" ", palabras.Skip(mitad));
 
         return new MarkupString($"{linea1}<br/>{linea2}");
-    }
-
-    private async Task CargarUsuarioActual()
-    {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        esSuperAdmin = user.IsInRole("SuperAdministrador");
-        esAdmin = user.IsInRole("Administrador");
-    }
-
-    private async Task CargarDatos()
-    {
-        await CargarClientes();
-        await CargarCategorias();
-    }
-
-    private async Task CargarClientes()
-    {
-        cargando = true;
-        try
-        {
-            clientes = await DbContext.Clientes.ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error al cargar clientes: {ex.Message}");
-        }
-        finally
-        {
-            cargando = false;
-        }
-    }
-
-    private async Task CargarCategorias()
-    {
-        try
-        {
-            categorias = await DbContext.CategoriaProductos.ToListAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error cargando categorias: {ex.Message}");
-        }
-    }
-
-    private void AbrirDropdownSucursal()
-    {
-        mostrarDropdownSucursal = true;
-    }
-
-    private void SeleccionarSucursal(SucursalCyc? sucursal)
-    {
-        if (sucursal == null)
-        {
-            filtroSucursal = "";
-            busquedaSucursal = "";
-        }
-        else
-        {
-            filtroSucursal = sucursal.Almacen;
-            busquedaSucursal = sucursal.NombreCompleto ?? sucursal.Almacen;
-        }
-        
-        mostrarDropdownSucursal = false;
-        paginaActual = 1;
-    }
-
-    private void ToggleSeleccionCliente(int clienteId)
-    {
-        if (!puedeEnviarWhatsApp) return;
-
-        if (clientesSeleccionados.Contains(clienteId))
-            clientesSeleccionados.Remove(clienteId);
-        else
-            clientesSeleccionados.Add(clienteId);
-    }
-
-    private void ToggleSelectAll()
-    {
-        if (!puedeEnviarWhatsApp) return;
-
-        var clientesSeleccionables = clientesPaginados
-            .Where(c => c.AceptaWhatsApp == true)
-            .ToList();
-
-        var todosSeleccionados = clientesSeleccionables
-            .All(c => clientesSeleccionados.Contains(c.Id));
-
-        if (todosSeleccionados)
-        {
-            foreach (var cliente in clientesSeleccionables)
-                clientesSeleccionados.Remove(cliente.Id);
-        }
-        else
-        {
-            foreach (var cliente in clientesSeleccionables)
-                clientesSeleccionados.Add(cliente.Id);
-        }
-    }
-
-    private void LimpiarSeleccion()
-    {
-        clientesSeleccionados.Clear();
-    }
-
-    private async Task AbrirModalWhatsApp()
-    {
-        if (!puedeEnviarWhatsApp)
-        {
-            await MostrarNotificacionError("No tienes permiso para realizar envíos por WhatsApp");
-            return;
-        }
-
-        if (clientesSeleccionados.Count == 0)
-        {
-            await MostrarNotificacionInfo("No has seleccionado ningun cliente");
-            return;
-        }
-
-        // Las promociones se cargan si existen, pero ya no son obligatorias
-        // porque el Menú Rams Cottons siempre está disponible.
-        promocionesActivas = await DbContext.Promociones
-            .Where(p => p.Activo && p.FechaFin >= DateTime.Today)
-            .OrderBy(p => p.FechaFin)
-            .ToListAsync();
-
-        mostrarModalPromociones = true;
-    }
-
-    private void CerrarModal()
-    {
-        mostrarModalPromociones = false;
-        promocionesActivas.Clear();
-    }
-
-
-    private async Task EnviarMenuRams()
-    {
-        if (!puedeEnviarWhatsApp)
-        {
-            await MostrarNotificacionError("No tienes permiso para realizar envíos por WhatsApp");
-            return;
-        }
-
-        mostrarModalPromociones = false;
-
-        var clientesParaEnviar = clientesSeleccionados
-            .Select(id => clientes.FirstOrDefault(c => c.Id == id))
-            .Where(c =>
-                c != null &&
-                c.AceptaWhatsApp == true &&
-                !string.IsNullOrWhiteSpace(c.Telefono))
-            .ToList();
-
-        if (clientesParaEnviar.Count == 0)
-        {
-            await MostrarNotificacionError(
-                "Ninguno de los clientes seleccionados tiene un teléfono válido o autorización para WhatsApp");
-            return;
-        }
-
-        var enviados = 0;
-        var fallidos = 0;
-        string? ultimoError = null;
-
-        foreach (var cliente in clientesParaEnviar)
-        {
-            try
-            {
-                var telefonoLimpio = new string(
-                    cliente!.Telefono!
-                        .Where(char.IsDigit)
-                        .ToArray());
-
-                // Si el número guardado tiene 10 dígitos, agregamos México (52).
-                if (telefonoLimpio.Length == 10)
-                {
-                    telefonoLimpio = "52" + telefonoLimpio;
-                }
-                else if (!telefonoLimpio.StartsWith("52"))
-                {
-                    telefonoLimpio = "52" + telefonoLimpio;
-                }
-
-                var primerNombre = cliente.NombreCompleto?
-                    .Split(
-                        ' ',
-                        StringSplitOptions.RemoveEmptyEntries)
-                    .FirstOrDefault();
-
-                if (string.IsNullOrWhiteSpace(primerNombre))
-                {
-                    primerNombre = "Cliente";
-                }
-
-                var resultado =
-                    await _whatsApp.EnviarPlantillaAsync(
-                        numeroDestino: telefonoLimpio,
-                        nombrePlantilla: "menu_atencion_rams",
-                        idioma: "es_MX",
-                        parametros: new Dictionary<string, string>
-                        {
-                            { "1", primerNombre }
-                        });
-
-                await JS.InvokeVoidAsync(
-                    "console.log",
-                    $"[WhatsApp Menú] Envío a {telefonoLimpio} - Resultado: {resultado}");
-
-                if (resultado)
-                {
-                    enviados++;
-                }
-                else
-                {
-                    fallidos++;
-
-                    if (!string.IsNullOrWhiteSpace(
-                        _whatsApp.UltimoError))
-                    {
-                        ultimoError =
-                            _whatsApp.UltimoError;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                fallidos++;
-                ultimoError = ex.Message;
-            }
-
-            // Pequeña separación entre envíos.
-            await Task.Delay(200);
-        }
-
-        clientesSeleccionados.Clear();
-
-        var mensajeResumen =
-            fallidos == 0
-                ? enviados == 1
-                    ? "Se envió el menú correctamente a 1 cliente"
-                    : $"Se envió el menú correctamente a {enviados} clientes"
-                : $"{enviados} enviados, {fallidos} fallidos";
-
-        var htmlError = "";
-
-        if (fallidos > 0 &&
-            !string.IsNullOrWhiteSpace(ultimoError))
-        {
-            var errorEscapado = ultimoError
-                .Replace("&", "&amp;")
-                .Replace("<", "&lt;")
-                .Replace(">", "&gt;")
-                .Replace("\"", "&quot;");
-
-            htmlError = $@"
-                <div style='margin-top: 1rem; padding: 0.75rem; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444; text-align: left; max-height: 200px; overflow-y: auto;'>
-                    <div style='font-size: 0.75rem; color: #991b1b; font-weight: 700; margin-bottom: 0.35rem;'>
-                        <i class='bi bi-exclamation-triangle-fill'></i> Error de Meta WhatsApp:
-                    </div>
-                    <div style='font-size: 0.7rem; color: #7f1d1d; word-break: break-all; font-family: monospace; line-height: 1.4;'>
-                        {errorEscapado}
-                    </div>
-                </div>";
-        }
-
-        await JS.InvokeVoidAsync(
-            "Swal.fire",
-            new
-            {
-                title =
-                    fallidos == 0
-                        ? "Menú enviado"
-                        : "Envío finalizado con errores",
-
-                html = $@"
-                    <div style='display: flex; justify-content: center; gap: 2.5rem; padding: 1rem 0;'>
-                        <div style='text-align: center;'>
-                            <div style='font-size: 1.8rem; font-weight: 700; color: #10b981;'>{enviados}</div>
-                            <div style='font-size: 0.8rem; color: #6b7280;'>Enviados</div>
-                        </div>
-                        <div style='width: 1px; background: #e5e7eb;'></div>
-                        <div style='text-align: center;'>
-                            <div style='font-size: 1.8rem; font-weight: 700; color: #ef4444;'>{fallidos}</div>
-                            <div style='font-size: 0.8rem; color: #6b7280;'>Fallidos</div>
-                        </div>
-                    </div>
-                    <div style='font-size: 0.9rem; color: #4b5563; text-align: center; padding-top: 0.5rem;'>
-                        {mensajeResumen}
-                    </div>
-                    {htmlError}",
-
-                icon =
-                    fallidos == 0
-                        ? "success"
-                        : "warning",
-
-                confirmButtonText = "Aceptar",
-                confirmButtonColor = "#0f172a",
-                width =
-                    fallidos > 0
-                        ? "600px"
-                        : "auto"
-            });
-    }
-
-   private async Task EnviarPromocion(Promocion promo, string enlace)
-{
-    if (!puedeEnviarWhatsApp)
-    {
-        await MostrarNotificacionError("No tienes permiso para enviar promociones por WhatsApp");
-        return;
-    }
-
-    mostrarModalPromociones = false;
-
-    var clientesParaEnviar = clientesSeleccionados
-        .Select(id => clientes.FirstOrDefault(c => c.Id == id))
-        .Where(c => c != null && !string.IsNullOrEmpty(c.Telefono))
-        .ToList();
-
-    if (clientesParaEnviar.Count == 0)
-    {
-        await MostrarNotificacionError("Ninguno de los clientes seleccionados tiene un telefono valido");
-        return;
-    }
-
-    var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-    var user = authState.User;
-    var usuarioActual = await UserManager.GetUserAsync(user);
-    var usuarioId = usuarioActual?.Id ?? "";
-
-    var enviados = 0;
-    var fallidos = 0;
-    string? ultimoError = null; 
-
-    foreach (var cliente in clientesParaEnviar)
-    {
-        try
-        {
-            var telefonoLimpio = cliente!.Telefono!.Replace(" ", "").Replace("-", "").Replace("+", "");
-            if (!telefonoLimpio.StartsWith("52")) telefonoLimpio = "52" + telefonoLimpio;
-
-                var resultado = await _whatsApp.EnviarPlantillaConBotonAsync(
-                    numeroDestino: telefonoLimpio,
-                    nombrePlantilla: "promocion_rams_v6",
-                    idioma: "es_MX",
-                    parametros: new Dictionary<string, string>
-                    {
-                        { "1", cliente.NombreCompleto.Split(' ')[0] },
-                        { "2", $"{promo.Titulo} - {promo.Descripcion}" },
-                        { "3", promo.FechaFin.ToString("dd/MM/yyyy") }
-                    },
-                    urlBoton: promo.TokenUnico ?? ""
-                );
-            //  LOG en el navegador (F12 → Console)
-            await JS.InvokeVoidAsync("console.log", $"[WhatsApp] Envío a {telefonoLimpio} - Resultado: {resultado}");
-            await JS.InvokeVoidAsync("console.log", $"[WhatsApp] Error: {_whatsApp.UltimoError ?? "Ninguno"}");
-
-            // Guardar el error para mostrarlo después
-            if (!resultado && !string.IsNullOrEmpty(_whatsApp.UltimoError))
-            {
-                ultimoError = _whatsApp.UltimoError;
-            }
-
-            var historial = new HistorialEnvio
-            {
-                ClienteId = cliente.Id,
-                PromocionId = promo.Id,
-                UsuarioEnvioId = usuarioId,
-                Mensaje = $"{promo.Titulo} - {promo.Descripcion}",
-                EnlacePromocion = enlace,
-                EnlaceWhatsApp = $"https://wa.me/{telefonoLimpio}?text={Uri.EscapeDataString($"{promo.Titulo} - {promo.Descripcion}")}",
-                FechaEnvio = DateTime.Now,
-                Estatus = resultado ? "Enviado" : "Fallido",
-                Observaciones = resultado 
-                    ? $"Enviado a {cliente.Telefono}" 
-                    : $"Error: {_whatsApp.UltimoError ?? "desconocido"}"
-            };
-            DbContext.HistorialEnvios.Add(historial);
-
-            if (resultado)
-                enviados++;
-            else
-                fallidos++;
-        }
-        catch (Exception ex)
-        {
-            fallidos++;
-            ultimoError = ex.Message;
-            
-            var historial = new HistorialEnvio
-            {
-                ClienteId = cliente!.Id,
-                PromocionId = promo.Id,
-                UsuarioEnvioId = usuarioId,
-                Mensaje = $"{promo.Titulo} - {promo.Descripcion}",
-                EnlacePromocion = enlace,
-                EnlaceWhatsApp = "",
-                FechaEnvio = DateTime.Now,
-                Estatus = "Error",
-                Observaciones = $"Error: {ex.Message}"
-            };
-            DbContext.HistorialEnvios.Add(historial);
-        }
-
-        await Task.Delay(200);
-    }
-
-    await DbContext.SaveChangesAsync();
-    clientesSeleccionados.Clear();
-
-    var mensajeResumen = fallidos == 0
-        ? (enviados == 1 
-            ? "Se envió 1 mensaje correctamente" 
-            : $"Se enviaron {enviados} mensajes correctamente")
-        : (enviados == 1 && fallidos == 1 
-            ? "1 enviado, 1 fallo" 
-            : fallidos == 1 
-                ? $"{enviados} enviados, 1 fallo" 
-                : $"{enviados} enviados, {fallidos} fallaron");
-
-    // HTML del Swal: muestra el error de Meta si hay fallos
-    var htmlError = "";
-    if (fallidos > 0 && !string.IsNullOrEmpty(ultimoError))
-    {
-        // Escapar HTML para que no rompa el Swal
-        var errorEscapado = ultimoError
-            .Replace("&", "&amp;")
-            .Replace("<", "&lt;")
-            .Replace(">", "&gt;")
-            .Replace("\"", "&quot;");
-
-        htmlError = $@"
-            <div style='margin-top: 1rem; padding: 0.75rem; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444; text-align: left; max-height: 200px; overflow-y: auto;'>
-                <div style='font-size: 0.75rem; color: #991b1b; font-weight: 700; margin-bottom: 0.35rem;'>
-                    <i class='bi bi-exclamation-triangle-fill'></i> Error de Meta WhatsApp:
-                </div>
-                <div style='font-size: 0.7rem; color: #7f1d1d; word-break: break-all; font-family: monospace; line-height: 1.4;'>
-                    {errorEscapado}
-                </div>
-            </div>";
-    }
-
-    await JS.InvokeVoidAsync("Swal.fire", new
-    {
-        title = fallidos == 0 ? "Promoción enviada" : "Error al enviar",
-        html = $@"
-            <div style='display: flex; justify-content: center; gap: 2.5rem; padding: 1rem 0;'>
-                <div style='text-align: center;'>
-                    <div style='font-size: 1.8rem; font-weight: 700; color: #10b981;'>{enviados}</div>
-                    <div style='font-size: 0.8rem; color: #6b7280;'>Enviados</div>
-                </div>
-                <div style='width: 1px; background: #e5e7eb;'></div>
-                <div style='text-align: center;'>
-                    <div style='font-size: 1.8rem; font-weight: 700; color: #ef4444;'>{fallidos}</div>
-                    <div style='font-size: 0.8rem; color: #6b7280;'>Fallidos</div>
-                </div>
-            </div>
-            <div style='font-size: 0.9rem; color: #4b5563; text-align: center; padding-top: 0.5rem;'>
-                {mensajeResumen}
-            </div>
-            {htmlError}
-        ",
-        icon = fallidos == 0 ? "success" : "warning",
-        confirmButtonText = "Aceptar",
-        confirmButtonColor = "#0f172a",
-        width = fallidos > 0 ? "600px" : "auto"   
-    });
-}
-    private void CrearPromocion()
-    {
-        if (!puedeCrearPromociones) return;
-        NavigationManager.NavigateTo("/promociones/crear");
-    }
-
-    private async Task MostrarNotificacionExito(string mensaje)
-    {
-        await JS.InvokeVoidAsync("Swal.fire", new
-        {
-            title = "Exito!",
-            text = mensaje,
-            icon = "success",
-            confirmButtonText = "Aceptar",
-            confirmButtonColor = "#0f172a",
-        });
-    }
-
-    private async Task MostrarNotificacionError(string mensaje)
-    {
-        await JS.InvokeVoidAsync("Swal.fire", new
-        {
-            title = "Error",
-            text = mensaje,
-            icon = "error",
-            confirmButtonText = "Aceptar",
-            confirmButtonColor = "#ef4444"
-        });
-    }
-
-    private async Task MostrarNotificacionInfo(string mensaje)
-    {
-        await JS.InvokeVoidAsync("Swal.fire", new
-        {
-            title = "Informacion",
-            text = mensaje,
-            icon = "info",
-            confirmButtonText = "Aceptar",
-            confirmButtonColor = "#3b82f6"
-        });
-    }
-
-    private void CrearCliente()
-    {
-        if (!puedeCrearClientes) return;
-        NavigationManager.NavigateTo("/clientes/crear");
-    }
-
-    private void VerCliente(int id)
-    {
-        if (!puedeVerClientes) return;
-        NavigationManager.NavigateTo($"/clientes/ver/{id}");
-    }
-
-    private void EditarCliente(int id)
-    {
-        if (!puedeEditarClientes) return;
-        NavigationManager.NavigateTo($"/clientes/editar/{id}");
-    }
-
-    private void GenerarQR(int id)
-    {
-        if (!puedeGenerarQR) return;
-        NavigationManager.NavigateTo($"/clientes/qr/{id}");
-    }
-    private void ToggleFilters() => mostrarFiltros = !mostrarFiltros;
-
-    private void LimpiarFiltros()
-    {
-        filtroBusqueda = "";
-        filtroCategoria = 0;
-        filtroEstado = "";
-        filtroWhatsApp = "todos";
-        filtroOrigen = "";
-        filtroSucursal = "";
-        busquedaSucursal = "";
-        ordenarPor = "reciente";
-        paginaActual = 1;
-    }
-
-    private void CambiarPagina(int pagina)
-    {
-        if (pagina >= 1 && pagina <= totalPaginas)
-            paginaActual = pagina;
-    }
-
-    private void ConfirmarEliminar(Cliente cliente)
-    {
-        if (!puedeEliminarClientes) return;
-
-        clienteEliminar = cliente;
-        mostrarModalEliminar = true;
-    }
-
-    private void CerrarModalEliminar()
-    {
-        mostrarModalEliminar = false;
-        clienteEliminar = null;
-    }
-
-    private async Task EliminarCliente()
-    {
-        if (!puedeEliminarClientes)
-        {
-            await MostrarNotificacionError("No tienes permiso para eliminar clientes");
-            return;
-        }
-
-        if (clienteEliminar == null) return;
-
-        try
-        {
-            var nombreCliente = clienteEliminar.NombreCompleto;
-            DbContext.Clientes.Remove(clienteEliminar);
-            await DbContext.SaveChangesAsync();
-
-            await CargarClientes();
-            await MostrarNotificacionExito($"Cliente {nombreCliente} eliminado correctamente");
-        }
-        catch (Exception ex)
-        {
-            await MostrarNotificacionError($"Error al eliminar cliente: {ex.Message}");
-        }
-        finally
-        {
-            CerrarModalEliminar();
-        }
     }
 
     private string GetCategoriaClass(string? categoria)

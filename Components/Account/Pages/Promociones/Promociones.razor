@@ -8,7 +8,6 @@
 @using RamsCottons.Models.CycData
 @using RamsCottons.Services
 @attribute [Authorize]
-
 @inject ApplicationDbContext DbContext
 @inject NavigationManager NavigationManager
 @inject UserManager<ApplicationUser> UserManager
@@ -16,8 +15,43 @@
 @inject IJSRuntime JS
 @inject SucursalService SucursalService
 @inject PermisoService PermisoService
-
 <PageTitle>Gestión de Promociones | RAMS Cottons</PageTitle>
+<style>
+    .promociones-container .col-publico {
+        min-width: 115px;
+        white-space: nowrap;
+    }
+    .promociones-container .promo-publico-badge {
+        display: inline-block;
+        padding: 0.25rem 0.55rem;
+        font-size: 0.74rem;
+        font-weight: 600;
+        line-height: 1.15;
+        border-radius: 999px;
+        border: 1px solid;
+        white-space: nowrap;
+    }
+    .promociones-container .promo-publico-mujer {
+        color: #9d174d;
+        background-color: #fdf2f8;
+        border-color: #fbcfe8;
+    }
+    .promociones-container .promo-publico-hombre {
+        color: #1d4ed8;
+        background-color: #eff6ff;
+        border-color: #bfdbfe;
+    }
+    .promociones-container .promo-publico-todos {
+        color: #047857;
+        background-color: #ecfdf5;
+        border-color: #a7f3d0;
+    }
+    .promociones-container .promo-publico-sin {
+        color: #64748b;
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+    }
+</style>
 
 @if (autorizadoPromociones)
 {
@@ -44,7 +78,6 @@
             }
         </div>
     </div>
-
     <!-- Control Panel -->
     <div class="control-panel">
         <div class="panel-header">
@@ -68,7 +101,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Filtros -->
         <div class="filters-panel @(mostrarFiltros ? "show" : "")">
             <div class="filter-row">
@@ -80,7 +112,16 @@
                         <option value="inactivo">Inactivas</option>
                     </select>
                 </div>
-
+                <div class="filter-group">
+                    <label>Público objetivo</label>
+                    <select class="select-custom" @bind="filtroPublicoObjetivo" @bind:after="ReiniciarPaginaPorFiltro">
+                        <option value="">Todos los públicos</option>
+                        <option value="Hombre">Hombre</option>
+                        <option value="Mujer">Mujer</option>
+                        <option value="Todos">Todos (general)</option>
+                        <option value="sin_clasificar">Sin clasificar</option>
+                    </select>
+                </div>
                 <div class="filter-group">
                     <label>Ordenar por</label>
                     <select class="select-custom" @bind="ordenarPor">
@@ -90,7 +131,6 @@
                         <option value="fechaFin">Fecha de fin</option>
                     </select>
                 </div>
-
                 <div class="filter-group">
                     <label>Filas por página</label>
                     <select class="select-custom" @bind="elementosPorPagina">
@@ -103,21 +143,19 @@
                     </select>
                 </div>
             </div>
-
             <div class="filter-row">
                 <!-- BUSCADOR DE SUCURSAL CON DROPDOWN -->
                 <div class="filter-group">
                     <label>Sucursal</label>
                     <div class="sucursal-search-wrapper">
                         <i class="bi bi-shop"></i>
-                        <input type="text" 
-                               class="sucursal-search-input" 
+                        <input type="text"
+                               class="sucursal-search-input"
                                placeholder="Busca y selecciona una sucursal..."
                                @bind="busquedaSucursal"
                                @bind:event="oninput"
                                @onfocus="AbrirDropdownSucursal" />
                         <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"></i>
-                        
                         @if (mostrarDropdownSucursal)
                         {
                             <div class="sucursal-dropdown">
@@ -127,7 +165,6 @@
                                     <i class="bi bi-x-circle"></i>
                                     <span class="sucursal-nombre">@(puedeVerPromocionesTodasSucursales ? "Todas las sucursales" : "Mi sucursal")</span>
                                 </div>
-                                
                                 @if (sucursalesFiltradas.Any())
                                 {
                                     @foreach (var sucursal in sucursalesFiltradas)
@@ -151,7 +188,6 @@
                         }
                     </div>
                 </div>
-
                 <div class="filter-group">
                     <label>&nbsp;</label>
                     <button class="btn-clear-filters" @onclick="LimpiarFiltros">
@@ -162,7 +198,6 @@
             </div>
         </div>
     </div>
-
     <!-- Loading -->
     @if (cargando)
     {
@@ -185,6 +220,7 @@
                             <th>Fecha Inicio</th>
                             <th>Fecha Fin</th>
                             <th>Sucursal</th>
+                            <th class="col-publico">Público objetivo</th>
                             <th>Estado</th>
                             <th>Enlace</th>
                             <th>Acciones</th>
@@ -194,7 +230,7 @@
                         @if (!promocionesPaginadas.Any())
                         {
                             <tr>
-                                <td colspan="9" class="text-center py-5">
+                                <td colspan="10" class="text-center py-5">
                                     <div class="no-data">
                                         <i class="bi bi-megaphone display-4 text-muted"></i>
                                         <p class="mb-0">No hay promociones registradas</p>
@@ -237,19 +273,15 @@
     }
 </td>
                                     <td class="col-descuento">
-                                        @if (promo.DescuentoPorcentaje.HasValue)
-                                        {
-                                            <span class="descuento-badge">@promo.DescuentoPorcentaje% OFF</span>
-                                        }
-                                        else if (promo.DescuentoMonto.HasValue)
-                                        {
-                                            <span class="descuento-badge">$@promo.DescuentoMonto OFF</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
-                                    </td>
+    @if (promo.DescuentoPorcentaje.HasValue)
+    {
+        <span class="descuento-badge">@promo.DescuentoPorcentaje% OFF</span>
+    }
+    else if (promo.DescuentoMonto.HasValue)
+    {
+        <span class="descuento-badge">$@promo.DescuentoMonto OFF</span>
+    }
+</td>
                                     <td class="col-fecha">
                                         @promo.FechaInicio.ToString("dd/MM/yyyy")
                                     </td>
@@ -267,6 +299,11 @@
                                         {
                                             <span class="text-muted">-</span>
                                         }
+                                    </td>
+                                    <td class="col-publico">
+                                        <span class="promo-publico-badge @GetClasePublicoObjetivo(promo.PublicoObjetivo)">
+                                            @GetTextoPublicoObjetivo(promo.PublicoObjetivo)
+                                        </span>
                                     </td>
                                     <td class="col-estado">
                                         <span class="status-badge @(promo.Activo ? "status-active" : "status-inactive")">
@@ -290,7 +327,6 @@
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
                                             }
-
                                             @if (puedeActivarDesactivarPromociones)
                                             {
                                                 <button class="btn-action btn-toggle"
@@ -299,7 +335,6 @@
                                                     <i class="bi @(promo.Activo ? "bi-pause-circle" : "bi-play-circle")"></i>
                                                 </button>
                                             }
-
                                             @if (puedeEliminarPromociones)
                                             {
                                                 <button class="btn-action btn-delete"
@@ -316,7 +351,6 @@
                     </tbody>
                 </table>
             </div>
-
             <!-- Paginación -->
             @if (promocionesFiltradas.Any())
             {
@@ -329,7 +363,6 @@
                             Página @paginaActual de @totalPaginas
                         </div>
                     </div>
-
                     @if (totalPaginas > 1)
                     {
                         <div class="pagination-wrapper">
@@ -367,7 +400,6 @@
         </div>
     }
 </div>
-
 <!-- Modal Eliminar Promoción -->
 @if (mostrarModalEliminar && promocionEliminar != null)
 {
@@ -385,7 +417,6 @@
                          style="width: 80px; height: 80px;">
                         <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 2.5rem;"></i>
                     </div>
-                    
                     <h5 class="fw-bold mb-3">¿Eliminar promoción?</h5>
                     <p class="text-muted mb-4">
                         Estás a punto de eliminar la promoción
@@ -407,9 +438,7 @@
         </div>
     </div>
 }
-
 }
-
 @code {
     private List<Promocion> promociones = new();
     private List<SucursalCyc> SucursalesDisponibles = new();
@@ -418,32 +447,27 @@
     private bool mostrarFiltros = false;
     private string filtro = "";
     private string filtroEstado = "";
+    private string filtroPublicoObjetivo = "";
     private string filtroSucursal = "";
     private string ordenarPor = "reciente";
     private int paginaActual = 1;
     private int elementosPorPagina = 15;
-    
     // Modal de confirmación para eliminar
     private bool mostrarModalEliminar = false;
     private Promocion? promocionEliminar;
-
     // Buscador de sucursal
     private string busquedaSucursal = "";
     private bool mostrarDropdownSucursal = false;
-
     // Variables para roles y permisos
     private bool esSuperAdmin = false;
     private bool esAdmin = false;
-
     private bool autorizadoPromociones = false;
     private bool puedeCrearPromociones = false;
     private bool puedeEditarPromociones = false;
     private bool puedeEliminarPromociones = false;
     private bool puedeActivarDesactivarPromociones = false;
     private bool puedeVerPromocionesTodasSucursales = false;
-
     private string? sucursalUsuarioActual = null;
-
     // Propiedad para filtrar sucursales según búsqueda
     private IEnumerable<SucursalCyc> sucursalesFiltradas =>
         string.IsNullOrWhiteSpace(busquedaSucursal)
@@ -451,13 +475,11 @@
             : SucursalesDisponibles.Where(s =>
                 s.Almacen.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase) ||
                 (s.NombreCompleto != null && s.NombreCompleto.Contains(busquedaSucursal, StringComparison.OrdinalIgnoreCase)));
-
     private IEnumerable<Promocion> promocionesFiltradas
     {
         get
         {
             var query = promociones.AsEnumerable();
-
             if (!string.IsNullOrWhiteSpace(filtro))
             {
                 query = query.Where(p =>
@@ -465,7 +487,6 @@
                     (p.Descripcion != null && p.Descripcion.Contains(filtro, StringComparison.OrdinalIgnoreCase))
                 );
             }
-
             if (filtroEstado == "activo")
             {
                 query = query.Where(p => p.Activo);
@@ -474,12 +495,21 @@
             {
                 query = query.Where(p => !p.Activo);
             }
-
             if (!string.IsNullOrEmpty(filtroSucursal))
             {
                 query = query.Where(p => p.IdSucursal == filtroSucursal);
             }
-
+            if (filtroPublicoObjetivo == "sin_clasificar")
+            {
+                query = query.Where(p => string.IsNullOrWhiteSpace(p.PublicoObjetivo));
+            }
+            else if (!string.IsNullOrWhiteSpace(filtroPublicoObjetivo))
+            {
+                query = query.Where(p => string.Equals(
+                    p.PublicoObjetivo?.Trim(),
+                    filtroPublicoObjetivo,
+                    StringComparison.OrdinalIgnoreCase));
+            }
             query = ordenarPor switch
             {
                 "antiguo" => query.OrderBy(p => p.FechaCreacion),
@@ -487,73 +517,57 @@
                 "fechaFin" => query.OrderBy(p => p.FechaFin),
                 _ => query.OrderByDescending(p => p.FechaCreacion)
             };
-
             return query;
         }
     }
-
     private int totalPaginas => (int)Math.Ceiling((double)promocionesFiltradas.Count() / elementosPorPagina);
-    
     private IEnumerable<Promocion> promocionesPaginadas =>
         promocionesFiltradas
             .Skip((paginaActual - 1) * elementosPorPagina)
             .Take(elementosPorPagina);
-
     protected override async Task OnInitializedAsync()
     {
         var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var userPermiso = authStatePermiso.User;
-
         esSuperAdmin = userPermiso.IsInRole("SuperAdministrador");
         esAdmin = userPermiso.IsInRole("Administrador");
-
         autorizadoPromociones = await PermisoService.TienePermisoAsync(
             userPermiso,
             Permissions.Promociones_Ver
         );
-
         if (!autorizadoPromociones)
         {
             NavigationManager.NavigateTo("/clientes", true);
             return;
         }
-
         puedeCrearPromociones = await PermisoService.TienePermisoAsync(
             userPermiso,
             Permissions.Promociones_Crear
         );
-
         puedeEditarPromociones = await PermisoService.TienePermisoAsync(
             userPermiso,
             Permissions.Promociones_Editar
         );
-
         puedeEliminarPromociones = await PermisoService.TienePermisoAsync(
             userPermiso,
             Permissions.Promociones_Eliminar
         );
-
         puedeActivarDesactivarPromociones = await PermisoService.TienePermisoAsync(
             userPermiso,
             Permissions.Promociones_ActivarDesactivar
         );
-
         puedeVerPromocionesTodasSucursales = await PermisoService.TienePermisoAsync(
             userPermiso,
             Permissions.Promociones_VerTodasSucursales
         );
-
         var usuarioActual = await UserManager.GetUserAsync(userPermiso);
         sucursalUsuarioActual = usuarioActual?.IdSucursal;
-
         CargarSucursalesDisponibles();
         await CargarPromociones();
     }
-
     private void CargarSucursalesDisponibles()
     {
         var todasLasSucursales = SucursalService.GetAllSucursales();
-
         if (esSuperAdmin || puedeVerPromocionesTodasSucursales)
         {
             SucursalesDisponibles = todasLasSucursales;
@@ -568,23 +582,18 @@
         {
             SucursalesDisponibles = new List<SucursalCyc>();
         }
-
         SucursalesCache = todasLasSucursales
             .GroupBy(s => s.Almacen)
             .ToDictionary(g => g.Key, g => g.First().NombreCompleto);
     }
-
     private string GetSucursalNombre(string? almacen)
     {
         if (string.IsNullOrEmpty(almacen))
             return "Sin sucursal";
-
         if (SucursalesCache.TryGetValue(almacen, out var nombre))
             return nombre;
-
         return almacen;
     }
-
     /// <summary>
     /// Retorna el nombre de la sucursal con un salto de línea HTML
     /// SOLO si el nombre es largo (más de 35 caracteres) y tiene paréntesis con contenido real
@@ -593,53 +602,41 @@
     {
         if (string.IsNullOrEmpty(almacen))
             return new MarkupString("Sin sucursal");
-
         if (!SucursalesCache.TryGetValue(almacen, out var nombre))
             return new MarkupString(almacen);
-
         if (nombre.Length <= 35)
             return new MarkupString(nombre);
-
         var indexParentesis = nombre.IndexOf('(');
         if (indexParentesis > 0)
         {
             var parte1 = nombre.Substring(0, indexParentesis).Trim();
             var parte2 = nombre.Substring(indexParentesis).Trim();
-
             var contenidoParentesis = parte2.Trim('(', ')', ' ').Trim();
             if (string.IsNullOrEmpty(contenidoParentesis) || contenidoParentesis == "." || contenidoParentesis.Length <= 2)
             {
                 return new MarkupString(nombre);
             }
-
             return new MarkupString($"{parte1}<br/>{parte2}");
         }
-
         return new MarkupString(nombre);
     }
-
     private async Task CargarPromociones()
     {
         cargando = true;
-
         try
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
-
             var puedeVer = await PermisoService.TienePermisoAsync(
                 user,
                 Permissions.Promociones_Ver
             );
-
             if (!puedeVer)
             {
                 NavigationManager.NavigateTo("/clientes", true);
                 return;
             }
-
             var query = DbContext.Promociones.AsQueryable();
-
             if (!esSuperAdmin && !puedeVerPromocionesTodasSucursales)
             {
                 if (string.IsNullOrWhiteSpace(sucursalUsuarioActual))
@@ -647,10 +644,8 @@
                     promociones = new List<Promocion>();
                     return;
                 }
-
                 query = query.Where(p => p.IdSucursal == sucursalUsuarioActual);
             }
-
             promociones = await query
                 .OrderByDescending(p => p.FechaCreacion)
                 .ToListAsync();
@@ -664,33 +659,27 @@
             cargando = false;
         }
     }
-
     // ============================================
     // BUSCADOR DE SUCURSAL
     // ============================================
-
     private void AbrirDropdownSucursal()
     {
         mostrarDropdownSucursal = true;
     }
-
     private void SeleccionarSucursal(SucursalCyc? sucursal)
     {
         if (!esSuperAdmin && !puedeVerPromocionesTodasSucursales)
         {
             filtroSucursal = sucursalUsuarioActual ?? "";
-
             var propia = SucursalesDisponibles.FirstOrDefault();
             busquedaSucursal =
                 propia?.NombreCompleto ??
                 propia?.Almacen ??
                 "";
-
             mostrarDropdownSucursal = false;
             paginaActual = 1;
             return;
         }
-
         if (sucursal == null)
         {
             filtroSucursal = "";
@@ -701,11 +690,9 @@
             filtroSucursal = sucursal.Almacen;
             busquedaSucursal = sucursal.NombreCompleto ?? sucursal.Almacen;
         }
-
         mostrarDropdownSucursal = false;
         paginaActual = 1;
     }
-
     private async Task CopiarEnlace(string enlace)
     {
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", enlace);
@@ -719,86 +706,84 @@
             showConfirmButton = false
         });
     }
-
     private void CrearPromocion()
     {
         if (!puedeCrearPromociones)
             return;
-
         NavigationManager.NavigateTo("/promociones/crear");
     }
     private void EditarPromocion(int id)
     {
         if (!puedeEditarPromociones)
             return;
-
         NavigationManager.NavigateTo($"/promociones/editar/{id}");
     }
+    private static string GetTextoPublicoObjetivo(string? publico) =>
+        string.IsNullOrWhiteSpace(publico) ? "Sin clasificar" : publico.Trim();
+
+    private static string GetClasePublicoObjetivo(string? publico) =>
+        publico?.Trim().ToLowerInvariant() switch
+        {
+            "mujer" => "promo-publico-mujer",
+            "hombre" => "promo-publico-hombre",
+            "todos" => "promo-publico-todos",
+            _ => "promo-publico-sin"
+        };
+
+    private void ReiniciarPaginaPorFiltro() => paginaActual = 1;
+
     private void ToggleFilters() => mostrarFiltros = !mostrarFiltros;
-    
-    private void LimpiarFiltros() 
-    { 
-        filtro = ""; 
-        filtroEstado = ""; 
+    private void LimpiarFiltros()
+    {
+        filtro = "";
+        filtroEstado = "";
+        filtroPublicoObjetivo = "";
         filtroSucursal = "";
         busquedaSucursal = "";
         paginaActual = 1;
     }
-    
     private void CambiarPagina(int pagina) => paginaActual = pagina;
-
     private async Task ToggleEstado(Promocion promo)
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-
         var tienePermiso = await PermisoService.TienePermisoAsync(
             user,
             Permissions.Promociones_ActivarDesactivar
         );
-
         if (!tienePermiso || !PuedeAdministrarPromocion(promo))
             return;
-
         promo.Activo = !promo.Activo;
         await DbContext.SaveChangesAsync();
         await CargarPromociones();
     }
-
     private void ConfirmarEliminar(Promocion promo)
     {
         if (!puedeEliminarPromociones || !PuedeAdministrarPromocion(promo))
             return;
-
         promocionEliminar = promo;
         mostrarModalEliminar = true;
     }
-
     private async Task EliminarPromocion()
     {
         if (promocionEliminar == null)
             return;
-
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-
         var tienePermiso = await PermisoService.TienePermisoAsync(
             user,
             Permissions.Promociones_Eliminar
         );
-
         if (!tienePermiso || !PuedeAdministrarPromocion(promocionEliminar))
         {
             CerrarModalEliminar();
             return;
         }
-
         try
         {
             DbContext.Promociones.Remove(promocionEliminar);
             await DbContext.SaveChangesAsync();
             await CargarPromociones();
-            
             await JS.InvokeVoidAsync("Swal.fire", new
             {
                 title = "¡Eliminada!",
@@ -824,16 +809,13 @@
             CerrarModalEliminar();
         }
     }
-
     private bool PuedeAdministrarPromocion(Promocion promo)
     {
         if (esSuperAdmin || puedeVerPromocionesTodasSucursales)
             return true;
-
         return !string.IsNullOrWhiteSpace(sucursalUsuarioActual) &&
                promo.IdSucursal == sucursalUsuarioActual;
     }
-
     private void CerrarModalEliminar()
     {
         mostrarModalEliminar = false;

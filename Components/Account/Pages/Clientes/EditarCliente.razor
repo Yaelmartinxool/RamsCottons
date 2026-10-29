@@ -1,9 +1,11 @@
+
 @page "/clientes/editar/{Id}"
 @rendermode InteractiveServer
 
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
 @using RamsCottons.Models
 @using RamsCottons.Data
 @using RamsCottons.Models.CycData
@@ -24,444 +26,648 @@
 
 @if (autorizado)
 {
-<div class="editar-cliente-container">
-    <div class="dashboard-header">
-        <div class="header-content">
-            <div class="header-title">
-                <div class="title-icon">
-                    <i class="bi bi-pencil-fill"></i>
-                </div>
-                <div>
-                    <h1>Editar Cliente</h1>
-                    <p class="subtitle">Modifique la información del cliente</p>
-                </div>
-            </div>
+    <div class="editar-cliente-container">
 
-            <button class="btn-back" @onclick="Volver">
-                <span>Volver</span>
-            </button>
-        </div>
-    </div>
-
-    @if (cargando)
-    {
-        <div class="loading-container">
-            <div class="spinner-border text-primary"></div>
-            <p>Cargando información del cliente...</p>
-        </div>
-    }
-    else if (cliente == null)
-    {
-        <div class="error-container">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            <h3>Cliente no encontrado</h3>
-            <p>El cliente que intentas editar no existe o ha sido eliminado.</p>
-            <button class="btn-back" @onclick="Volver">Volver</button>
-        </div>
-    }
-    else
-    {
-        <div class="row">
-            <div class="col-lg-8">
-                <div class="form-card">
-                    <div class="card-header">
-                        <div class="header-left">
-                            <i class="bi bi-pencil-square"></i>
-                            <h3>Información del Cliente</h3>
-                        </div>
-
-                        <span class="required-badge">
-                            * Campos obligatorios
-                        </span>
+        <!-- ENCABEZADO -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <div class="header-title">
+                    <div class="title-icon">
+                        <i class="bi bi-pencil-fill"></i>
                     </div>
 
-                    <div class="card-body">
-                        <EditForm Model="modelo"
-                                  OnValidSubmit="GuardarCliente"
-                                  FormName="editarCliente">
+                    <div>
+                        <h1>Editar Cliente</h1>
+                        <p class="subtitle">
+                            Modifique la información del cliente
+                        </p>
+                    </div>
+                </div>
 
-                            <DataAnnotationsValidator />
-                            <ValidationSummary class="validation-summary" />
+                <button class="btn-back" @onclick="Volver">
+                    <span>Volver</span>
+                </button>
+            </div>
+        </div>
 
-                            <div class="form-grid">
+        @if (cargando)
+        {
+            <div class="loading-container">
+                <div class="spinner-border text-primary"></div>
+                <p>Cargando información del cliente...</p>
+            </div>
+        }
+        else if (cliente == null)
+        {
+            <div class="error-container">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <h3>Cliente no encontrado</h3>
+                <p>
+                    El cliente que intentas editar
+                    no existe o ha sido eliminado.
+                </p>
 
-                                <div class="form-group full-width">
-                                    <label class="form-label">
-                                        Nombre Completo
-                                        <span class="text-danger">*</span>
-                                    </label>
+                <button class="btn-back" @onclick="Volver">
+                    Volver
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="row">
 
-                                    <div class="input-wrapper">
-                                        <i class="bi bi-person input-icon"></i>
+                <!-- FORMULARIO -->
+                <div class="col-lg-8">
+                    <div class="form-card">
 
-                                        <InputText @bind-Value="modelo.NombreCompleto"
-                                                   class="form-control" />
+                        <div class="card-header">
+                            <div class="header-left">
+                                <i class="bi bi-pencil-square"></i>
+                                <h3>Información del Cliente</h3>
+                            </div>
+
+                            <span class="required-badge">
+                                * Campos obligatorios
+                            </span>
+                        </div>
+
+                        <div class="card-body">
+
+                            <EditForm Model="modelo"
+                                      OnValidSubmit="GuardarCliente"
+                                      FormName="editarCliente">
+
+                                <DataAnnotationsValidator />
+
+                                <ValidationSummary
+                                    class="validation-summary" />
+
+                                <div class="form-grid">
+
+                                    <!-- NOMBRE COMPLETO -->
+                                    <div class="form-group full-width">
+
+                                        <label class="form-label">
+                                            Nombre Completo
+                                            <span class="text-danger">*</span>
+                                        </label>
+
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-person input-icon"></i>
+
+                                            <InputText
+                                                @bind-Value="modelo.NombreCompleto"
+                                                class="form-control" />
+                                        </div>
+
+                                        <ValidationMessage
+                                            For="() => modelo.NombreCompleto"
+                                            class="validation-message" />
                                     </div>
 
-                                    <ValidationMessage For="() => modelo.NombreCompleto"
-                                                       class="validation-message" />
-                                </div>
+                                    <!-- TELÉFONO PROTEGIDO -->
+                                    <div class="form-group">
 
-                                <div class="form-group">
-                                    <label class="form-label">
-                                        Teléfono
-                                        <span class="text-danger">*</span>
-                                    </label>
+                                        <label class="form-label">
+                                            Teléfono
+                                            <span class="text-danger">*</span>
+                                        </label>
 
-                                    <div class="input-wrapper">
-                                        <i class="bi bi-telephone input-icon"></i>
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-telephone input-icon"></i>
 
-                                        <InputText @bind-Value="modelo.Telefono"
-                                                   class="form-control" />
+                                            <InputText
+                                                @bind-Value="modelo.Telefono"
+                                                class="form-control"
+                                                readonly="readonly" />
+                                        </div>
+
+                                        <small class="form-text text-muted d-block mt-1">
+                                            El teléfono está vinculado
+                                            al historial de puntos RAMS.
+                                            No puede modificarse desde aquí.
+                                        </small>
+
+                                        <ValidationMessage
+                                            For="() => modelo.Telefono"
+                                            class="validation-message" />
                                     </div>
 
-                                    <ValidationMessage For="() => modelo.Telefono"
-                                                       class="validation-message" />
-                                </div>
+                                    <!-- CORREO ELECTRÓNICO -->
+                                    <div class="form-group">
 
-                                <div class="form-group">
-                                    <label class="form-label">
-                                        Correo Electrónico
-                                    </label>
+                                        <label class="form-label">
+                                            Correo Electrónico
+                                        </label>
 
-                                    <div class="input-wrapper">
-                                        <i class="bi bi-envelope input-icon"></i>
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-envelope input-icon"></i>
 
-                                        <input type="text"
-                                               @bind="modelo.Correo"
-                                               class="form-control"
-                                               placeholder="correo@ejemplo.com" />
+                                            <input type="text"
+                                                   @bind="modelo.Correo"
+                                                   class="form-control"
+                                                   placeholder="correo@ejemplo.com" />
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div class="form-group full-width">
-                                    <label class="form-label">
-                                        Categoría
-                                    </label>
+                                    <!-- FECHA DE CUMPLEAÑOS -->
+                                    <div class="form-group full-width">
 
-                                    <div class="input-wrapper">
-                                        <i class="bi bi-tags input-icon"></i>
+                                        <label class="form-label"
+                                               for="fechaCumpleanos">
+                                            Fecha de cumpleaños
+                                            <span class="text-danger">*</span>
+                                        </label>
 
-                                        <select @bind="modelo.IdCategoriaProducto"
-                                                class="form-control">
+                                        <InputDate TValue="DateTime?"
+                                                   id="fechaCumpleanos"
+                                                   Type="InputDateType.Date"
+                                                   @bind-Value="modelo.FechaNacimiento"
+                                                   class="rams-cumpleanos-fecha"
+                                                   max="@FechaMaximaCumpleanos" />
 
-                                            <option value="">
-                                                Seleccione una categoría
-                                            </option>
+                                        <small class="form-text text-muted d-block mt-1">
+                                            Selecciona o escribe la fecha de cumpleaños.
+                                            Este campo es obligatorio.
+                                        </small>
 
-                                            @foreach (var cat in categorias)
-                                            {
-                                                <option value="@cat.IdCategoria">
-                                                    @cat.NombreCat
+                                        <ValidationMessage
+                                            For="() => modelo.FechaNacimiento"
+                                            class="validation-message" />
+                                    </div>
+
+                                    <!-- CATEGORÍA -->
+                                    <div class="form-group full-width">
+
+                                        <label class="form-label">
+                                            Categoría
+                                        </label>
+
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-tags input-icon"></i>
+
+                                            <select
+                                                @bind="modelo.IdCategoriaProducto"
+                                                class="form-control"
+                                                disabled="@(!puedeAsignarCategoria)">
+
+                                                <option value="">
+                                                    Seleccione una categoría
                                                 </option>
-                                            }
 
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="form-group full-width">
-                                    <label class="form-label">
-                                        Tipo de Cliente
-                                    </label>
-
-                                    <div class="input-wrapper">
-                                        <i class="bi bi-diagram-3 input-icon"></i>
-
-                                        <select @bind="modelo.TipoCliente"
-                                                class="form-control">
-
-                                            <option value="">
-                                                Seleccione una opción
-                                            </option>
-
-                                            @foreach (var tipo in tiposCliente)
-                                            {
-                                                <option value="@tipo.Nombre">
-                                                    @tipo.Nombre
-                                                </option>
-                                            }
-
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="form-group full-width">
-                                    <label class="form-label">
-                                        Sucursal
-                                        <span class="text-danger">*</span>
-                                    </label>
-
-                                    <div class="sucursal-search-wrapper @(errorSucursal ? "has-error" : "")">
-
-                                        <i class="bi bi-shop"></i>
-
-                                        <input type="text"
-                                               class="sucursal-search-input"
-                                               placeholder="Busca y selecciona una sucursal..."
-                                               @bind="busquedaSucursal"
-                                               @bind:event="oninput"
-                                               @onfocus="AbrirDropdownSucursal" />
-
-                                        <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"
-   style="cursor:pointer;"
-   @onclick="ToggleDropdownSucursal"></i>
-
-                                        @if (mostrarDropdownSucursal)
-                                        {
-                                            <div class="sucursal-dropdown">
-
-    <div class="sucursal-dropdown-item cerrar-lista"
-         @onmousedown:preventDefault
-         @onclick="CerrarDropdownSucursal">
-
-        <span class="sucursal-almacen">
-            <i class="bi bi-x-circle"></i>
-        </span>
-
-        <span class="sucursal-nombre">
-            Cerrar lista
-        </span>
-
-    </div>
-
-                                                @if (sucursalesFiltradas.Any())
+                                                @foreach (var cat in categorias)
                                                 {
-                                                    @foreach (var sucursal in sucursalesFiltradas)
+                                                    <option value="@cat.IdCategoria">
+                                                        @cat.NombreCat
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+
+                                        @if (!puedeAsignarCategoria)
+                                        {
+                                            <small class="form-text text-muted d-block mt-1">
+                                                <i class="bi bi-lock-fill me-1"></i>
+                                                No tienes permiso para modificar
+                                                la categoría del cliente.
+                                            </small>
+                                        }
+                                    </div>
+
+                                    <!-- TIPO DE CLIENTE -->
+                                    <div class="form-group full-width">
+
+                                        <label class="form-label">
+                                            Tipo de Cliente
+                                        </label>
+
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-diagram-3 input-icon"></i>
+
+                                            <select
+                                                @bind="modelo.TipoCliente"
+                                                class="form-control">
+
+                                                <option value="">
+                                                    Seleccione una opción
+                                                </option>
+
+                                                @foreach (var tipo in tiposCliente)
+                                                {
+                                                    <option value="@tipo.Nombre">
+                                                        @tipo.Nombre
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- GÉNERO -->
+                                    <div class="form-group full-width">
+
+                                        <label class="form-label">
+                                            Género
+                                        </label>
+
+                                        <div class="input-wrapper">
+                                            <i class="bi bi-people input-icon"></i>
+
+                                            <select
+                                                class="form-control"
+                                                @bind="modelo.Genero">
+
+                                                <option value="">
+                                                    Sin especificar
+                                                </option>
+
+                                                <option value="Hombre">
+                                                    Hombre
+                                                </option>
+
+                                                <option value="Mujer">
+                                                    Mujer
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                        <small class="form-text text-muted d-block mt-1">
+                                            Se utiliza para filtrar los
+                                            catálogos y promociones.
+                                        </small>
+                                    </div>
+
+                                    <!-- SUCURSAL -->
+                                    <div class="form-group full-width">
+
+                                        <label class="form-label">
+                                            Sucursal
+                                            <span class="text-danger">*</span>
+                                        </label>
+
+                                        <div class="sucursal-search-wrapper @(errorSucursal ? "has-error" : "")">
+
+                                            <i class="bi bi-shop"></i>
+
+                                            <input type="text"
+                                                   class="sucursal-search-input"
+                                                   placeholder="Busca y selecciona una sucursal..."
+                                                   @bind="busquedaSucursal"
+                                                   @bind:event="oninput"
+                                                   @onfocus="AbrirDropdownSucursal" />
+
+                                            <i class="bi bi-chevron-down sucursal-search-arrow @(mostrarDropdownSucursal ? "rotated" : "")"
+                                               style="cursor:pointer;"
+                                               @onclick="ToggleDropdownSucursal"></i>
+
+                                            @if (mostrarDropdownSucursal)
+                                            {
+                                                <div class="sucursal-dropdown">
+
+                                                    <div class="sucursal-dropdown-item cerrar-lista"
+                                                         @onmousedown:preventDefault
+                                                         @onclick="CerrarDropdownSucursal">
+
+                                                        <span class="sucursal-almacen">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </span>
+
+                                                        <span class="sucursal-nombre">
+                                                            Cerrar lista
+                                                        </span>
+                                                    </div>
+
+                                                    @if (sucursalesFiltradas.Any())
                                                     {
-                                                        <div class="sucursal-dropdown-item @(selectedSucursal == sucursal.Almacen ? "selected" : "")"
-                                                             @onmousedown:preventDefault
-                                                             @onclick="() => SeleccionarSucursal(sucursal)">
+                                                        @foreach (var sucursal in sucursalesFiltradas)
+                                                        {
+                                                            <div class="sucursal-dropdown-item @(selectedSucursal == sucursal.Almacen ? "selected" : "")"
+                                                                 @onmousedown:preventDefault
+                                                                 @onclick="() => SeleccionarSucursal(sucursal)">
 
-                                                            <span class="sucursal-almacen">
-                                                                @sucursal.Almacen
-                                                            </span>
+                                                                <span class="sucursal-almacen">
+                                                                    @sucursal.Almacen
+                                                                </span>
 
-                                                            <span class="sucursal-nombre">
-                                                                @sucursal.NombreCompleto
-                                                            </span>
-
+                                                                <span class="sucursal-nombre">
+                                                                    @sucursal.NombreCompleto
+                                                                </span>
+                                                            </div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="sucursal-dropdown-empty">
+                                                            <i class="bi bi-search"></i>
+                                                            No se encontraron sucursales
                                                         </div>
                                                     }
-                                                }
-                                                else
-                                                {
-                                                    <div class="sucursal-dropdown-empty">
-                                                        <i class="bi bi-search"></i>
-                                                        No se encontraron sucursales
-                                                    </div>
-                                                }
+                                                </div>
+                                            }
+                                        </div>
 
+                                        @if (errorSucursal)
+                                        {
+                                            <div class="validation-message"
+                                                 style="margin-top:0.25rem;">
+
+                                                <i class="bi bi-exclamation-circle-fill me-1"></i>
+
+                                                @mensajeErrorSucursal
                                             </div>
                                         }
                                     </div>
 
-                                    @if (errorSucursal)
-                                    {
-                                        <div class="validation-message"
-                                             style="margin-top: 0.25rem;">
+                                    <!-- AUTORIZACIÓN WHATSAPP -->
+                                    <div class="form-group full-width">
 
-                                            <i class="bi bi-exclamation-circle-fill me-1"></i>
-                                            @mensajeErrorSucursal
+                                        <div class="form-check">
 
+                                            <InputCheckbox
+                                                @bind-Value="modelo.AceptaWhatsApp"
+                                                id="aceptaWhatsApp"
+                                                class="form-check-input" />
+
+                                            <label class="form-check-label"
+                                                   for="aceptaWhatsApp">
+
+                                                <i class="bi bi-whatsapp text-success"></i>
+
+                                                Acepta recibir promociones por WhatsApp
+                                            </label>
+
+                                            <small class="form-text text-muted d-block mt-1">
+                                                Si el cliente no acepta,
+                                                no podrá recibir promociones por WhatsApp.
+                                            </small>
                                         </div>
-                                    }
-                                </div>
-
-                                <div class="form-group full-width">
-                                    <div class="form-check">
-
-                                        <InputCheckbox @bind-Value="modelo.AceptaWhatsApp"
-                                                       id="aceptaWhatsApp"
-                                                       class="form-check-input" />
-
-                                        <label class="form-check-label"
-                                               for="aceptaWhatsApp">
-
-                                            <i class="bi bi-whatsapp text-success"></i>
-                                            Acepta recibir promociones por WhatsApp
-
-                                        </label>
-
-                                        <small class="form-text text-muted d-block mt-1">
-                                            Si el cliente no acepta, no podrá recibir promociones por WhatsApp
-                                        </small>
-
                                     </div>
-                                </div>
 
-                                <div class="form-group full-width">
-                                    <label class="form-label">
-                                        Estado
-                                    </label>
+                                    <!-- ESTADO -->
+                                    <div class="form-group full-width">
 
-                                    <div class="status-toggle">
-
-                                        <label class="toggle-switch">
-                                            <InputCheckbox @bind-Value="modelo.Estado" />
-                                            <span class="toggle-slider"></span>
+                                        <label class="form-label">
+                                            Estado
                                         </label>
 
-                                        <span class="status-text">
-                                            @(modelo.Estado ? "Activo" : "Inactivo")
+                                        <div class="status-toggle">
+
+                                            <label class="toggle-switch">
+                                                <InputCheckbox
+                                                    @bind-Value="modelo.Estado" />
+
+                                                <span class="toggle-slider"></span>
+                                            </label>
+
+                                            <span class="status-text">
+                                                @(modelo.Estado ? "Activo" : "Inactivo")
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- NOTA -->
+                                    <div class="info-message full-width">
+
+                                        <i class="bi bi-info-circle-fill"></i>
+
+                                        <span>
+                                            <strong>Nota:</strong>
+                                            Puedes modificar los datos del cliente,
+                                            pero el número telefónico permanece
+                                            protegido por su historial de puntos RAMS.
                                         </span>
-
                                     </div>
-                                </div>
 
-                                <div class="info-message full-width">
-                                    <i class="bi bi-info-circle-fill"></i>
+                                    <!-- BOTONES -->
+                                    <div class="form-actions full-width">
 
-                                    <span>
-                                        <strong>Nota:</strong>
-                                        Al cambiar el teléfono, asegúrate de que no esté registrado en otro cliente.
-                                    </span>
-                                </div>
+                                        <button type="submit"
+                                                class="btn-submit"
+                                                disabled="@guardando">
 
-                                <div class="form-actions full-width">
+                                            @(guardando
+                                                ? "Guardando..."
+                                                : "Guardar Cambios")
+                                        </button>
 
-                                    <button type="submit"
-                                            class="btn-submit"
-                                            disabled="@guardando">
+                                        <button type="button"
+                                                class="btn-cancel"
+                                                @onclick="Volver">
 
-                                        @(guardando ? "Guardando..." : "Guardar Cambios")
-
-                                    </button>
-
-                                    <button type="button"
-                                            class="btn-cancel"
-                                            @onclick="Volver">
-
-                                        Cancelar
-
-                                    </button>
+                                            Cancelar
+                                        </button>
+                                    </div>
 
                                 </div>
+                            </EditForm>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- INFORMACIÓN LATERAL -->
+                <div class="col-lg-4">
+
+                    <div class="info-card">
+
+                        <div class="info-card-header">
+                            <i class="bi bi-person-badge"></i>
+                            <h4>Información del Cliente</h4>
+                        </div>
+
+                        <div class="info-card-body">
+
+                            <!-- IDENTIFICADOR -->
+                            <div class="info-item">
+
+                                <span class="info-label">
+                                    ID:
+                                </span>
+
+                                <span class="info-value">
+                                    CL-@cliente.Id
+                                </span>
                             </div>
 
-                        </EditForm>
+                            <!-- FECHA DE REGISTRO -->
+                            <div class="info-item">
+
+                                <span class="info-label">
+                                    Fecha registro:
+                                </span>
+
+                                <span class="info-value">
+                                    @cliente.FechaRegistro.ToString("dd/MM/yyyy")
+                                </span>
+                            </div>
+
+                            <!-- CUMPLEAÑOS -->
+                            <div class="info-item">
+
+                                <span class="info-label">
+                                    Cumpleaños:
+                                </span>
+
+                                <span class="info-value">
+                                    @(cliente.FechaNacimiento.HasValue
+                                        ? cliente.FechaNacimiento.Value.ToString("dd/MM/yyyy")
+                                        : "No registrado")
+                                </span>
+                            </div>
+
+                            <!-- REGISTRADO POR -->
+                            <div class="info-item">
+
+                                <span class="info-label">
+                                    Registrado por:
+                                </span>
+
+                                <span class="info-value">
+                                    @cliente.IdUsuario
+                                </span>
+                            </div>
+
+                            <!-- ORIGEN -->
+                            <div class="info-item">
+
+                                <span class="info-label">
+                                    Origen:
+                                </span>
+
+                                <span class="info-value">
+                                    @if (!string.IsNullOrEmpty(cliente.TipoCliente))
+                                    {
+                                        <span class="origen-badge">
+                                            @cliente.TipoCliente
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">
+                                            No definido
+                                        </span>
+                                    }
+                                </span>
+                            </div>
+
+                            <!-- GÉNERO -->
+                            <div class="info-item">
+
+                                <span class="info-label">
+                                    Género:
+                                </span>
+
+                                <span class="info-value">
+                                    @(string.IsNullOrWhiteSpace(cliente.Genero)
+                                        ? "Sin especificar"
+                                        : cliente.Genero)
+                                </span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="tip-card">
+
+                        <i class="bi bi-lightbulb"></i>
+
+                        <div>
+                            <h5>Consejo de Edición</h5>
+
+                            <p>
+                                Puedes agregar o actualizar
+                                la fecha de cumpleaños de un cliente
+                                sin modificar sus puntos RAMS.
+                            </p>
+                        </div>
                     </div>
                 </div>
+
             </div>
+        }
 
-            <div class="col-lg-4">
+        <!-- MENSAJES -->
+        @if (!string.IsNullOrEmpty(mensajeExito))
+        {
+            <div class="toast-notification toast-success">
+                <i class="bi bi-check-circle-fill"></i>
 
-                <div class="info-card">
-
-                    <div class="info-card-header">
-                        <i class="bi bi-person-badge"></i>
-                        <h4>Información del Cliente</h4>
-                    </div>
-
-                    <div class="info-card-body">
-
-                        <div class="info-item">
-                            <span class="info-label">
-                                ID:
-                            </span>
-
-                            <span class="info-value">
-                                CL-@cliente.Id
-                            </span>
-                        </div>
-
-                        <div class="info-item">
-                            <span class="info-label">
-                                Fecha registro:
-                            </span>
-
-                            <span class="info-value">
-                                @cliente.FechaRegistro.ToString("dd/MM/yyyy")
-                            </span>
-                        </div>
-
-                        <div class="info-item">
-                            <span class="info-label">
-                                Registrado por:
-                            </span>
-
-                            <span class="info-value">
-                                @cliente.IdUsuario
-                            </span>
-                        </div>
-
-                        <div class="info-item">
-                            <span class="info-label">
-                                Origen:
-                            </span>
-
-                            <span class="info-value">
-
-                                @if (!string.IsNullOrEmpty(cliente.TipoCliente))
-                                {
-                                    <span class="origen-badge">
-                                        @cliente.TipoCliente
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">
-                                        No definido
-                                    </span>
-                                }
-
-                            </span>
-                        </div>
-
-                    </div>
-                </div>
-
-                <div class="tip-card">
-
-                    <i class="bi bi-lightbulb"></i>
-
-                    <div>
-                        <h5>Consejo de Edición</h5>
-
-                        <p>
-                            Al cambiar el teléfono, verifica que no exista otro cliente
-                            con el mismo número para evitar duplicados.
-                        </p>
-                    </div>
-
-                </div>
-
+                <span>@mensajeExito</span>
             </div>
-        </div>
-    }
+        }
 
-    @if (!string.IsNullOrEmpty(mensajeExito))
-    {
-        <div class="toast-notification toast-success">
-            <i class="bi bi-check-circle-fill"></i>
-            <span>@mensajeExito</span>
-        </div>
-    }
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="toast-notification toast-error">
+                <i class="bi bi-exclamation-triangle-fill"></i>
 
-    @if (!string.IsNullOrEmpty(error))
-    {
-        <div class="toast-notification toast-error">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            <span>@error</span>
-        </div>
-    }
-</div>
-
+                <span>@error</span>
+            </div>
+        }
+    </div>
 }
 
 <style>
-.cerrar-lista {
-    font-weight: 600;
-    border-bottom: 1px solid #e5e7eb;
-}
 
-.cerrar-lista:hover {
-    background: #f8fafc;
-}
+    .cerrar-lista {
+        font-weight: 600;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .cerrar-lista:hover {
+        background: #f8fafc;
+    }
+
+    /* FECHA DE CUMPLEAÑOS */
+
+    input.rams-cumpleanos-fecha[type="date"] {
+        display: block !important;
+        width: 100% !important;
+        height: 48px !important;
+        min-height: 48px !important;
+
+        padding: 10px 14px !important;
+        box-sizing: border-box;
+
+        background-color: #ffffff !important;
+        color: #0f172a !important;
+
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 9px !important;
+
+        font-size: 15px;
+        font-family: inherit;
+
+        appearance: auto !important;
+        -webkit-appearance: auto !important;
+        color-scheme: light;
+    }
+
+    input.rams-cumpleanos-fecha[type="date"]:focus {
+        outline: none;
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+
+    input.rams-cumpleanos-fecha[type="date"]::-webkit-calendar-picker-indicator {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+
+        position: static !important;
+        width: 22px !important;
+        height: 22px !important;
+
+        cursor: pointer !important;
+        pointer-events: auto !important;
+    }
+
 </style>
 
 @code {
+
+    // ============================================
+    // PARÁMETRO DEL CLIENTE
+    // ============================================
+
     [Parameter]
     public string Id { get; set; } = string.Empty;
 
@@ -470,11 +676,20 @@
 
     private Cliente? cliente;
 
+    // ============================================
+    // LISTAS
+    // ============================================
+
     private List<CategoriaProducto> categorias = new();
     private List<TipoCliente> tiposCliente = new();
     private List<SucursalCyc> SucursalesDisponibles = new();
 
+    // ============================================
+    // ESTADOS Y PERMISOS
+    // ============================================
+
     private bool autorizado = false;
+    private bool puedeAsignarCategoria = false;
     private bool cargando = true;
     private bool guardando = false;
 
@@ -483,13 +698,24 @@
 
     private ClienteModel modelo = new();
 
+    // ============================================
+    // SUCURSAL
+    // ============================================
+
     private string? selectedSucursal = null;
     private string busquedaSucursal = "";
+
     private bool mostrarDropdownSucursal = false;
     private bool errorSucursal = false;
+
     private string mensajeErrorSucursal = "";
 
-    private bool aceptaWhatsAppAnterior = false;
+    // ============================================
+    // CUMPLEAÑOS
+    // ============================================
+
+    private string FechaMaximaCumpleanos =>
+        DateTime.Today.ToString("yyyy-MM-dd");
 
     private IEnumerable<SucursalCyc> sucursalesFiltradas =>
         string.IsNullOrWhiteSpace(busquedaSucursal)
@@ -497,26 +723,30 @@
             : SucursalesDisponibles.Where(s =>
                 s.Almacen.Contains(
                     busquedaSucursal,
-                    StringComparison.OrdinalIgnoreCase
-                ) ||
-                (
-                    s.NombreCompleto != null &&
-                    s.NombreCompleto.Contains(
-                        busquedaSucursal,
-                        StringComparison.OrdinalIgnoreCase
-                    )
-                )
-            );
+                    StringComparison.OrdinalIgnoreCase)
+                ||
+                (s.NombreCompleto != null &&
+                 s.NombreCompleto.Contains(
+                    busquedaSucursal,
+                    StringComparison.OrdinalIgnoreCase)));
+
+    // ============================================
+    // INICIALIZACIÓN
+    // ============================================
 
     protected override async Task OnInitializedAsync()
     {
-        var authStatePermiso = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var authStatePermiso =
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
         var userPermiso = authStatePermiso.User;
 
-        var tienePermiso = await PermisoService.TienePermisoAsync(
-            userPermiso,
-            Permissions.Clientes_Editar
-        );
+        // Verificar permiso para editar clientes.
+
+        var tienePermiso =
+            await PermisoService.TienePermisoAsync(
+                userPermiso,
+                Permissions.Clientes_Editar);
 
         if (!tienePermiso)
         {
@@ -524,9 +754,21 @@
             return;
         }
 
+        // Verificar permiso independiente de categoría.
+
+        puedeAsignarCategoria =
+            await PermisoService.TienePermisoAsync(
+                userPermiso,
+                Permissions.Clientes_AsignarCategoria);
+
         autorizado = true;
+
         await CargarDatos();
     }
+
+    // ============================================
+    // CARGAR DATOS DEL CLIENTE
+    // ============================================
 
     private async Task CargarDatos()
     {
@@ -537,60 +779,73 @@
             SucursalesDisponibles =
                 SucursalService.GetAllSucursales();
 
-            categorias = await DbContext
-                .CategoriaProductos
-                .ToListAsync();
+            categorias =
+                await DbContext.CategoriaProductos
+                    .ToListAsync();
 
-            tiposCliente = await DbContext
-                .TiposCliente
-                .Where(t => t.Activo)
-                .OrderBy(t => t.IdTipoCliente)
-                .ToListAsync();
+            tiposCliente =
+                await DbContext.TiposCliente
+                    .Where(t => t.Activo)
+                    .OrderBy(t => t.IdTipoCliente)
+                    .ToListAsync();
 
-            cliente = await DbContext
-                .Clientes
-                .FirstOrDefaultAsync(c => c.Id == ClienteId);
+            cliente =
+                await DbContext.Clientes
+                    .FirstOrDefaultAsync(c =>
+                        c.Id == ClienteId);
 
             if (cliente != null)
             {
                 modelo = new ClienteModel
                 {
                     NombreCompleto = cliente.NombreCompleto,
-                    Telefono = cliente.Telefono ?? "",
-                    Correo = cliente.Correo,
-                    IdCategoriaProducto = cliente.IdCategoriaProducto,
-                    Estado = cliente.Estado == 1,
-                    AceptaWhatsApp = cliente.AceptaWhatsApp,
-                    TipoCliente = cliente.TipoCliente
-                };
 
-                aceptaWhatsAppAnterior =
-                    cliente.AceptaWhatsApp;
+                    Telefono = cliente.Telefono ?? "",
+
+                    Correo = cliente.Correo,
+
+                    IdCategoriaProducto =
+                        cliente.IdCategoriaProducto,
+
+                    Estado = cliente.Estado == 1,
+
+                    AceptaWhatsApp =
+                        cliente.AceptaWhatsApp,
+
+                    TipoCliente = cliente.TipoCliente,
+
+                    Genero = cliente.Genero,
+
+                    FechaNacimiento =
+                        cliente.FechaNacimiento
+                };
 
                 if (!string.IsNullOrEmpty(cliente.IdSucursal))
                 {
-                    selectedSucursal =
-                        cliente.IdSucursal;
+                    selectedSucursal = cliente.IdSucursal;
 
                     busquedaSucursal =
                         SucursalesDisponibles
-                            .FirstOrDefault(
-                                s => s.Almacen == cliente.IdSucursal
-                            )?.NombreCompleto
+                            .FirstOrDefault(s =>
+                                s.Almacen == cliente.IdSucursal)
+                            ?.NombreCompleto
                         ?? cliente.IdSucursal;
                 }
             }
         }
         catch (Exception ex)
         {
-            error =
-                $"Error cargando datos: {ex.Message}";
+            error = $"Error cargando datos: {ex.Message}";
         }
         finally
         {
             cargando = false;
         }
     }
+
+    // ============================================
+    // SELECTOR DE SUCURSALES
+    // ============================================
 
     private void AbrirDropdownSucursal()
     {
@@ -604,34 +859,43 @@
 
     private void ToggleDropdownSucursal()
     {
-        mostrarDropdownSucursal = !mostrarDropdownSucursal;
+        mostrarDropdownSucursal =
+            !mostrarDropdownSucursal;
     }
 
-    private void SeleccionarSucursal(
-        SucursalCyc sucursal
-    )
+    private void SeleccionarSucursal(SucursalCyc sucursal)
     {
-        selectedSucursal =
-            sucursal.Almacen;
+        selectedSucursal = sucursal.Almacen;
 
         busquedaSucursal =
-            sucursal.NombreCompleto
-            ?? sucursal.Almacen;
+            sucursal.NombreCompleto ?? sucursal.Almacen;
 
         mostrarDropdownSucursal = false;
+
         errorSucursal = false;
         mensajeErrorSucursal = "";
     }
 
+    // ============================================
+    // GUARDAR CAMBIOS DEL CLIENTE
+    // ============================================
+
     private async Task GuardarCliente()
     {
-        var authStatePermisoGuardar = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var userPermisoGuardar = authStatePermisoGuardar.User;
+        // ----------------------------------------
+        // VALIDAR PERMISOS
+        // ----------------------------------------
 
-        var tienePermisoGuardar = await PermisoService.TienePermisoAsync(
-            userPermisoGuardar,
-            Permissions.Clientes_Editar
-        );
+        var authStatePermisoGuardar =
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+        var userPermisoGuardar =
+            authStatePermisoGuardar.User;
+
+        var tienePermisoGuardar =
+            await PermisoService.TienePermisoAsync(
+                userPermisoGuardar,
+                Permissions.Clientes_Editar);
 
         if (!tienePermisoGuardar)
         {
@@ -639,10 +903,18 @@
             return;
         }
 
-        if (cliente == null)
+        if (cliente == null || guardando)
         {
             return;
         }
+
+        // Revisar nuevamente permisos al guardar,
+        // para que no dependan solo del formulario.
+
+        var puedeAsignarCategoriaGuardar =
+            await PermisoService.TienePermisoAsync(
+                userPermisoGuardar,
+                Permissions.Clientes_AsignarCategoria);
 
         guardando = true;
 
@@ -656,66 +928,107 @@
 
         try
         {
-            if (string.IsNullOrEmpty(selectedSucursal))
+            // ====================================
+            // 1. VALIDAR SUCURSAL
+            // ====================================
+
+            if (string.IsNullOrWhiteSpace(selectedSucursal))
             {
-                error =
-                    "Debes seleccionar una sucursal";
+                error = "Debes seleccionar una sucursal.";
 
                 errorSucursal = true;
-
-                mensajeErrorSucursal =
-                    "Debes seleccionar una sucursal";
-
-                guardando = false;
-
-                StateHasChanged();
+                mensajeErrorSucursal = error;
 
                 return;
             }
 
-            var existe =
-                await DbContext.Clientes.AnyAsync(
-                    c =>
-                        c.Telefono == modelo.Telefono &&
-                        c.Id != ClienteId
-                );
+            // ====================================
+            // 2. VALIDAR FECHA DE CUMPLEAÑOS
+            // ====================================
 
-            if (existe)
+            if (!modelo.FechaNacimiento.HasValue)
+            {
+                error = "La fecha de cumpleaños es obligatoria.";
+                return;
+            }
+
+            if (modelo.FechaNacimiento.Value.Date > DateTime.Today)
+            {
+                error = "La fecha de cumpleaños no puede ser futura.";
+                return;
+            }
+
+            // ====================================
+            // 3. PROTEGER TELÉFONO
+            // ====================================
+
+            // No permitir cambios al teléfono.
+            //
+            // Este número está vinculado con
+            // cycdata.dbo.puntosrams.
+            //
+            // Un cambio directo podría ocasionar
+            // que el cliente dejara de visualizar
+            // sus puntos anteriores.
+            //
+            // Se valida también en el servidor,
+            // no solamente en el campo readonly.
+
+            if (!string.Equals(
+                    cliente.Telefono,
+                    modelo.Telefono,
+                    StringComparison.Ordinal))
             {
                 error =
-                    "Ya existe otro cliente con este número de teléfono.";
-
-                guardando = false;
-
-                StateHasChanged();
+                    "El número de teléfono no puede modificarse " +
+                    "desde este formulario porque está vinculado " +
+                    "al historial de puntos RAMS.";
 
                 return;
             }
+
+            // ====================================
+            // 4. GUARDAR VALORES ORIGINALES
+            // ====================================
 
             bool aceptaWhatsAppOriginal =
                 cliente.AceptaWhatsApp;
 
-            var correo =
-                modelo.Correo;
+            var correo = modelo.Correo;
 
             if (string.IsNullOrWhiteSpace(correo))
             {
                 correo = null;
             }
 
+            // ====================================
+            // 5. ACTUALIZAR CLIENTE
+            // ====================================
+
             cliente.NombreCompleto =
                 modelo.NombreCompleto;
 
-            cliente.Telefono =
-                modelo.Telefono;
+            // IMPORTANTE:
+            // No actualizar cliente.Telefono.
+            //
+            // Se conserva su número original
+            // para proteger el historial de puntos.
 
-            cliente.Correo =
-                correo;
+            cliente.Correo = correo;
 
-            cliente.IdCategoriaProducto =
-                modelo.IdCategoriaProducto > 0
-                    ? modelo.IdCategoriaProducto
-                    : null;
+            cliente.FechaNacimiento =
+                modelo.FechaNacimiento?.Date;
+
+            // Categoría:
+            // Solo cambiar cuando exista permiso.
+
+            if (puedeAsignarCategoriaGuardar)
+            {
+                cliente.IdCategoriaProducto =
+                    modelo.IdCategoriaProducto > 0
+                        ? modelo.IdCategoriaProducto
+                        : null;
+            }
 
             cliente.Estado =
                 modelo.Estado ? 1 : 0;
@@ -726,70 +1039,129 @@
             cliente.TipoCliente =
                 modelo.TipoCliente;
 
+            cliente.Genero =
+                modelo.Genero is "Hombre" or "Mujer"
+                    ? modelo.Genero
+                    : null;
+
             cliente.IdSucursal =
                 selectedSucursal;
 
+            // ====================================
+            // 6. GUARDAR EN RamsCottonsDB
+            // ====================================
+
+            // Solo se guardan los cambios
+            // en la tabla de clientes.
+            //
+            // No se insertan ni modifican
+            // puntos de bienvenida.
+            //
+            // No se ejecuta SQL contra cycdata.
+
             await DbContext.SaveChangesAsync();
 
-bool cambioAWhatsApp =
-    modelo.AceptaWhatsApp &&
-    !aceptaWhatsAppOriginal;
+            // ====================================
+            // 7. WHATSAPP
+            // ====================================
 
-if (
-    cambioAWhatsApp &&
-    !string.IsNullOrEmpty(cliente.Telefono)
-)
-{
-    try
-    {
-        var telefonoLimpio =
-            cliente.Telefono
-                .Replace(" ", "")
-                .Replace("-", "")
-                .Replace("+", "");
+            // Se conserva el comportamiento:
+            // enviar la plantilla cuando el cliente
+            // cambia de NO aceptar a SÍ aceptar.
+            //
+            // Esto NO otorga puntos nuevos.
 
-        if (!telefonoLimpio.StartsWith("52"))
-        {
-            telefonoLimpio =
-                "52" + telefonoLimpio;
-        }
+            bool cambioAWhatsApp =
+                modelo.AceptaWhatsApp &&
+                !aceptaWhatsAppOriginal;
 
-        var primerNombre =
-            cliente.NombreCompleto
-                .Split(' ')[0];
-
-        await _whatsApp.EnviarPlantillaConImagenAsync(
-            numeroDestino: telefonoLimpio,
-            nombrePlantilla: "bienvenida_rams_cliente",
-            idioma: "es_MX",
-            parametros: new Dictionary<string, string>
+            if (cambioAWhatsApp &&
+                !string.IsNullOrEmpty(cliente.Telefono))
             {
-                { "1", primerNombre }
-            },
-            imagenUrl: "https://rams.no-ip.info:8082/images/LogoRamsCottons.jpg"
-        );
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine(
-            $"Error al enviar mensaje de bienvenida: {ex.Message}"
-        );
-    }
-}
+                try
+                {
+                    // Normalización del número para Meta.
+
+                    var telefonoDigitos =
+                        new string(
+                            cliente.Telefono
+                                .Where(char.IsDigit)
+                                .ToArray());
+
+                    if (telefonoDigitos.Length == 13 &&
+                        telefonoDigitos.StartsWith("521"))
+                    {
+                        telefonoDigitos =
+                            telefonoDigitos[3..];
+                    }
+                    else if (telefonoDigitos.Length == 12 &&
+                             telefonoDigitos.StartsWith("52"))
+                    {
+                        telefonoDigitos =
+                            telefonoDigitos[2..];
+                    }
+
+                    if (telefonoDigitos.Length != 10)
+                    {
+                        throw new InvalidOperationException(
+                            "El número telefónico no tiene 10 dígitos.");
+                    }
+
+                    var telefonoLimpio =
+                        "52" + telefonoDigitos;
+
+                    var primerNombre =
+                        cliente.NombreCompleto
+                            .Split(
+                                ' ',
+                                StringSplitOptions.RemoveEmptyEntries)
+                            .FirstOrDefault() ?? "Cliente";
+
+                    // Plantilla solicitada.
+
+                    await _whatsApp.EnviarPlantillaConImagenAsync(
+                        numeroDestino: telefonoLimpio,
+
+                        nombrePlantilla:
+                            "bienvenida_rams_cliente_v2",
+
+                        idioma: "es_MX",
+
+                        parametros:
+                            new Dictionary<string, string>
+                            {
+                                { "1", primerNombre }
+                            },
+
+                        imagenUrl:
+                            "https://rams.no-ip.info:8082/images/LogoRamsCottons.jpg"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(
+                        $"Error al enviar mensaje de bienvenida: {ex.Message}");
+                }
+            }
+
+            // ====================================
+            // 8. CONFIRMACIÓN
+            // ====================================
 
             mensajeExito =
                 $"Cliente {cliente.NombreCompleto} actualizado correctamente.";
 
             await Task.Delay(2000);
 
-            NavigationManager.NavigateTo(
-                "/clientes"
-            );
+            NavigationManager.NavigateTo("/clientes");
         }
         catch (Exception ex)
         {
+            Console.Error.WriteLine(
+                $"[EditarCliente] {ex}");
+
             error =
-                $"Error inesperado: {ex.Message}";
+                $"Error inesperado: {ex.GetBaseException().Message}";
         }
         finally
         {
@@ -799,36 +1171,35 @@ if (
         }
     }
 
+    // ============================================
+    // VOLVER
+    // ============================================
+
     private void Volver()
     {
-        NavigationManager.NavigateTo(
-            "/clientes"
-        );
+        NavigationManager.NavigateTo("/clientes");
     }
+
+    // ============================================
+    // MODELO DEL FORMULARIO
+    // ============================================
 
     private class ClienteModel
     {
         [Required(
-            ErrorMessage =
-                "El nombre completo es obligatorio"
-        )]
+            ErrorMessage = "El nombre completo es obligatorio")]
         [StringLength(
             180,
             MinimumLength = 3,
             ErrorMessage =
-                "El nombre debe tener entre 3 y 180 caracteres"
-        )]
+                "El nombre debe tener entre 3 y 180 caracteres")]
         public string NombreCompleto { get; set; } = "";
 
         [Required(
-            ErrorMessage =
-                "El teléfono es obligatorio"
-        )]
+            ErrorMessage = "El teléfono es obligatorio")]
         [RegularExpression(
             @"^[0-9+\s-]{8,20}$",
-            ErrorMessage =
-                "Formato de teléfono inválido"
-        )]
+            ErrorMessage = "Formato de teléfono inválido")]
         public string Telefono { get; set; } = "";
 
         public string? Correo { get; set; }
@@ -840,5 +1211,11 @@ if (
         public bool AceptaWhatsApp { get; set; } = false;
 
         public string? TipoCliente { get; set; }
+
+        [StringLength(20)]
+        public string? Genero { get; set; }
+
+        [Required(ErrorMessage = "La fecha de cumpleaños es obligatoria.")]
+        public DateTime? FechaNacimiento { get; set; }
     }
 }

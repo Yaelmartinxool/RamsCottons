@@ -9,7 +9,6 @@
 @using RamsCottons.Models.CycData
 @using RamsCottons.Services
 
-
 @attribute [Authorize]
 
 @inject ApplicationDbContext DbContext
@@ -21,6 +20,7 @@
 
 <div class="ver-cliente-container">
     <br>
+
     <!-- Header -->
     <div class="dashboard-header">
         <div class="header-content">
@@ -66,10 +66,23 @@
                         <div class="profile-avatar">
                             @cliente.NombreCompleto.Substring(0,1).ToUpper()
                         </div>
-                        <div class="profile-info">
-                            <h2>@cliente.NombreCompleto</h2>
-                            <p>ID: CL-@cliente.Id</p>
+
+                        <div class="profile-info"
+                             style="display: flex;
+                                    flex-direction: column;
+                                    align-items: flex-start;
+                                    gap: 6px;">
+
+                            <h2 style="display: block; margin: 0;">
+                                @cliente.NombreCompleto
+                            </h2>
+
+                            <p style="display: block; margin: 0;">
+                                ID: CL-@cliente.Id
+                            </p>
+
                         </div>
+
                         <div class="profile-status @(cliente.Estado == 1 ? "status-active" : "status-inactive")">
                             <i class="bi @(cliente.Estado == 1 ? "bi-check-circle-fill" : "bi-x-circle-fill")"></i>
                             @(cliente.Estado == 1 ? "Activo" : "Inactivo")
@@ -141,6 +154,32 @@
                                     </span>
                                 </div>
                             </div>
+
+                            <!-- NUEVO: Genero del cliente -->
+                            <div class="info-item">
+                                <div class="info-icon" style="background: rgba(59, 130, 246, 0.1);">
+                                    <i class="bi bi-people-fill"></i>
+                                </div>
+                                <div class="info-content">
+                                    <span class="info-label">Género</span>
+                                    <span class="info-value">@(string.IsNullOrWhiteSpace(cliente.Genero) ? "Sin especificar" : cliente.Genero)</span>
+                                </div>
+                            </div>
+
+                            <!-- FECHA DE CUMPLEAÑOS -->
+                            <div class="info-item">
+                                <div class="info-icon" style="background: rgba(245, 158, 11, 0.1);">
+                                    <i class="bi bi-gift-fill" style="color: #f59e0b;"></i>
+                                </div>
+                                <div class="info-content">
+                                    <span class="info-label">Fecha de cumpleaños</span>
+                                    <span class="info-value">
+                                        @(cliente.FechaNacimiento.HasValue
+                                            ? cliente.FechaNacimiento.Value.ToString("dd/MM/yyyy")
+                                            : "No registrado")
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -191,7 +230,15 @@
 </div>
 
 @code {
+    // =====================================================================
+    // PARÁMETROS
+    // =====================================================================
+
     [Parameter] public string Id { get; set; } = string.Empty;
+
+    // =====================================================================
+    // CAMPOS
+    // =====================================================================
 
     private int ClienteId => int.TryParse(Id, out var id) ? id : 0;
     private string nombreCreador = "No disponible";
@@ -200,11 +247,19 @@
     private bool cargando = true;
     private Dictionary<string, string> SucursalesCache = new();
 
+    // =====================================================================
+    // CICLO DE VIDA
+    // =====================================================================
+
     protected override async Task OnInitializedAsync()
     {
         CargarSucursales();
         await CargarDatos();
     }
+
+    // =====================================================================
+    // CARGA DE DATOS
+    // =====================================================================
 
     private void CargarSucursales()
     {
@@ -219,43 +274,48 @@
         }
     }
 
-   private async Task CargarDatos()
-{
-    cargando = true;
-    try
+    private async Task CargarDatos()
     {
-        cliente = await DbContext.Clientes.FirstOrDefaultAsync(c => c.Id == ClienteId);
-        categorias = await DbContext.CategoriaProductos.ToListAsync();
-
-        // NUEVO: Cargar nombre del creador
-        if (cliente != null && !string.IsNullOrEmpty(cliente.IdUsuario))
+        cargando = true;
+        try
         {
-            var usuario = await UserManager.FindByIdAsync(cliente.IdUsuario);
-            if (usuario != null)
+            cliente = await DbContext.Clientes.FirstOrDefaultAsync(c => c.Id == ClienteId);
+            categorias = await DbContext.CategoriaProductos.ToListAsync();
+            if (cliente != null && !string.IsNullOrEmpty(cliente.IdUsuario))
             {
-                nombreCreador = usuario.NombreCompleto ?? usuario.Email ?? "No disponible";
+                var usuario = await UserManager.FindByIdAsync(cliente.IdUsuario);
+                if (usuario != null)
+                {
+                    nombreCreador = usuario.NombreCompleto ?? usuario.Email ?? "No disponible";
+                }
             }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            cargando = false;
+        }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error: {ex.Message}");
-    }
-    finally
-    {
-        cargando = false;
-    }
-}
+
+    // =====================================================================
+    // HELPERS
+    // =====================================================================
+
     private string GetSucursalNombre(string? almacen)
     {
         if (string.IsNullOrEmpty(almacen))
             return "Sin sucursal";
-
         if (SucursalesCache.TryGetValue(almacen, out var nombre))
             return nombre;
-
         return almacen;
     }
+
+    // =====================================================================
+    // NAVEGACIÓN
+    // =====================================================================
 
     private void Volver()
     {
